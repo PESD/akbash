@@ -1,7 +1,7 @@
 import pyodbc
 import dbauth
 
-# Vars assigned in dbauth.py which is ignored in the repo
+# Vars assigned in dbauth.py which is ignored in the repo. Get this file from Troy.
 login = dbauth.visions["login"]
 password = dbauth.visions["password"]
 server = dbauth.visions["server"]
