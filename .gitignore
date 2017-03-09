@@ -95,3 +95,7 @@ ENV/
 
 # Akbash specific
 dbauth.py
+*.sqlite
+**/migrations/**
+!**/migrations
+!**/migrations/__init__.py
