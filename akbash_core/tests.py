@@ -1,6 +1,7 @@
 from django.test import TestCase
 from akbash_core.models import Person, Employee, update_field
 from akbash_core.xml_parse import parse_hires
+from datetime import date
 
 
 # Create your tests here.
@@ -30,7 +31,18 @@ class PersonTestCase(TestCase):
 
     def test_parse_hires(self):
         parse_hires()
-        hodor = Employee.objects.get(first_name="Hodor1")
-        self.assertEqual(hodor.first_name, "Hodor1")
-        hodor_32 = Employee.objects.get(first_name="Hodor32")
-        self.assertEqual(hodor_32.first_name, "Hodor32")
+        emp = Employee.objects.get(talented_id=13345)
+        self.assertEqual(emp.first_name, "Yenni")
+        self.assertEqual(emp.ethnicity, "Hispanic")
+        self.assertIs(emp.race_asian, False)
+        self.assertEqual(emp.birth_date, date(1997, 9, 9))
+        self.assertEqual(emp.gender, "F")
+        self.assertEqual(emp.ssn, "***REMOVED***")
+        self.assertEqual(emp.marked_as_hired, date(2017, 1, 23))
+        emp2 = Employee.objects.get(talented_id=13475)
+        self.assertEqual(emp2.first_name, "Berhana")
+        self.assertIs(emp2.race_white, False)
+        emp3 = Employee.objects.get(talented_id=13325)
+        self.assertEqual(emp3.first_name, "Jennifer")
+        self.assertIs(emp3.race_white, True)
+        self.assertIs(emp.race_asian, False)
