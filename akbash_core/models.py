@@ -19,25 +19,34 @@ class Person(models.Model):
     first_name = models.CharField(max_length=50)
     middle_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)
-    badge_number = models.IntegerField()
-    birth_date = models.DateField()
+    badge_number = models.IntegerField(null=True, blank=True)
+    birth_date = models.DateField(null=True, blank=True)
     gender = models.CharField(max_length=1)
     race = models.CharField(max_length=50)
     ethnicity = models.CharField(max_length=50)
     hqt = models.CharField(max_length=16)
     ssn = models.CharField(max_length=9)
-    tcp_id = models.IntegerField()
-    onboarding_date = models.DateTimeField()
-    is_tcp_fingerprinted = models.BooleanField()
-    is_badge_created = models.BooleanField()
+    tcp_id = models.IntegerField(null=True, blank=True)
+    talented_id = models.IntegerField(null=True, blank=True)
+    onboarding_date = models.DateTimeField(null=True, blank=True)
+    is_tcp_fingerprinted = models.BooleanField(default=False)
+    is_badge_created = models.BooleanField(default=False)
+
+    @staticmethod
+    def person_exists(tid):
+        qs = Person.objects.filter(talented_id=tid)
+        if qs.exists():
+            return True
+        else:
+            return False
 
 
 class Employee(Person):
     employee_id = models.CharField(max_length=7)
-    visions_id = models.IntegerField()
+    visions_id = models.IntegerField(null=True, blank=True)
     sub_type = models.CharField(max_length=1)
-    marked_as_hired = models.DateField()
-    epar_id = models.IntegerField()
+    marked_as_hired = models.DateField(null=True, blank=True)
+    epar_id = models.IntegerField(null=True, blank=True)
 
 
 class Contractor(Person):
@@ -110,3 +119,12 @@ class Position(models.Model):
     department = models.ForeignKey(Department, on_delete=models.CASCADE)
     person = models.ForeignKey(Person, on_delete=models.CASCADE)
     position_type = models.ForeignKey(PositionType, on_delete=models.CASCADE)
+
+
+def update_field(data_object, column, new_value):
+    old_value = getattr(data_object, column)
+    if new_value != old_value:
+        # Save the new value. In the future could also call an
+        # audit log function
+        setattr(data_object, column, new_value)
+        data_object.save()
