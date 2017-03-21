@@ -99,3 +99,10 @@ dbauth.py
 **/migrations/**
 !**/migrations
 !**/migrations/__init__.py
+
+# Test XML files
+RetrieveHiresXML.xml
+
+# Mac spam
+.DS_Store
+
