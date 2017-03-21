@@ -1,5 +1,4 @@
 import xml.etree.ElementTree as ET
-# import urllib2
 from .models import Person, Employee, update_field
 from datetime import date
 
@@ -44,12 +43,13 @@ def gender_from_talented(gender):
         return ""
 
 
+# Am now just reading from a file. Need to write the HTTP code later
+# Also need to find a better location for the XML file to be saved (and rotated)
 # xml_file = urllib2.urlopen("https://phxschools.tedk12.com/hire/nfIntegration/srApplicantExport.asmx/RetrieveHiresXML?sStartDate=20170101000000&sEndDate=20170320000000&sKey=680iv19L72ta1SN47t00888iG26L1H3I")
 def parse_hires():
     xml_file = "RetrieveHiresXML.xml"
     tree = ET.parse(xml_file)
     root = tree.getroot()
-    # hodor_int = 1
 
     for newhire in root:
         emp_info = newhire.find("EmployeeInfo")
@@ -106,9 +106,3 @@ def parse_hires():
         hire_date = date_from_talented(hire_string)
         if hire_date != date(1900, 1, 1):
             update_field(hire, "marked_as_hired", hire_date)
-
-        # hodor = "Hodor%i" % (hodor_int)
-
-        # update_field(hire, "first_name", hodor)
-
-        # hodor_int = hodor_int + 1
