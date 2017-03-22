@@ -40,7 +40,6 @@ INSTALLED_APPS = [
     'rest_framework',
     'api.apps.ApiConfig',
     'bpm.apps.BpmConfig',
-    'django_cron',
 ]
 
 MIDDLEWARE = [
@@ -122,9 +121,3 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.10/howto/static-files/
 
 STATIC_URL = '/static/'
-
-CRON_CLASSES = [
-    "bpm.triggers.TalentEdCronJob",
-]
-
-DJANGO_CRON_LOCK_BACKEND = "django_cron.backends.lock.file.FileLock"
