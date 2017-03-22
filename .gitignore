@@ -101,6 +101,7 @@ dbauth.py
 !**/migrations/__init__.py
 *.xml
 **/*.xml
+api_keys.py
 
 # Test XML files
 RetrieveHiresXML.xml
