@@ -1,6 +1,6 @@
 from django.test import TestCase
-from akbash_core.models import Person, Employee, update_field
-from akbash_core.xml_parse import parse_hires
+from api.models import Person, Employee, update_field
+from api.xml_parse import parse_hires
 from datetime import date
 
 

@@ -1,6 +1,7 @@
 import xml.etree.ElementTree as ET
 from .models import Person, Employee, update_field
 from datetime import date
+import os
 
 
 def get_xml_text(xml_object):
@@ -47,7 +48,8 @@ def gender_from_talented(gender):
 # Also need to find a better location for the XML file to be saved (and rotated)
 # xml_file = urllib2.urlopen("https://phxschools.tedk12.com/hire/nfIntegration/srApplicantExport.asmx/RetrieveHiresXML?sStartDate=20170101000000&sEndDate=20170320000000&sKey=680iv19L72ta1SN47t00888iG26L1H3I")
 def parse_hires():
-    xml_file = "RetrieveHiresXML.xml"
+    # xml_file = os.path.join(os.pardir, "test.xml")
+    xml_file = "test.xml"
     tree = ET.parse(xml_file)
     root = tree.getroot()
 
