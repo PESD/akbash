@@ -13,7 +13,7 @@
 
 ### api
 
-The `api` app will hold etl and data model things.
+The `api` app will hold ETL and data model things.
 
 ### bpm
 
@@ -24,4 +24,4 @@ The `bpm` app will handle business logic, workflow, etc.
 To wipe out your database and start from scratch without having to worry about migrations:
 
 1. Delete or drop database
-2. Delete all migration files from each app's ./migration directory (make sure not to delete __init__.py in those directories)
+2. Delete all migration files from each app's ./migration directory (make sure not to delete \_\_init\_\_.py in those directories)
