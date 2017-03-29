@@ -18,7 +18,6 @@ class Process(models.Model):
 
 class Task(models.Model):
     name = models.CharField(max_length=255)
-    task_type = models.ForeignKey(TaskType, on_delete=models.CASCADE)
     task_function = models.CharField(max_length=255)
 
     def task_controller_function(self, args):
