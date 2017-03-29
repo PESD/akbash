@@ -1,7 +1,6 @@
 import requests
 from bpm.api_keys import keys
 import os
-from .signals.signals import talented_signal
 
 
 def get_talented_xml():
