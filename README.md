@@ -19,9 +19,23 @@ The `api` app will hold ETL and data model things.
 
 The `bpm` app will handle business logic, workflow, etc.
 
+### etl
+
+The `etl` app (not created yet) will hold ETL functionality.
+
 ## Starting from Scratch
 
 To wipe out your database and start from scratch without having to worry about migrations:
 
 1. Delete or drop database
 2. Delete all migration files from each app's ./migration directory (make sure not to delete \_\_init\_\_.py in those directories)
+
+## TalentEd API Key
+
+For the xml_request script to work, an `api_keys.py` file needs to exist in the `bpm` app directory. Check out the sample in there for how it should look. Or see here:
+
+```keys = {
+    "talented": {
+        "sKey": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    }
+}```
