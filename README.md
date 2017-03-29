@@ -1,5 +1,7 @@
 # akbash
 
+[![Build Status](http://circleci-badges-max.herokuapp.com/img/PESD/akbash?token=505e27dc7bacf1bdc368d12374285a8255509700)](https://circleci.com/gh/PESD/akbash)
+
 ## Installation
 
 1. Set up a Virtualenv
