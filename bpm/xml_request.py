@@ -1,5 +1,4 @@
 import requests
-from bpm.api_keys import keys
 import os
 
 
@@ -7,7 +6,8 @@ def get_talented_xml():
     if os.environ.get("CIRCLECI") == "true":
         talented_key = os.environ.get("TALENTEDAPI")
     else:
-        talented_key = keys["talented"]["sKey"]
+        import bpm.api_keys
+        talented_key = bpm.api_keys.keys["talented"]["sKey"]
 
     post_vars = {
         "sStartDate": "20170101000000",
