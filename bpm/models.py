@@ -1,6 +1,5 @@
 from django.db import models
 from api.models import Person
-from bpm.task_controller import TaskWorker
 
 # Create your models here.
 
@@ -47,3 +46,18 @@ class WorkflowActivity(models.Model):
     workflow = models.ForeignKey(Workflow, on_delete=models.CASCADE)
     activity = models.ForeignKey(Activity, on_delete=models.CASCADE)
     status = models.CharField(max_length=8, choices=STATUSES)
+
+
+class TaskWorker:
+
+        def task_update_name(**kwargs):
+            workflow_activity = kwargs["workflow_activity"]
+            first_name = kwargs["first_name"]
+            last_name = kwargs["last_name"]
+            person = workflow_activity.workflow.person
+            person.first_name = first_name
+            person.last_name = last_name
+            person.save()
+
+        def task_update_employee_id(**kwargs):
+            pass
