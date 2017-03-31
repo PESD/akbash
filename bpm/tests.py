@@ -1,7 +1,6 @@
 from django.test import TestCase
 from api.models import Person, Employee
-from bpm.models import Process, Task, Activity, Workflow, WorkflowActivity
-from bpm.task_controller import TaskWorker
+from bpm.models import Process, Task, Activity, Workflow, WorkflowActivity, TaskWorker
 
 # Create your tests here.
 
