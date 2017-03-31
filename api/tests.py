@@ -3,6 +3,7 @@ from api.models import Person, Employee, update_field
 from api.xml_parse import parse_hires
 from bpm.xml_request import get_talented_xml
 from datetime import date
+import os
 
 
 # Create your tests here.
@@ -31,7 +32,8 @@ class PersonTestCase(TestCase):
         self.assertEqual(final_jon.middle_name, "Stark")
 
     def test_parse_hires(self):
-        get_talented_xml()
+        if os.environ.get("CIRCLECI") == "true":
+            get_talented_xml()
         parse_hires()
         emp = Employee.objects.get(talented_id=13345)
         self.assertEqual(emp.first_name, "Yenni")
