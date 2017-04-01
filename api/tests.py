@@ -3,6 +3,10 @@ from api.models import Person, Employee, update_field
 from api.xml_parse import parse_hires
 from bpm.xml_request import get_talented_xml
 from datetime import date
+from api.serializers import EmployeeSerializer
+from rest_framework.renderers import JSONRenderer
+from rest_framework.parsers import JSONParser
+from django.utils.six import BytesIO
 import os
 
 
@@ -48,3 +52,17 @@ class PersonTestCase(TestCase):
         self.assertEqual(emp3.first_name, "Jennifer")
         self.assertIs(emp3.race_white, True)
         self.assertIs(emp.race_asian, False)
+
+
+class RestTestCase(TestCase):
+    def setUp(self):
+        tyrion = Employee.objects.create(first_name="Tyrion", last_name="Lanister")
+        tyrion.save()
+
+    def test_json(self):
+        tyrion = Employee.objects.get(first_name="Tyrion")
+        t_serial = EmployeeSerializer(tyrion)
+        json_string = JSONRenderer().render(t_serial.data)
+        stream = BytesIO(json_string)
+        data = JSONParser().parse(stream)
+        self.assertEqual(data["first_name"], "Tyrion")

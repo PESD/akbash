@@ -125,6 +125,8 @@ class Position(models.Model):
     position_type = models.ForeignKey(PositionType, on_delete=models.CASCADE)
 
 
+# Function for updating data
+
 def update_field(data_object, column, new_value):
     old_value = getattr(data_object, column)
     if new_value != old_value:
