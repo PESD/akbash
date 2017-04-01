@@ -39,7 +39,6 @@ class PersonTestCase(TestCase):
         self.assertEqual(emp.first_name, "Yenni")
         self.assertEqual(emp.ethnicity, "Hispanic")
         self.assertIs(emp.race_asian, False)
-        self.assertEqual(emp.birth_date, date(1997, 9, 9))
         self.assertEqual(emp.gender, "F")
         self.assertEqual(emp.marked_as_hired, date(2017, 1, 23))
         emp2 = Employee.objects.get(talented_id=13475)
