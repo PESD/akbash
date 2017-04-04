@@ -123,16 +123,14 @@ DEBUG = config.getboolean('debug', 'DEBUG')
 # Database
 # https://docs.djangoproject.com/en/1.10/ref/settings/#databases
 
-if os.environ.get("CIRCLECI") == "true":
-    # sqlight config
+if config['default database']['DATABASE_ENGINE'] == "django.db.backends.sqlite3":
     DATABASES = {
         'default': {
             'ENGINE': config['default database']['DATABASE_ENGINE'],
             'NAME': config['default database']['DATABASE_NAME'],
         }
     }
-else:
-    # SQL Server config
+elif config['default database']['DATABASE_ENGINE'] == "sql_server.pyodbc":
     DATABASES = {
         'default': {
             'ENGINE': config['default database']['DATABASE_ENGINE'],
