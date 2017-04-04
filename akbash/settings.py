@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/1.10/ref/settings/
 """
 
 import os
+from configparser import ConfigParser
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -18,12 +19,6 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.10/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'nf!6t5vm0#&d-j)kdev_5aco^9$2@b%3-6b$h7x72x01og3s4@'
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
 
 ALLOWED_HOSTS = []
 
@@ -73,17 +68,6 @@ TEMPLATES = [
 WSGI_APPLICATION = 'akbash.wsgi.application'
 
 
-# Database
-# https://docs.djangoproject.com/en/1.10/ref/settings/#databases
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-    }
-}
-
-
 # Password validation
 # https://docs.djangoproject.com/en/1.10/ref/settings/#auth-password-validators
 
@@ -121,3 +105,40 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.10/howto/static-files/
 
 STATIC_URL = '/static/'
+
+# Private and local configurations
+
+PRIVATE_CONFIG_FILE = os.environ.get(
+    'AKBASH_CONFIG_FILE',
+    os.path.join(BASE_DIR, '..', 'akbash_private_settings', 'akbash.ini'))
+config = ConfigParser(interpolation=None)
+config.read(PRIVATE_CONFIG_FILE)
+
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = config.get('secrets', 'SECRET_KEY')
+
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = config.getboolean('debug', 'DEBUG')
+
+# Database
+# https://docs.djangoproject.com/en/1.10/ref/settings/#databases
+
+DEFAULT_DATABASE_ENGINE = config.get('default database', 'DATABASE_ENGINE')
+DEFAULT_DATABASE_NAME = config.get('default database', 'DATABASE_NAME')
+DEFAULT_DATABASE_USER = config.get('default database', 'DATABASE_USER')
+DEFAULT_DATABASE_PASSWORD = config.get('default database', 'DATABASE_PASSWORD')
+DEFAULT_DATABASE_DRIVER = config.get('default database', 'DATABASE_DRIVER')
+DEFAULT_DATABASE_DSN = config.get('default database', 'DATABASE_DSN')
+
+DATABASES = {
+    'default': {
+        'ENGINE': DEFAULT_DATABASE_ENGINE,
+        'NAME': DEFAULT_DATABASE_NAME,
+        'USER': DEFAULT_DATABASE_USER,
+        'PASSWORD': DEFAULT_DATABASE_PASSWORD,
+        'OPTIONS': {
+            'driver': DEFAULT_DATABASE_DRIVER,
+            'dsn': DEFAULT_DATABASE_DSN,
+        },
+    }
+}
