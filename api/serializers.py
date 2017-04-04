@@ -1,9 +1,19 @@
 from rest_framework import serializers
-from api.models import Employee
+from api.models import Employee, Service
+
+
+class ServiceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Service
+        fields = (
+            "type",
+            "user_info"
+        )
 
 
 class EmployeeSerializer(serializers.ModelSerializer):
     api_url = serializers.HyperlinkedIdentityField(view_name='employee-detail', format='html')
+    services = ServiceSerializer(many=True, read_only=True)
 
     class Meta:
         model = Employee
@@ -33,4 +43,5 @@ class EmployeeSerializer(serializers.ModelSerializer):
             "sub_type",
             "marked_as_hired",
             "epar_id",
+            "services",
         )

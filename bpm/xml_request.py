@@ -15,7 +15,6 @@ def get_talented_xml():
         "sKey": talented_key,
     }
     r = requests.post("https://phxschools.tedk12.com/hire/nfIntegration/srApplicantExport.asmx/RetrieveHiresXML", data=post_vars)
-    print("after")
     # file_path = os.path.join(os.pardir, "test.xml")
     file_path = "test.xml"
     xml_file = open(file_path, "w")
