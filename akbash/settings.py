@@ -123,22 +123,25 @@ DEBUG = config.getboolean('debug', 'DEBUG')
 # Database
 # https://docs.djangoproject.com/en/1.10/ref/settings/#databases
 
-DEFAULT_DATABASE_ENGINE = config.get('default database', 'DATABASE_ENGINE')
-DEFAULT_DATABASE_NAME = config.get('default database', 'DATABASE_NAME')
-DEFAULT_DATABASE_USER = config.get('default database', 'DATABASE_USER')
-DEFAULT_DATABASE_PASSWORD = config.get('default database', 'DATABASE_PASSWORD')
-DEFAULT_DATABASE_DRIVER = config.get('default database', 'DATABASE_DRIVER')
-DEFAULT_DATABASE_DSN = config.get('default database', 'DATABASE_DSN')
-
-DATABASES = {
-    'default': {
-        'ENGINE': DEFAULT_DATABASE_ENGINE,
-        'NAME': DEFAULT_DATABASE_NAME,
-        'USER': DEFAULT_DATABASE_USER,
-        'PASSWORD': DEFAULT_DATABASE_PASSWORD,
-        'OPTIONS': {
-            'driver': DEFAULT_DATABASE_DRIVER,
-            'dsn': DEFAULT_DATABASE_DSN,
-        },
+if os.environ.get("CIRCLECI") == "true":
+    # sqlight config
+    DATABASES = {
+        'default': {
+            'ENGINE': config['default database']['DATABASE_ENGINE'],
+            'NAME': config['default database']['DATABASE_NAME'],
+        }
     }
-}
+else:
+    # SQL Server config
+    DATABASES = {
+        'default': {
+            'ENGINE': config['default database']['DATABASE_ENGINE'],
+            'NAME': config['default database']['DATABASE_NAME'],
+            'USER': config['default database']['DATABASE_USER'],
+            'PASSWORD': config['default database']['DATABASE_PASSWORD'],
+            'OPTIONS': {
+                'driver': config['default database']['DATABASE_DRIVER'],
+                'dsn': config['default database']['DATABASE_DSN'],
+            },
+        }
+    }
