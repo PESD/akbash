@@ -1,34 +1,25 @@
-from django.http import HttpResponse, JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from rest_framework.renderers import JSONRenderer
-from rest_framework.parsers import JSONParser
+from rest_framework import generics
 from api.models import Employee
 from api.serializers import EmployeeSerializer
+from rest_framework.decorators import api_view
+from rest_framework.reverse import reverse
+from rest_framework.response import Response
 
 # Create your views here.
 
 
-@csrf_exempt
-def employee_list(request):
-    """
-    List all employees
-    """
-    if request.method == 'GET':
-        employees = Employee.objects.all()
-        serializer = EmployeeSerializer(employees, many=True)
-        return JsonResponse(serializer.data, safe=False)
+@api_view(["GET"])
+def api_root(request, format=None):
+    return Response({
+        'employees': reverse('employee-list', request=request, format=format)
+    })
 
 
-@csrf_exempt
-def employee_detail(request, pk):
-    """
-    Retrieve, update or delete a code snippet.
-    """
-    try:
-        employee = Employee.objects.get(pk=pk)
-    except Employee.DoesNotExist:
-        return HttpResponse(status=404)
+class EmployeeList(generics.ListCreateAPIView):
+    queryset = Employee.objects.all()
+    serializer_class = EmployeeSerializer
 
-    if request.method == 'GET':
-        serializer = EmployeeSerializer(employee)
-        return JsonResponse(serializer.data)
+
+class EmployeeDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Employee.objects.all()
+    serializer_class = EmployeeSerializer
