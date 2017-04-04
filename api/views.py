@@ -1,11 +1,9 @@
-from rest_framework import generics
 from api.models import Employee
 from api.serializers import EmployeeSerializer
 from rest_framework.decorators import api_view
 from rest_framework.reverse import reverse
 from rest_framework.response import Response
-
-# Create your views here.
+from rest_framework import viewsets
 
 
 @api_view(["GET"])
@@ -15,11 +13,6 @@ def api_root(request, format=None):
     })
 
 
-class EmployeeList(generics.ListCreateAPIView):
-    queryset = Employee.objects.all()
-    serializer_class = EmployeeSerializer
-
-
-class EmployeeDetail(generics.RetrieveUpdateDestroyAPIView):
+class EmployeeViewSet(viewsets.ModelViewSet):
     queryset = Employee.objects.all()
     serializer_class = EmployeeSerializer

@@ -1,5 +1,5 @@
 from django.test import TestCase
-from api.models import Person, Employee, update_field
+from api.models import Person, Employee, update_field, Service
 from api.xml_parse import parse_hires
 from bpm.xml_request import get_talented_xml
 from datetime import date
@@ -60,6 +60,10 @@ class RestTestCase(TestCase):
     def setUp(self):
         tyrion = Employee.objects.create(first_name="Tyrion", last_name="Lanister")
         tyrion.save()
+        visions = Service.objects.create(type="visions", person=tyrion, user_info="tlanister")
+        visions.save()
+        synergy = Service.objects.create(type="synergy", person=tyrion, user_info="tyrion")
+        synergy.save()
 
     def test_json(self):
         factory = APIRequestFactory()
@@ -73,3 +77,8 @@ class RestTestCase(TestCase):
         stream = BytesIO(json_string)
         data = JSONParser().parse(stream)
         self.assertEqual(data["first_name"], "Tyrion")
+        vuser = ""
+        for a in data["services"]:
+            if a["type"] == "visions":
+                vuser = a["user_info"]
+        self.assertEqual(vuser, "tlanister")
