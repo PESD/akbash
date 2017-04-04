@@ -3,10 +3,12 @@ from api.models import Employee
 
 
 class EmployeeSerializer(serializers.ModelSerializer):
+    api_url = serializers.HyperlinkedIdentityField(view_name='employee-detail', format='html')
+
     class Meta:
         model = Employee
         fields = (
-            "pk",
+            "api_url",
             "employee_id",
             "first_name",
             "last_name",
