@@ -6,6 +6,8 @@ from datetime import date
 from api.serializers import EmployeeSerializer
 from rest_framework.renderers import JSONRenderer
 from rest_framework.parsers import JSONParser
+from rest_framework.test import APIRequestFactory
+from rest_framework.request import Request
 from django.utils.six import BytesIO
 import os
 
@@ -60,8 +62,13 @@ class RestTestCase(TestCase):
         tyrion.save()
 
     def test_json(self):
+        factory = APIRequestFactory()
+        request = factory.get('/api/')
+        serializer_context = {
+            'request': Request(request),
+        }
         tyrion = Employee.objects.get(first_name="Tyrion")
-        t_serial = EmployeeSerializer(tyrion)
+        t_serial = EmployeeSerializer(instance=tyrion, context=serializer_context)
         json_string = JSONRenderer().render(t_serial.data)
         stream = BytesIO(json_string)
         data = JSONParser().parse(stream)
