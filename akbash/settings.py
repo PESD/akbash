@@ -108,14 +108,14 @@ STATIC_URL = '/static/'
 
 # Private and local configurations
 
-PRIVATE_CONFIG_FILE = os.environ.get(
+private_config_file = os.environ.get(
     'AKBASH_CONFIG_FILE',
     os.path.join(BASE_DIR, '..', 'akbash_private_settings', 'akbash.ini'))
 config = ConfigParser(interpolation=None)
-config.read(PRIVATE_CONFIG_FILE)
+config.read(private_config_file)
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config.get('secrets', 'SECRET_KEY')
+SECRET_KEY = config['secrets']['SECRET_KEY']
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config.getboolean('debug', 'DEBUG')
@@ -145,3 +145,6 @@ else:
             },
         }
     }
+
+# Talented API key
+TALENTED_API_KEY = config['secrets']['TALENTED_API_KEY']
