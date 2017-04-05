@@ -6,6 +6,7 @@
 
 1. Set up a Virtualenv
 2. `pip install -r requirements.txt`
+3. Create configuration file (see below)
 3. `python manage.py makemigrations`
 4. `python manage.py migrate`
 5. To manually populate the database: `python cron.py`
@@ -32,12 +33,26 @@ To wipe out your database and start from scratch without having to worry about m
 1. Delete or drop database
 2. Delete all migration files from each app's ./migration directory (make sure not to delete \_\_init\_\_.py in those directories)
 
-## TalentEd API Key
+## Configuration File
+Local settings and sensitive information are stored in an .ini syle configuration file. By default the file, akbash.ini, is located besides the base directory in a directory named akbash_private_settings (```BASE_DIR\..\akbash_private_settings\akbash.ini```). You may set "AKBASH_CONFIG_FILE" as an environment variable with your own filename and location. Refer to the example below and settings.py for what you should put in the config file.
 
-For the xml_request script to work, an `api_keys.py` file needs to exist in the `bpm` app directory. Check out the sample in there for how it should look. Or see here:
+```
+[secrets]
+SECRET_KEY: 
+TALENTED_API_KEY: 
 
-```keys = {
-    "talented": {
-        "sKey": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-    }
-}```
+[default database]
+DATABASE_ENGINE: django.db.backends.sqlite3
+DATABASE_NAME: db.sqlite3
+DATABASE_USER: 
+DATABASE_PASSWORD: 
+DATABASE_DRIVER: 
+DATABASE_DSN: 
+
+[debug]
+DEBUG: True
+```
+
+### TalentEd API Key
+
+For the xml_request script to work, enter the api key in the configuration file.

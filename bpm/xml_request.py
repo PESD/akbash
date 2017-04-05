@@ -1,13 +1,13 @@
 import requests
 import os
+from django.conf import settings
 
 
 def get_talented_xml():
     if os.environ.get("CIRCLECI") == "true":
         talented_key = os.environ.get("TALENTEDAPI")
     else:
-        import bpm.api_keys
-        talented_key = bpm.api_keys.keys["talented"]["sKey"]
+        talented_key = settings.TALENTED_API_KEY
 
     post_vars = {
         "sStartDate": "20170101000000",

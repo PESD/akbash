@@ -108,3 +108,6 @@ RetrieveHiresXML.xml
 
 # Mac spam
 .DS_Store
+
+# VIM swap files
+*.swp
