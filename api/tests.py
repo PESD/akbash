@@ -1,8 +1,14 @@
 from django.test import TestCase
-from api.models import Person, Employee, update_field
+from api.models import Person, Employee, update_field, Service
 from api.xml_parse import parse_hires
 from bpm.xml_request import get_talented_xml
 from datetime import date
+from api.serializers import EmployeeSerializer
+from rest_framework.renderers import JSONRenderer
+from rest_framework.parsers import JSONParser
+from rest_framework.test import APIRequestFactory
+from rest_framework.request import Request
+from django.utils.six import BytesIO
 import os
 
 
@@ -48,3 +54,31 @@ class PersonTestCase(TestCase):
         self.assertEqual(emp3.first_name, "Jennifer")
         self.assertIs(emp3.race_white, True)
         self.assertIs(emp.race_asian, False)
+
+
+class RestTestCase(TestCase):
+    def setUp(self):
+        tyrion = Employee.objects.create(first_name="Tyrion", last_name="Lanister")
+        tyrion.save()
+        visions = Service.objects.create(type="visions", person=tyrion, user_info="tlanister")
+        visions.save()
+        synergy = Service.objects.create(type="synergy", person=tyrion, user_info="tyrion")
+        synergy.save()
+
+    def test_json(self):
+        factory = APIRequestFactory()
+        request = factory.get('/api/')
+        serializer_context = {
+            'request': Request(request),
+        }
+        tyrion = Employee.objects.get(first_name="Tyrion")
+        t_serial = EmployeeSerializer(instance=tyrion, context=serializer_context)
+        json_string = JSONRenderer().render(t_serial.data)
+        stream = BytesIO(json_string)
+        data = JSONParser().parse(stream)
+        self.assertEqual(data["first_name"], "Tyrion")
+        vuser = ""
+        for a in data["services"]:
+            if a["type"] == "visions":
+                vuser = a["user_info"]
+        self.assertEqual(vuser, "tlanister")

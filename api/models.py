@@ -66,34 +66,26 @@ class HireDateRange(models.Model):
 # Service Classes
 
 class Service(models.Model):
-    name = models.CharField(max_length=255)
+    TYPES = (
+        ("visions", "Visions"),
+        ("synergy", "Synergy"),
+        ("ad", "Active Directory"),
+        ("cell", "Cell Phone"),
+        ("phone", "Desk Phone")
+    )
+    type = models.CharField(max_length=16, choices=TYPES)
+    person = models.ForeignKey(
+        Person,
+        on_delete=models.CASCADE,
+        related_name="services",
+    )
+    user_info = models.CharField(max_length=50)
 
+    class Meta:
+        unique_together = ("type", "person")
 
-class Visions(Service):
-    username = models.CharField(max_length=50)
-    person = models.OneToOneField(Person, on_delete=models.CASCADE, primary_key=True)
-
-
-class Synergy(Service):
-    username = models.CharField(max_length=50)
-    person = models.OneToOneField(Person, on_delete=models.CASCADE, primary_key=True)
-
-
-class ActiveDirectory(Service):
-    username = models.CharField(max_length=50)
-    email = models.CharField(max_length=255)
-    person = models.OneToOneField(Person, on_delete=models.CASCADE, primary_key=True)
-
-
-class CellPhone(Service):
-    cell_number = models.CharField(max_length=10)
-    person = models.OneToOneField(Person, on_delete=models.CASCADE, primary_key=True)
-
-
-class DeskPhone(Service):
-    desk_phone = models.CharField(max_length=10)
-    extension = models.CharField(max_length=4)
-    person = models.OneToOneField(Person, on_delete=models.CASCADE, primary_key=True)
+    def __unicode__(self):
+        return '%s: %s' % (self.type, self.user_data)
 
 
 # Organizational Classes
@@ -124,6 +116,8 @@ class Position(models.Model):
     person = models.ForeignKey(Person, on_delete=models.CASCADE)
     position_type = models.ForeignKey(PositionType, on_delete=models.CASCADE)
 
+
+# Function for updating data
 
 def update_field(data_object, column, new_value):
     old_value = getattr(data_object, column)
