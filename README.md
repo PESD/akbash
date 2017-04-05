@@ -34,20 +34,20 @@ To wipe out your database and start from scratch without having to worry about m
 2. Delete all migration files from each app's ./migration directory (make sure not to delete \_\_init\_\_.py in those directories)
 
 ## Configuration File
-Local settings and sensitive information are stored in an .ini syle configuration file. By default the file, akbash.ini, is located besides the base directory in a directory named akbash_private_settings (BASE_DIR\..\akbash_private_settings\akbash.ini). You may set "AKBASH_CONFIG_FILE" as an environment variable with your own filename and location. Refer to the example below and settings.py for what you should put in the config file.
+Local settings and sensitive information are stored in an .ini syle configuration file. By default the file, akbash.ini, is located besides the base directory in a directory named akbash_private_settings (```BASE_DIR\..\akbash_private_settings\akbash.ini```). You may set "AKBASH_CONFIG_FILE" as an environment variable with your own filename and location. Refer to the example below and settings.py for what you should put in the config file.
 
 ```
 [secrets]
-SECRET_KEY: xxxxxxxxxxxx
-TALENTED_API_KEY: xxxxxxxxxxxx
+SECRET_KEY: 
+TALENTED_API_KEY: 
 
 [default database]
-DATABASE_ENGINE: sql_server.pyodbc
-DATABASE_NAME: xxxxxxxx
-DATABASE_USER: xxxxxxxx
-DATABASE_PASSWORD: xxxxxxxx
-DATABASE_DRIVER: FreeTDS
-DATABASE_DSN: xxxxxxxx
+DATABASE_ENGINE: django.db.backends.sqlite3
+DATABASE_NAME: db.sqlite3
+DATABASE_USER: 
+DATABASE_PASSWORD: 
+DATABASE_DRIVER: 
+DATABASE_DSN: 
 
 [debug]
 DEBUG: True
