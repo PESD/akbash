@@ -14,6 +14,7 @@ def api_root(request, format=None):
         'employees': reverse('employee-list', request=request, format=format)
     })
 
+
 # ModelViewSet does all of the heavy lifting for REST framework.
 class EmployeeViewSet(viewsets.ModelViewSet):
     queryset = Employee.objects.all()
