@@ -36,6 +36,7 @@ class Person(models.Model):
     is_tcp_fingerprinted = models.BooleanField(default=False)
     is_badge_created = models.BooleanField(default=False)
 
+    # Convieniece function to verify if an Employee exists by talented_id
     @staticmethod
     def person_exists(tid):
         qs = Person.objects.filter(talented_id=tid)
@@ -81,6 +82,7 @@ class Service(models.Model):
     )
     user_info = models.CharField(max_length=50)
 
+    # There can be only one service of each type per Person
     class Meta:
         unique_together = ("type", "person")
 
@@ -117,12 +119,12 @@ class Position(models.Model):
     position_type = models.ForeignKey(PositionType, on_delete=models.CASCADE)
 
 
-# Function for updating data
-
+# Function for updating data. Use this instead of updating objects directly
+# in order to potentially capture in a future changelog/audit model.
 def update_field(data_object, column, new_value):
     old_value = getattr(data_object, column)
     if new_value != old_value:
         # Save the new value. In the future could also call an
-        # audit log function
+        # audit/changelog log function
         setattr(data_object, column, new_value)
         data_object.save()

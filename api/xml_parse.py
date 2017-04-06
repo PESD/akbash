@@ -4,6 +4,8 @@ from datetime import date
 import os
 
 
+# Django doesn't allow null strings, so must convert any None objects
+# to empty strings.
 def get_xml_text(xml_object):
     if xml_object is None:
         return ""
@@ -11,6 +13,7 @@ def get_xml_text(xml_object):
         return xml_object.text
 
 
+# Map TalentEd races strings to our model's boolean races.
 def get_race(xml_object):
     race_dict = {}
     races = ["RaceWhite", "RaceBlack", "RaceAsian", "RaceIslander", "RaceAmericanIndian"]
@@ -23,6 +26,7 @@ def get_race(xml_object):
     return race_dict
 
 
+# Translate TalentEd date to python date()
 def date_from_talented(date_string):
     if "-" in date_string:
         date_arr = date_string.split("-")
@@ -31,10 +35,12 @@ def date_from_talented(date_string):
         return date(1900, 1, 1)
 
 
+# Strip out hyphons in SSNs
 def format_ssn(ssn):
     return ssn.replace("-", "")
 
 
+# TalentEd genders: 1 = Male, 2 = Female
 def gender_from_talented(gender):
     if gender == "1":
         return "M"
@@ -44,20 +50,23 @@ def gender_from_talented(gender):
         return ""
 
 
-# Am now just reading from a file. Need to write the HTTP code later
-# Also need to find a better location for the XML file to be saved (and rotated)
-# xml_file = urllib2.urlopen("https://phxschools.tedk12.com/hire/nfIntegration/srApplicantExport.asmx/RetrieveHiresXML?sStartDate=20170101000000&sEndDate=20170320000000&sKey=680iv19L72ta1SN47t00888iG26L1H3I")
+# Am now just reading from a file. bpm.xml_request module handles downloading the file
+# Need to find a better location for the XML file to be saved (and rotated)
+# Also, all of this code should probably be moved to a future 'etl' app.
+
 def parse_hires():
-    # xml_file = os.path.join(os.pardir, "test.xml")
+    # Simply reads test.xml from the root akbash directory. Obviously this needs to change.
     xml_file = "test.xml"
     tree = ET.parse(xml_file)
     root = tree.getroot()
 
+    # Loop through each new hire in the TalentEd XML file.
     for newhire in root:
         emp_info = newhire.find("EmployeeInfo")
         app_id = emp_info.find("ApplicantId")
         tid = int(app_id.find("IdValue").text)
 
+        # Do we create a new Employee or update an existing?
         if Person.person_exists(tid) is False:
             hire = Employee.objects.create(talented_id=tid)
         else:
