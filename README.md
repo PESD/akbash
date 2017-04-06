@@ -56,3 +56,32 @@ DEBUG: True
 ### TalentEd API Key
 
 For the xml_request script to work, enter the api key in the configuration file.
+
+## Connecting to SQL Server
+### FreeTDS
+Install FreeTDS. Add the following to freetds.conf.
+```
+[VSQL]
+  host = ms-27-vsql-1
+  port = 1433
+```
+
+### unixodbc
+Install unixodbc. Add the following to odbc.ini.
+```
+[VSQL]
+Description         = Versifit SQL Server
+Driver              = FreeTDS
+Servername          = VSQL
+```
+
+### akbash.ini
+```
+[default database]
+DATABASE_ENGINE: sql_server.pyodbc
+DATABASE_NAME: akbash
+DATABASE_USER: akbash
+DATABASE_PASSWORD: password
+DATABASE_DRIVER: FreeTDS
+DATABASE_DSN: VSQL
+```
