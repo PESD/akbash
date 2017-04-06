@@ -6,6 +6,8 @@ from rest_framework.response import Response
 from rest_framework import viewsets
 
 
+# The api_root simply displays an HTML page with any root API end-points
+# that are exposed
 @api_view(["GET"])
 def api_root(request, format=None):
     return Response({
@@ -13,6 +15,7 @@ def api_root(request, format=None):
     })
 
 
+# ModelViewSet does all of the heavy lifting for REST framework.
 class EmployeeViewSet(viewsets.ModelViewSet):
     queryset = Employee.objects.all()
     serializer_class = EmployeeSerializer

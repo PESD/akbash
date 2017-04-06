@@ -1,7 +1,20 @@
 from django.db import models
 from api.models import Person
 
-# Create your models here.
+
+# A Process is something like "New Hire Process"
+# A Process is a a set of Activities
+# A Process defines a start_activity.
+# Activities are one or more Tasks
+# Activities define child Activities that come after that Activity is performed.
+# A Workflow is a Process paired with a Person
+# A Workflow (Process: New Hire, Person: Jon Snow) would start Jon Snow down /
+# / the new hire process.
+# WorkflowActivities keep track of each Workflow's Activity status
+# -----
+# Tasks store a function name. That function name can be accessed through /
+# / the TaskWorker class. It uses **kwargs to accept any number of function args
+# It is up to whatever is calling that function to know what args it needs to pass
 
 
 class Process(models.Model):
@@ -50,6 +63,7 @@ class WorkflowActivity(models.Model):
 
 class TaskWorker:
 
+        # Proof of concept on a TaskWorker function. Needs to be cleaned up.
         def task_update_name(**kwargs):
             workflow_activity = kwargs["workflow_activity"]
             first_name = kwargs["first_name"]

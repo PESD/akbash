@@ -15,6 +15,7 @@ import os
 # Create your tests here.
 class PersonTestCase(TestCase):
     def setUp(self):
+        # Add a couple of Employees to use in the tests.
         jon = Employee.objects.create(first_name="Jon", last_name="Snow")
         arya = Person.objects.create(first_name="Arya", last_name="Stark")
         jon.employee_id = "SN12345"
@@ -23,21 +24,26 @@ class PersonTestCase(TestCase):
         arya.save()
 
     def test_find_employee(self):
+        # Can we find the Jon Snow employee we created?
         people = Person.objects.all()
         self.assertEqual(people.count(), 2)
         newjon = Employee.objects.get(first_name="Jon")
         self.assertEqual(newjon.employee_id, "SN12345")
 
     def test_person_exists(self):
+        # Does our person_exists() model function work?
         self.assertIs(Person.person_exists(12345), True)
 
     def test_update_field(self):
+        # Does our custom update function work?
         update_jon = Employee.objects.get(talented_id=12345)
         update_field(update_jon, "middle_name", "Stark")
         final_jon = Employee.objects.get(talented_id=12345)
         self.assertEqual(final_jon.middle_name, "Stark")
 
     def test_parse_hires(self):
+        # Can we parse through the TalentEd New Hire XML file?
+        # If running on Circle CI, we must also pull down the file.
         if os.environ.get("CIRCLECI") == "true":
             get_talented_xml()
         parse_hires()
@@ -58,6 +64,7 @@ class PersonTestCase(TestCase):
 
 class RestTestCase(TestCase):
     def setUp(self):
+        # Set up some data to test REST functionality
         tyrion = Employee.objects.create(first_name="Tyrion", last_name="Lanister")
         tyrion.save()
         visions = Service.objects.create(type="visions", person=tyrion, user_info="tlanister")
@@ -66,6 +73,9 @@ class RestTestCase(TestCase):
         synergy.save()
 
     def test_json(self):
+        # Serialize an Employee object to JSON then parse it to an object.
+        # Since we are not actually making an HTTP request, we must fake /
+        # / it using APIRequestFactory()
         factory = APIRequestFactory()
         request = factory.get('/api/')
         serializer_context = {
@@ -76,9 +86,12 @@ class RestTestCase(TestCase):
         json_string = JSONRenderer().render(t_serial.data)
         stream = BytesIO(json_string)
         data = JSONParser().parse(stream)
+        # Check the object created by the JSON parser. Did it come through as expected?
         self.assertEqual(data["first_name"], "Tyrion")
+        # Now lets loop through services and pull out the Visions user.
         vuser = ""
         for a in data["services"]:
             if a["type"] == "visions":
                 vuser = a["user_info"]
+        # Did we find a Visions user and is it as expected?
         self.assertEqual(vuser, "tlanister")

@@ -2,6 +2,8 @@ from rest_framework import serializers
 from api.models import Employee, Service
 
 
+# As of now, Services are never directly exposed through REST
+# This serializer is used to expose Services in the EmployeeSerializer
 class ServiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Service
@@ -12,7 +14,10 @@ class ServiceSerializer(serializers.ModelSerializer):
 
 
 class EmployeeSerializer(serializers.ModelSerializer):
+    # Expose the URL to access employee-detail
     api_url = serializers.HyperlinkedIdentityField(view_name='employee-detail', format='html')
+
+    # Will pull in any Service usernames (Visions, Synergy, etc)
     services = ServiceSerializer(many=True, read_only=True)
 
     class Meta:
