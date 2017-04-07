@@ -54,21 +54,27 @@ tsql2 = "EXEC sp_MSforeachtable 'DROP TABLE ?'"
 
 # Drop tables
 db = settings.DATABASES['default']['NAME']
+engine = settings.DATABASES['default']['ENGINE']
 if prompt("Delete all tables from the default database, {}?".format(db)):
     with connection.cursor() as cursor:
-        cursor.execute(tsql1)
-        cursor.execute(tsql2)
+        if engine == 'sql_server.pyodbc':
+            cursor.execute(tsql1)
+            cursor.execute(tsql2)
+        else:
+            print(
+                "This script only support MS SQL Server databases.\n"
+                "Database Engine: {}".format(engine))
 
 # Delete migration files
 BASE_DIR = settings.BASE_DIR
 cmd1 = 'find {} -path "*/migrations/*.py" -not -name "__init__.py" -delete -print'.format(BASE_DIR)
 cmd2 = 'find {} -path "*/migrations/*.pyc"  -delete -print'.format(BASE_DIR)
 
-if prompt("Delete migration files?"):
+if prompt("\nDelete migration files?"):
     call(cmd1, shell=True)
     call(cmd2, shell=True)
 
 # rerun migrations
-if prompt('Make migrations and migrate?'):
+if prompt("\nMake migrations and migrate?"):
     execute_from_command_line(['', 'makemigrations'])
     execute_from_command_line(['', 'migrate'])
