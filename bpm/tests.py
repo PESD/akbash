@@ -7,6 +7,7 @@ from bpm.models import Process, Task, Activity, Workflow, WorkflowActivity, Task
 
 class WorkflowTestCase(TestCase):
     def setUp(self):
+        # Create some BPM objects and an Employee for our tests.
         new_hire = Process.objects.create(name="New Hire Process")
         new_hire.save()
         update_name_task = Task.objects.create(name="Update Name", task_function="task_update_name")
@@ -27,6 +28,8 @@ class WorkflowTestCase(TestCase):
         ned_update_name.save()
 
     def test_name_change(self):
+        # Can we check the current WorkflowActivity's Activity's tasks and run those?
+        # Ned Stark should change to Eddard Starky
         ned = Employee.objects.get(talented_id=11111)
         workflow = Workflow.objects.get(person=ned)
         workflow_activity = WorkflowActivity.objects.get(workflow=workflow, status="Active")
@@ -42,5 +45,7 @@ class WorkflowTestCase(TestCase):
             tw = t.task_controller_function(args)
             i = i + 1
         new_ned = Employee.objects.get(talented_id=11111)
+        # Make sure that 1 task was returned.
         self.assertEqual(i, 1)
+        # Make sure that Ned's first name changed to Eddard.
         self.assertEqual(new_ned.first_name, "Eddard")
