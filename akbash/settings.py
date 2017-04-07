@@ -125,9 +125,11 @@ DEBUG = config.getboolean('debug', 'DEBUG')
 
 # check database config for unrecognized options.
 for k in config['default database']:
-    if not k.startswith('option') or \
-        not k.startswith('test') or \
-        k.upper() not in (
+    if k.startswith('option'):
+        continue
+    elif k.startswith('test'):
+        continue
+    elif k.upper() in (
             'ATOMIC_REQUESTS',
             'AUTOCOMMIT',
             'ENGINE',
@@ -138,6 +140,8 @@ for k in config['default database']:
             'PORT',
             'TIME_ZONE',
             'USER'):
+        continue
+    else:
         raise KeyError("Unrecognized default database option: {}".format(k))
 
 # setup DATABASES settings dictionary
