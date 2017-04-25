@@ -106,7 +106,7 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-# Private and local configurations
+# Private and local configurations read from a config file
 
 private_config_file = os.environ.get(
     'AKBASH_CONFIG_FILE',
@@ -178,8 +178,14 @@ DATABASES['visions'] = {
     'OPTIONS': {
         'driver': 'FreeTDS',
         'dsn': 'VSDB',
+    },
+    'TEST': {
+        'NAME': 'visions_akbash',
     }
 }
 
 # Talented API key
 TALENTED_API_KEY = config['secrets']['TALENTED_API_KEY']
+
+# Database routers
+DATABASE_ROUTERS = ['api.database_router.AkbashRouter']

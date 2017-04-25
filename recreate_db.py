@@ -4,6 +4,8 @@ This is a SQL Server specific. This won't work with sqlite.
 
 The SQL code was grabbed from here:
 http://stackoverflow.com/questions/8439650/how-to-drop-all-tables-in-a-sql-server-database
+
+I didn't know about the "flush" management command when I created this script.
 """
 
 import os
