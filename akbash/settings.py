@@ -169,6 +169,7 @@ for po, v in config['default database'].items():
     else:
         DATABASES['default'][o[0].upper()] = v
 
+"""
 # Visions database
 DATABASES['visions'] = {
     'ENGINE': 'sql_server.pyodbc',
@@ -183,9 +184,7 @@ DATABASES['visions'] = {
         'NAME': 'visions_akbash',
     }
 }
+"""
 
 # Talented API key
 TALENTED_API_KEY = config['secrets']['TALENTED_API_KEY']
-
-# Database routers
-DATABASE_ROUTERS = ['api.database_router.AkbashRouter']
