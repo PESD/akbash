@@ -1,15 +1,20 @@
 """
-Setup 3rd party databases.
+Visions
 
-Django does a lot of automatic things when you configure a database in in the
-settings files. We don't want those automatic things to happen with 3rd party
-databases.
+Database connection and model
 """
 
 import os
 import pyodbc
 from configparser import ConfigParser
 from django.conf import settings
+
+"""
+Setup visions database.
+Django does a lot of automatic things when you configure a database in in the
+settings files. We don't want those automatic things to happen with 3rd party
+databases.
+"""
 
 # load in private seettings from the ini file
 private_config_file = os.environ.get(
@@ -20,20 +25,10 @@ config.read(private_config_file)
 
 # check visions database config for unrecognized options.
 for k in config['visions database']:
-    if k.startswith('option'):
-        continue
-    elif k.startswith('test'):
-        continue
-    elif k.upper() in (
-            'ATOMIC_REQUESTS',
-            'AUTOCOMMIT',
-            'ENGINE',
-            'HOST',
+    if k.upper() in (
+            'OPTIONS-DSN',
             'NAME',
-            'CONN_MAX_AGE',
             'PASSWORD',
-            'PORT',
-            'TIME_ZONE',
             'USER'):
         continue
     else:
@@ -48,7 +43,11 @@ vsdbcscript = (
 )
 
 # Establish visions DB connection
-with pyodbc.connect(vsdbcscript) as vsdbconn:
+# using the with statement in pyodb doesn't close the connection?
+# Changing to use try: finally:.
+# https://github.com/mkleehammer/pyodbc/wiki/Connection#connection-objects-and-the-python-context-manager-syntax
+try:
+    vsdbconn = pyodbc.connect(vsdbcscript, autocommit=False)
 
     # doc says to set the encoding. I'm not sure I have this right.
     vsdbconn.setdecoding(pyodbc.SQL_CHAR, encoding='utf-8')
@@ -67,3 +66,5 @@ with pyodbc.connect(vsdbcscript) as vsdbconn:
         row = cursor.fetchone()
         if row:
             print(row)
+finally:
+    vsdbconn.close()
