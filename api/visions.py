@@ -121,9 +121,9 @@ class Select():
             self.table = table
 
         # For the Select clause in a sql statement
-        if isinstance(columns, basestring):
+        if isinstance(columns, str):
             self.columns = columns
-        elif isinstance(columns, list):
+        elif isinstance(columns, (list, tuple)):
             self.columns = ", ".join(columns)
         else:
             self.columns = "*"
@@ -141,6 +141,7 @@ class Select():
 
     def where_id(self, id):
         "Query by ID. A cursor is returned."
+        # TODO: fix this
         cursor = exec_sql(
             "select * from viwPREmployees where ID = ?",)
         return cursor
