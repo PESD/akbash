@@ -169,22 +169,6 @@ for po, v in config['default database'].items():
     else:
         DATABASES['default'][o[0].upper()] = v
 
-"""
-# Visions database
-DATABASES['visions'] = {
-    'ENGINE': 'sql_server.pyodbc',
-    'NAME': 'PESDFY1617',
-    'USER': 'akbash',
-    'PASSWORD': 'k3t4ligivers',
-    'OPTIONS': {
-        'driver': 'FreeTDS',
-        'dsn': 'VSDB',
-    },
-    'TEST': {
-        'NAME': 'visions_akbash',
-    }
-}
-"""
 
 # Talented API key
 TALENTED_API_KEY = config['secrets']['TALENTED_API_KEY']

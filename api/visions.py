@@ -1,22 +1,24 @@
 """
 Visions
 
-Database connection and model
+* Setup a database connection
+* Basic functions to query the database
+* Classes based on database views
+
+We're not using django models because django does a lot of automatic things
+when you configure a database in in the settings files. We don't want those
+automatic things to happen with 3rd party databases.
 """
+
 
 import os
 import pyodbc
 from configparser import ConfigParser
 from django.conf import settings
-from django.db import models
-# from collections import namedtuple
 
 
 """
-Setup visions database.
-Django does a lot of automatic things when you configure a database in in the
-settings files. We don't want those automatic things to happen with 3rd party
-databases.
+Visions database connection
 """
 
 # load in private seettings from the ini file
@@ -45,13 +47,13 @@ cstring = (
     ';UID=' + config['visions database']['USER']
 )
 
-# Establish visions DB connection
-# reading the docs, it's probably best not use use multiple cursors in
-# a connection since cursors are not isolated. Will keep to one cursor per connection.
-# The exception would be doing things inside transactions. Multiple cursors in
-# the transaction might make sense.
+# Establish visions DB connection and execute statements
+#   Reading the docs, it's probably best not use use multiple cursors in a
+#   connection since cursors are not isolated. Will keep to one cursor per
+#   connection. The exception would be doing things inside transactions.
+#   Multiple cursors inside transaction make sense.
 def exec_sql(sql, timeout=None):
-    """Execute SQL statement and return the results as a cursor object."""
+    "Execute SQL statement and return the results as a cursor object."
     connection = pyodbc.connect(cstring, autocommit=False)
 
     # doc says to set the encoding. I'm not sure I have this right.
@@ -73,10 +75,15 @@ def exec_sql(sql, timeout=None):
     results = cursor.execute(sql)
     return results
 
+
+"""
+Functions to help retreive data from the cursor
+"""
+
 # From https://docs.djangoproject.com/en/1.11/topics/db/sql under
 # Performing Raw Queries
 def dictfetchall(cursor):
-    "Return all rows from a cursor as a dict"
+    "Return all rows from a cursor as a list of dictionaries."
     columns = [col[0] for col in cursor.description]
     return [
         dict(zip(columns, row))
@@ -84,37 +91,70 @@ def dictfetchall(cursor):
     ]
 
 
-# iterate through retreived rows and load them into a model?  or create a
-# object factory to supply only the needed data.  an object factory sounds more
-# sensable so whole tables are not loaded into memory.
+# it might be faster to just use the row objects returned by the cursor?
+def rowfetchall(cursor):
+    """Return all rows from a cursor as a list of row objects.
+
+    You can get column values by index or column name.
+
+    Examples:
+       result[0][0] # first column in the first row.
+       result[0].ID # ID column in the first row
+       fieldname[0] for fieldname in cursor.description] # list of field names
+    """
+    return [row for row in cursor.fetchall()]
 
 
-# Classes for Visions tables and views
-class VsPREmployees():
-    pass
+"""
+Some classes to make it easier to grab data from the Visions DB.
+
+For referance, viwpremployees and viwprpositions as models
+https://github.com/PESD/akbash/blob/0ce23430567945443bb465ba0003a84a1336af1f/api/visions_models.py
+"""
+
+class Select():
+
+    def __init__(self, columns=None, table=None, where_str=None, **kwargs):
+
+        # For the From clause in a sql statement
+        if table:
+            self.table = table
+
+        # For the Select clause in a sql statement
+        if isinstance(columns, basestring):
+            self.columns = columns
+        elif isinstance(columns, list):
+            self.columns = ", ".join(columns)
+        else:
+            self.columns = "*"
+
+        # For the Where clause in a sql statement
+        if where_str:
+            self.where_str = where_str
+        elif kwargs:
+            self.x = kwargs.popitem()
+            self.where_str = self.x[0] + " = " + str(self.x[1])
+            if kwargs:
+                for kw in kwargs:
+                    self.where_str += ", " + kw + " = " + str(kwargs[kw])
 
 
-# Model - I'm starting to think using django model objects isn't the way to go.
-class VsModel(models.Model):
-    class Meta:
-        abstract = True
-        managed = False
+    def where_id(self, id):
+        "Query by ID. A cursor is returned."
+        cursor = exec_sql(
+            "select * from viwPREmployees where ID = ?",)
+        return cursor
 
-class VsPerson(VsModel):
-    first_name = models.CharField(max_length=50)
-    middle_name = models.CharField(max_length=50)
-    last_name = models.CharField(max_length=50)
-    badge_number = models.IntegerField(null=True, blank=True)
-    birth_date = models.DateField(null=True, blank=True)
-    gender = models.CharField(max_length=1)
-    race_white = models.BooleanField(default=False)
-    race_asian = models.BooleanField(default=False)
-    race_black = models.BooleanField(default=False)
-    race_islander = models.BooleanField(default=False)
-    race_american_indian = models.BooleanField(default=False)
-    ethnicity = models.CharField(max_length=50)
-    hqt = models.CharField(max_length=16)
-    ssn = models.CharField(max_length=9)
 
-    class Meta:
-        abstract = True
+    def where(self, **kwargs):
+        pass
+
+
+class Viwpremployees(Select):
+    "Contains methods to query the viwPREmployees view in Visions."
+    table = "viwPREmployees"
+
+
+class Viwprpositions(Select):
+    "Contains methods to query the viwPRPositions view in Visions."
+    table = "viwPRPositions"
