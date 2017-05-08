@@ -1,5 +1,5 @@
-from api.models import Employee
-from api.serializers import EmployeeSerializer
+from api.models import Employee, Contractor, Position, Location, Department, PositionType
+from api.serializers import EmployeeSerializer, ContractorSerializer, PositionSerializer, LocationSerializer, DepartmentSerializer, PositionTypeSerializer
 from rest_framework.decorators import api_view
 from rest_framework.reverse import reverse
 from rest_framework.response import Response
@@ -19,3 +19,28 @@ def api_root(request, format=None):
 class EmployeeViewSet(viewsets.ModelViewSet):
     queryset = Employee.objects.all()
     serializer_class = EmployeeSerializer
+
+
+class ContractorViewSet(viewsets.ModelViewSet):
+    queryset = Contractor.objects.all()
+    serializer_class = ContractorSerializer
+
+
+class PositionViewSet(viewsets.ModelViewSet):
+    queryset = Position.objects.all()
+    serializer_class = PositionSerializer
+
+
+class LocationViewSet(viewsets.ModelViewSet):
+    queryset = Location.objects.all()
+    serializer_class = LocationSerializer
+
+
+class DepartmentViewSet(viewsets.ModelViewSet):
+    queryset = Department.objects.all()
+    serializer_class = DepartmentSerializer
+
+
+class PositionTypeViewSet(viewsets.ModelViewSet):
+    queryset = PositionType.objects.all()
+    serializer_class = PositionTypeSerializer

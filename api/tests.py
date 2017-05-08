@@ -1,9 +1,9 @@
 from django.test import TestCase
-from api.models import Person, Employee, update_field, Service
+from api.models import Person, Employee, update_field, Service, Vendor, VendorType, Contractor
 from api.xml_parse import parse_hires
 from bpm.xml_request import get_talented_xml
 from datetime import date
-from api.serializers import EmployeeSerializer
+from api.serializers import EmployeeSerializer, ContractorSerializer
 from rest_framework.renderers import JSONRenderer
 from rest_framework.parsers import JSONParser
 from rest_framework.test import APIRequestFactory
@@ -64,13 +64,22 @@ class PersonTestCase(TestCase):
 
 class RestTestCase(TestCase):
     def setUp(self):
-        # Set up some data to test REST functionality
+        # Set up some data to test REST functionality. Start with Employee
         tyrion = Employee.objects.create(first_name="Tyrion", last_name="Lanister")
         tyrion.save()
         visions = Service.objects.create(type="visions", person=tyrion, user_info="tlanister")
         visions.save()
         synergy = Service.objects.create(type="synergy", person=tyrion, user_info="tyrion")
         synergy.save()
+        # Now set up test data to test Contractor
+        castle = VendorType.objects.create(name="castle")
+        castle.save()
+        winterfell = Vendor.objects.create(name="Winterfell", short_name="WinFell", vendor_type=castle)
+        winterfell.save()
+        ned = Contractor.objects.create(first_name="Ned", last_name="Stark", vendor=winterfell)
+        ned.save()
+        ned_visions = Service.objects.create(type="visions", person=ned, user_info="nstark")
+        ned_visions.save()
 
     def test_json(self):
         # Serialize an Employee object to JSON then parse it to an object.
@@ -95,3 +104,24 @@ class RestTestCase(TestCase):
                 vuser = a["user_info"]
         # Did we find a Visions user and is it as expected?
         self.assertEqual(vuser, "tlanister")
+
+    def test_contractor_json(self):
+        # Serialize a Contractor object to JSON then parse it to an object.
+        # Since we are not actually making an HTTP request, we must fake /
+        # / it using APIRequestFactory()
+        factory = APIRequestFactory()
+        request = factory.get('/api/')
+        serializer_context = {
+            'request': Request(request),
+        }
+        ned = Contractor.objects.get(first_name="Ned")
+        n_serial = ContractorSerializer(instance=ned, context=serializer_context)
+        json_string = JSONRenderer().render(n_serial.data)
+        stream = BytesIO(json_string)
+        data = JSONParser().parse(stream)
+        self.assertEqual(data["first_name"], "Ned")
+        # Make sure the Vendor information came over properly
+        self.assertEqual(data["vendor"]["vendor_type"], "castle")
+        self.assertEqual(data["vendor"]["name"], "Winterfell")
+        # Check services for good measure
+        self.assertEqual(data["services"][0]["user_info"], "nstark")

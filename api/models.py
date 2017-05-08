@@ -6,11 +6,17 @@ from django.db import models
 class VendorType(models.Model):
     name = models.CharField(max_length=255)
 
+    def __unicode__(self):
+        return self.name
+
 
 class Vendor(models.Model):
     name = models.CharField(max_length=255)
     short_name = models.CharField(max_length=50)
     vendor_type = models.ForeignKey(VendorType, on_delete=models.CASCADE)
+
+    def __unicode__(self):
+        return '%s' % self.name
 
 
 # Person Classes
