@@ -41,7 +41,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
         model = Employee
         fields = (
             "api_url",
-            "id"
+            "id",
             "employee_id",
             "first_name",
             "last_name",
