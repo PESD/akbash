@@ -113,6 +113,8 @@ Some classes to make it easier to grab data from the Visions DB.
 
 For referance, viwpremployees and viwprpositions as models
 https://github.com/PESD/akbash/blob/0ce23430567945443bb465ba0003a84a1336af1f/api/visions_models.py
+
+I'm not yet clear in my brain wether to use classes or functions
 """
 
 class Select():
@@ -126,24 +128,33 @@ class Select():
             self.columns = ", ".join(columns)
         else:
             self.columns = "*"
-        self.sql = "select " + self.columns
 
         # The From clause in a sql statement
         if table:
             self.table = table
-            self.sql += " from " + self.table
 
         # The Where clause in a sql statement
+        #   Notice that you can't provide both where_str and kwargs when
+        #   calling the class.
         if where_str:
             self.where_str = where_str
         elif kwargs:
-            self.x = kwargs.popitem()
-            self.where_str = self.x[0] + " = " + str(self.x[1])
+            x = kwargs.popitem()
+            self.where_str = x[0] + " = " + str(x[1])
             if kwargs:
                 for kw in kwargs:
                     self.where_str += ", " + kw + " = " + str(kwargs[kw])
+
+        self.sql = self.build_sql()
+
+
+    def build_sql(self):
+        "Assemble a string containing an SQL statement."
+        stmt = "select " + self.columns
+        if table:
+            stmt += " from " + self.table
         if self.where_str:
-            self.sql += " where " + self.where_str
+            stmt += " where " + self.where_str
 
 
     def where_id(self, table: str, idnum: int):
