@@ -119,19 +119,21 @@ class Select():
 
     def __init__(self, columns=None, table=None, where_str=None, **kwargs):
 
-        # For the From clause in a sql statement
-        if table:
-            self.table = table
-
-        # For the Select clause in a sql statement
+        # The Select clause in a sql statement
         if isinstance(columns, str):
             self.columns = columns
         elif isinstance(columns, (list, tuple)):
             self.columns = ", ".join(columns)
         else:
             self.columns = "*"
+        self.sql = "select " + self.columns
 
-        # For the Where clause in a sql statement
+        # The From clause in a sql statement
+        if table:
+            self.table = table
+            self.sql += " from " + self.table
+
+        # The Where clause in a sql statement
         if where_str:
             self.where_str = where_str
         elif kwargs:
@@ -140,22 +142,23 @@ class Select():
             if kwargs:
                 for kw in kwargs:
                     self.where_str += ", " + kw + " = " + str(kwargs[kw])
+        if self.where_str:
+            self.sql += " where " + self.where_str
 
 
-    def where_id(self, id: int):
+    def where_id(self, table: str, idnum: int):
         "Query by ID. A cursor is returned."
-        # TODO: fix this
         self.cursor = exec_sql(
-            "select * from viwPREmployees where ID = ?", id)
+            "select * from ? where ID = ?", table, idnum)
         return self.cursor
 
-
-    def where(self, **kwargs):
+    def execute(self):
         pass
 
 
 class Viwpremployees(Select):
     "Contains methods to query the viwPREmployees view in Visions."
+
     table = "viwPREmployees"
 
 
