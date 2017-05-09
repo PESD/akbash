@@ -52,7 +52,7 @@ cstring = (
 #   connection since cursors are not isolated. Will keep to one cursor per
 #   connection. The exception would be doing things inside transactions.
 #   Multiple cursors inside transaction make sense.
-def exec_sql(sql, timeout=None):
+def exec_sql(sql, *params, timeout=None):
     "Execute SQL statement and return the results as a cursor object."
     connection = pyodbc.connect(cstring, autocommit=False)
 
@@ -72,7 +72,10 @@ def exec_sql(sql, timeout=None):
     cursor = connection.cursor()
 
     # execute the sql and return results as a cursor object
-    results = cursor.execute(sql)
+    if params:
+        results = cursor.execute(sql, params)
+    else:
+        results = cursor.execute(sql)
     return results
 
 
@@ -139,12 +142,12 @@ class Select():
                     self.where_str += ", " + kw + " = " + str(kwargs[kw])
 
 
-    def where_id(self, id):
+    def where_id(self, id: int):
         "Query by ID. A cursor is returned."
         # TODO: fix this
-        cursor = exec_sql(
-            "select * from viwPREmployees where ID = ?",)
-        return cursor
+        self.cursor = exec_sql(
+            "select * from viwPREmployees where ID = ?", id)
+        return self.cursor
 
 
     def where(self, **kwargs):
