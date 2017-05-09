@@ -51,7 +51,10 @@ cstring = (
 #   Reading the docs, it's probably best not use use multiple cursors in a
 #   connection since cursors are not isolated. Will keep to one cursor per
 #   connection. The exception would be doing things inside transactions.
-#   Multiple cursors inside transaction make sense.
+#   Multiple cursors inside transaction make sense. I'm not sure how this
+#   decision will effect paramaterized queries. I think SQL server will cache
+#   the query plan so it will be okay maybe?
+#   I'm starting to question this decision.
 def exec_sql(sql, *params, timeout=None):
     "Execute SQL statement and return the results as a cursor object."
     connection = pyodbc.connect(cstring, autocommit=False)
@@ -121,6 +124,11 @@ class Select():
 
     def __init__(self, columns=None, table=None, where_str=None, **kwargs):
 
+        # By default the class doesn't make use of paramaterized queries but
+        # they can be very useful so let's put some support in.
+        # should I make a set_params method?
+        self.params = None
+
         # The Select clause in a sql statement
         if isinstance(columns, str):
             self.columns = columns
@@ -130,15 +138,13 @@ class Select():
             self.columns = "*"
 
         # The From clause in a sql statement
-        if table:
-            self.table = table
+        self.table = table
 
         # The Where clause in a sql statement
         #   Notice that you can't provide both where_str and kwargs when
         #   calling the class.
-        if where_str:
-            self.where_str = where_str
-        elif kwargs:
+        self.where_str = where_str
+        if kwargs:
             x = kwargs.popitem()
             self.where_str = x[0] + " = " + str(x[1])
             if kwargs:
@@ -151,10 +157,13 @@ class Select():
     def build_sql(self):
         "Assemble a string containing an SQL statement."
         stmt = "select " + self.columns
-        if table:
+        if self.table:
             stmt += " from " + self.table
         if self.where_str:
             stmt += " where " + self.where_str
+        if stmt == 'select *':
+            stmt = None
+        return stmt
 
 
     def where_id(self, table: str, idnum: int):
@@ -163,8 +172,22 @@ class Select():
             "select * from ? where ID = ?", table, idnum)
         return self.cursor
 
+
+    # A general purpose method to execute the sql statement.
+    # Execute the statment in self.sql using self.params if it's set.
     def execute(self):
-        pass
+        if self.params:
+            self.cursor = exec_sql(self.sql, self.params)
+        else:
+            self.cursor = exec_sql(self.sql)
+        # will this copy the cursor? I need to experiment.
+        x = self.cursor
+        return rowfetchall(x)
+
+    # I'm not sure what I'm doing here. do I return the cursor even though it's
+    # in self.cursor? I could return the results in a list of row objects. This
+    # is the general execute method so I think I should go with the list of
+    # rows and use other methods to return more specific things.
 
 
 class Viwpremployees(Select):
