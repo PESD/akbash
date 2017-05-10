@@ -117,11 +117,12 @@ config.read(private_config_file)
 
 # Get all allowed hosts from private config files
 # In config file, hosts are entered in as comma seperated
-if 'ALLOWED_HOSTS' in config['security']:
-    hosts = config['security']['ALLOWED_HOSTS']
-    hosts_list = [host.strip() for host in hosts.split(',')]
-else:
-    hosts_list = []
+hosts_list = []
+
+if 'security' in config:
+    if 'ALLOWED_HOSTS' in config['security']:
+        hosts = config['security']['ALLOWED_HOSTS']
+        hosts_list = [host.strip() for host in hosts.split(',')]
 
 ALLOWED_HOSTS = hosts_list
 
