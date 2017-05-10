@@ -20,8 +20,6 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.10/howto/deployment/checklist/
 
-ALLOWED_HOSTS = []
-
 
 # Application definition
 
@@ -105,6 +103,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.10/howto/static-files/
 
 STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, "static/")
 
 # Private and local configurations
 
@@ -113,6 +112,17 @@ private_config_file = os.environ.get(
     os.path.join(BASE_DIR, '..', 'akbash_private_settings', 'akbash.ini'))
 config = ConfigParser(interpolation=None)
 config.read(private_config_file)
+
+# Get all allowed hosts from private config files
+# In config file, hosts are entered in as comma seperated
+hosts_list = []
+
+if 'security' in config:
+    if 'ALLOWED_HOSTS' in config['security']:
+        hosts = config['security']['ALLOWED_HOSTS']
+        hosts_list = [host.strip() for host in hosts.split(',')]
+
+ALLOWED_HOSTS = hosts_list
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = config['secrets']['SECRET_KEY']
