@@ -8,6 +8,8 @@ Visions
 We're not using django models because django does a lot of automatic things
 when you configure a database in in the settings files. We don't want those
 automatic things to happen with 3rd party databases.
+
+Using a read only account to connect. This module is assuming read-only access.
 """
 
 
@@ -126,6 +128,7 @@ class Select():
 
         # By default the class doesn't make use of paramaterized queries but
         # they can be very useful so let's put some support in.
+        # Params should be a string containing each param separated by commas.
         # should I make a set_params method?
         self.params = None
 
@@ -143,13 +146,20 @@ class Select():
         # The Where clause in a sql statement
         #   Notice that you can't provide both where_str and kwargs when
         #   calling the class.
+        # TODO: should I raise an error if where_str and kwargs are both
+        # present? Or should I allow both and just join them together?
         self.where_str = where_str
+        # In kwargs, wrap str values in single quotes
         if kwargs:
+            for i in kwargs:
+                if isinstance(kwargs[i], str):
+                    kwargs[i] = "'" + kwargs[i] + "'"
+            # pop one item off to start out self.where_str
             x = kwargs.popitem()
             self.where_str = x[0] + " = " + str(x[1])
             if kwargs:
                 for kw in kwargs:
-                    self.where_str += ", " + kw + " = " + str(kwargs[kw])
+                    self.where_str += " and " + kw + " = " + str(kwargs[kw])
 
         self.sql = self.build_sql()
 
@@ -166,36 +176,98 @@ class Select():
         return stmt
 
 
-    def where_id(self, table: str, idnum: int):
-        "Query by ID. A cursor is returned."
-        self.cursor = exec_sql(
-            "select * from ? where ID = ?", table, idnum)
-        return self.cursor
-
-
     # A general purpose method to execute the sql statement.
-    # Execute the statment in self.sql using self.params if it's set.
     def execute(self):
+        """Execute the sql statement and return a cursor.
+
+        Execute the statment in self.sql using self.params if it's set.
+        """
         if self.params:
             self.cursor = exec_sql(self.sql, self.params)
         else:
             self.cursor = exec_sql(self.sql)
-        # will this copy the cursor? I need to experiment.
-        x = self.cursor
-        return rowfetchall(x)
+        return self.cursor
+    # an alias to execute()
+    fetch_cursor = execute
 
-    # I'm not sure what I'm doing here. do I return the cursor even though it's
-    # in self.cursor? I could return the results in a list of row objects. This
-    # is the general execute method so I think I should go with the list of
-    # rows and use other methods to return more specific things.
+
+    # Execute the sql statement and return row or dict objects.
+    #
+    # These loads all rows into memory. Instead, iterate through the cursor if
+    # you know the query will return a huge amount of data.
+    def fetch_all_row(self):
+        """Execute the sql statement and return all rows as a list of row
+        objects.
+        """
+        cursor = self.execute()
+        return rowfetchall(cursor)
+
+    def fetch_all_dict(self):
+        """Execute the sql statement and return all rows as a list of
+        dictionary objects.
+        """
+        cursor = self.execute()
+        return dictfetchall(cursor)
+
+
+    # what the doc string says
+    def fetch_value(self):
+        """Execute the sql statement and return the value in the first column
+        of the first row"""
+        cursor = self.execute()
+        result = cursor.fetchone()
+        return result[0]
+
+
+    # For the subclasses and make_column_by_id_methods().
+    # Only provide 1 column name. Only query ID primary key so only 1 row is
+    # returned. This breaks otherwise.
+    def get_column_by_id(self, column, table, idnum):
+        "Query a column by ID Primary Key."
+        cursor = exec_sql(
+            "select " + column + " from " + table + " where ID = " + str(idnum))
+        return cursor.fetchone()[0]
+
+
+    # Idea: Generate methods named after each column in the table where you
+    # give the visions ID and the value in that column is returned. self.table
+    # must be defined.
+    #
+    # TODO:
+    # There might be name clashes if a db column name equals an attribute name?
+    # maybe I should modify the generated method name. Like _name?
+    def make_column_by_id_methods(self):
+        if not self.table:
+            return None  # should I raise an error instead?
+
+        # get a list of column names
+        # I could have used cursor.columns(table='self.table')?
+        sql = "select top 1 * from " + self.table
+        cursor = exec_sql(sql)
+        columns = []
+        for r in cursor.description:
+            columns.append(r[0])
+
+        # Iterate through column names and make a method for each column
+        # FIXME: this doesn't work yet. getting functions instead of methods
+        for c in columns:
+            def get_by_id(obj, idnum, column=c, table=self.table):
+                obj.get_column_by_id(column, table, idnum)
+            setattr(self, c, classmethod(get_by_id))
+
 
 
 class Viwpremployees(Select):
     "Contains methods to query the viwPREmployees view in Visions."
 
-    table = "viwPREmployees"
+    def __init__(self, columns=None, where_str=None, **kwargs):
+        super().__init__(columns, "viwPREmployees", where_str, **kwargs)
+        self.make_column_by_id_methods()
 
 
 class Viwprpositions(Select):
     "Contains methods to query the viwPRPositions view in Visions."
-    table = "viwPRPositions"
+
+    def __init__(self, columns=None, where_str=None, **kwargs):
+        super().__init__(columns, "viwPRPositions", where_str, **kwargs)
+        self.make_column_by_id_methods()
