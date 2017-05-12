@@ -115,11 +115,6 @@ def rowfetchall(cursor):
 
 """
 Some classes to make it easier to grab data from the Visions DB.
-
-For referance, viwpremployees and viwprpositions as models
-https://github.com/PESD/akbash/blob/0ce23430567945443bb465ba0003a84a1336af1f/api/visions_models.py
-
-I'm not yet clear in my brain wether to use classes or functions
 """
 
 class Select():
@@ -171,7 +166,12 @@ class Select():
             stmt += " from " + self.table
         if self.where_str:
             stmt += " where " + self.where_str
+        # Null out some invalid queries
         if stmt == 'select *':
+            stmt = None
+        if self.table is None and self.where_str is not None:
+            stmt = None
+        if self.columns is None:
             stmt = None
         return stmt
 
@@ -219,55 +219,66 @@ class Select():
         return result[0]
 
 
-    # For the subclasses and make_column_by_id_methods().
+    """
+    Generate methods named after each column in the table where you
+    give the visions ID and the value in that column is returned. The class
+    variable "table" must be defined.
+
+    Luckily there are no spaces in table names in the visions DB. I don't know
+    how this code would handle table names with spaces. I didn't test that.
+    """
+
     # Only provide 1 column name. Only query ID primary key so only 1 row is
     # returned. This breaks otherwise.
-    def get_column_by_id(self, column, table, idnum):
-        "Query a column by ID Primary Key."
+    # TODO: Do I need to check for multiple rows and raise an error if so?
+    @staticmethod
+    def get_column_by_id(column, table, idnum):
+        "Retrive a column value filtered by the ID primary key column."
         cursor = exec_sql(
             "select " + column + " from " + table + " where ID = " + str(idnum))
         return cursor.fetchone()[0]
 
 
-    # Idea: Generate methods named after each column in the table where you
-    # give the visions ID and the value in that column is returned. self.table
-    # must be defined.
-    #
-    # TODO:
-    # There might be name clashes if a db column name equals an attribute name?
-    # maybe I should modify the generated method name. Like _name?
-    def make_column_by_id_methods(self):
-        if not self.table:
+    # There is a chance an attribute name clashes with a db column name.
+    # Consider adding a prefix to the generated method name. Like get_name.
+    # No conflics that I see with the tables we're using presently.
+    @classmethod
+    def make_column_by_id_methods(cls):
+        if not cls.table:
             return None  # should I raise an error instead?
 
         # get a list of column names
-        # I could have used cursor.columns(table='self.table')?
-        sql = "select top 1 * from " + self.table
+        # I could have used cursor.columns(table='self.table'). Is that better?
+        sql = "select top 1 * from " + cls.table
         cursor = exec_sql(sql)
         columns = []
         for r in cursor.description:
             columns.append(r[0])
 
         # Iterate through column names and make a method for each column
-        # FIXME: this doesn't work yet. getting functions instead of methods
         for c in columns:
-            def get_by_id(obj, idnum, column=c, table=self.table):
-                obj.get_column_by_id(column, table, idnum)
-            setattr(self, c, classmethod(get_by_id))
+            def get_by_id(cls, idnum, column=c, table=cls.table):
+                return cls.get_column_by_id(column, table, idnum)
+            setattr(cls, c, classmethod(get_by_id))
+
 
 
 
 class Viwpremployees(Select):
     "Contains methods to query the viwPREmployees view in Visions."
 
+    table = "viwPREmployees"
+
     def __init__(self, columns=None, where_str=None, **kwargs):
-        super().__init__(columns, "viwPREmployees", where_str, **kwargs)
+        super().__init__(columns, self.table, where_str, **kwargs)
         self.make_column_by_id_methods()
 
 
 class Viwprpositions(Select):
     "Contains methods to query the viwPRPositions view in Visions."
 
+    table = "viwPRPositions"
+
     def __init__(self, columns=None, where_str=None, **kwargs):
-        super().__init__(columns, "viwPRPositions", where_str, **kwargs)
+        super().__init__(columns, self.table, where_str, **kwargs)
         self.make_column_by_id_methods()
