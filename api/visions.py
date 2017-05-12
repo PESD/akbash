@@ -1,6 +1,7 @@
 """
-Visions
+Visions Module
 
+Goals:
 * Setup a database connection
 * Basic functions to query the database
 * Classes based on database views
@@ -57,6 +58,7 @@ cstring = (
 #   decision will effect paramaterized queries. I think SQL server will cache
 #   the query plan so it will be okay maybe?
 #   I'm starting to question this decision.
+# TODO: write test for exec_sql().
 def exec_sql(sql, *params, timeout=None):
     "Execute SQL statement and return the results as a cursor object."
     connection = pyodbc.connect(cstring, autocommit=False)
@@ -231,13 +233,14 @@ class Select():
     # Only provide 1 column name. Only query ID primary key so only 1 row is
     # returned. This breaks otherwise.
     # TODO: Do I need to check for multiple rows and raise an error if so?
-    # FIXME: error when None result.
     @staticmethod
     def get_column_by_id(column, table, idnum):
         "Retrive a column value filtered by the ID primary key column."
         cursor = exec_sql(
             "select " + column + " from " + table + " where ID = " + str(idnum))
-        return cursor.fetchone()[0]
+        results = cursor.fetchone()
+        if results is not None:
+            return results[0]
 
 
     # There is a chance an attribute name clashes with a db column name.
