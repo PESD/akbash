@@ -231,6 +231,7 @@ class Select():
     # Only provide 1 column name. Only query ID primary key so only 1 row is
     # returned. This breaks otherwise.
     # TODO: Do I need to check for multiple rows and raise an error if so?
+    # FIXME: error when None result.
     @staticmethod
     def get_column_by_id(column, table, idnum):
         "Retrive a column value filtered by the ID primary key column."
@@ -248,7 +249,7 @@ class Select():
             return None  # should I raise an error instead?
 
         # get a list of column names
-        # I could have used cursor.columns(table='self.table'). Is that better?
+        # I could have used cursor.columns(table='cls.table'). Is that better?
         sql = "select top 1 * from " + cls.table
         cursor = exec_sql(sql)
         columns = []
