@@ -10,7 +10,7 @@ class ServiceSerializer(serializers.ModelSerializer):
         fields = (
             "id",
             "type",
-            "user_info"
+            "user_info",
         )
 
 

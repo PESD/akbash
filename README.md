@@ -91,6 +91,10 @@ To wipe out your database and start from scratch without having to worry about m
 1. Delete or drop database
 2. Delete all migration files from each app's ./migration directory (make sure not to delete \_\_init\_\_.py in those directories)
 
+## JSON Web Token Authentication
+
+Akbash uses JSON Web Tokens (JWT) for authentication. This can be turned on and off in the [Configuration File](#configuration-file). When on, the browser or application MUST send a valid token to retrieve any information.
+
 ## Configuration File
 Local settings and sensitive information are stored in an .ini syle configuration file. By default the file, akbash.ini, is located besides the base directory in a directory named akbash_private_settings (```BASE_DIR\..\akbash_private_settings\akbash.ini```). You may set "AKBASH_CONFIG_FILE" as an environment variable with your own filename and location. Refer to the example below and settings.py for what you should put in the config file.
 
@@ -112,6 +116,7 @@ DEBUG: True
 
 [security]
 ALLOWED_HOSTS: 127.0.0.1, localhost
+ENABLE_JWT: False
 ```
 
 ### TalentEd API Key
