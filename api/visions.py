@@ -57,7 +57,6 @@ cstring = (
 #   Multiple cursors inside transaction make sense. I'm not sure how this
 #   decision will effect paramaterized queries. I think SQL server will cache
 #   the query plan so it will be okay maybe?
-#   I'm starting to question this decision.
 # TODO: write test for exec_sql().
 def exec_sql(sql, *params, timeout=None):
     "Execute SQL statement and return the results as a cursor object."
