@@ -1,6 +1,6 @@
 from django.db import models
 from api.models import Person
-
+from django.contrib.auth.models import User
 
 # A Process is something like "New Hire Process"
 # A Process is a a set of Activities
@@ -41,6 +41,7 @@ class Activity(models.Model):
     children = models.ManyToManyField("Activity")
     tasks = models.ManyToManyField(Task)
     process = models.ForeignKey(Process, on_delete=models.CASCADE)
+    users = models.ManyToManyField(User)
 
 
 class Workflow(models.Model):
