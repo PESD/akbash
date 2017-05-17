@@ -116,11 +116,16 @@ config.read(private_config_file)
 # Get all allowed hosts from private config files
 # In config file, hosts are entered in as comma seperated
 hosts_list = []
+permission_classes = ()
 
 if 'security' in config:
     if 'ALLOWED_HOSTS' in config['security']:
         hosts = config['security']['ALLOWED_HOSTS']
         hosts_list = [host.strip() for host in hosts.split(',')]
+    if 'ENABLE_JWT' in config['security']:
+        is_jwt_enabled = config.getboolean('security', 'ENABLE_JWT')
+        if is_jwt_enabled:
+            permission_classes = ('rest_framework.permissions.IsAuthenticated',)
 
 ALLOWED_HOSTS = hosts_list
 
@@ -156,3 +161,14 @@ elif config['default database']['DATABASE_ENGINE'] == "sql_server.pyodbc":
 
 # Talented API key
 TALENTED_API_KEY = config['secrets']['TALENTED_API_KEY']
+
+# REST Framework authentication settings. Defaulting to JWT Auth.
+# See: http://getblimp.github.io/django-rest-framework-jwt/
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': permission_classes,
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_jwt.authentication.JSONWebTokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
+    ),
+}

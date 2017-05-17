@@ -1,4 +1,5 @@
 from django.test import TestCase
+from django.contrib.auth.models import User
 from api.models import Person, Employee
 from bpm.models import Process, Task, Activity, Workflow, WorkflowActivity, TaskWorker
 
@@ -26,6 +27,15 @@ class WorkflowTestCase(TestCase):
             status="Active",
         )
         ned_update_name.save()
+        user = User.objects.create_user('jsnow', 'jsnow@winterfell.com', 'ghost')
+        user.last_name = "Snow"
+        user.save()
+        user2 = User.objects.create_user('astark', 'astark@winterfell.com', 'nymeria')
+        user2.last_name = "Stark"
+        user2.save()
+        update_name_activity.users.add(user)
+        update_name_activity.users.add(user2)
+        update_name_activity.save()
 
     def test_name_change(self):
         # Can we check the current WorkflowActivity's Activity's tasks and run those?
@@ -49,3 +59,13 @@ class WorkflowTestCase(TestCase):
         self.assertEqual(i, 1)
         # Make sure that Ned's first name changed to Eddard.
         self.assertEqual(new_ned.first_name, "Eddard")
+        is_users_jon = False
+        is_users_arya = False
+        users = activity.users.all()
+        for u in users:
+            if u.username == "jsnow":
+                is_users_jon = True
+            elif u.username == "astark":
+                is_users_arya = True
+        self.assertIs(is_users_jon, True)
+        self.assertIs(is_users_arya, True)

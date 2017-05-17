@@ -6,3 +6,4 @@ Markdown
 pyodbc
 python-dateutil
 requests
+djangorestframework-jwt
