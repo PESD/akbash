@@ -27,6 +27,16 @@ class Process(models.Model):
         related_name="+"
     )
 
+    def start_workflow(self, person):
+        workflow = Workflow.objects.create(person=person, process=self)
+        workflow.save()
+        activities = self.activities.all()
+        for activity in activities:
+            workflow_activity = workflow.create_workflow_activity(activity)
+            if activity == self.start_activity:
+                workflow_activity.set_workflow_activity_active()
+        return workflow
+
 
 class Task(models.Model):
     name = models.CharField(max_length=255)
@@ -40,13 +50,21 @@ class Activity(models.Model):
     name = models.CharField(max_length=255)
     children = models.ManyToManyField("Activity")
     tasks = models.ManyToManyField(Task)
-    process = models.ForeignKey(Process, on_delete=models.CASCADE)
+    process = models.ForeignKey(Process, on_delete=models.CASCADE, related_name="activities")
     users = models.ManyToManyField(User)
 
 
 class Workflow(models.Model):
     person = models.ForeignKey(Person, on_delete=models.CASCADE)
     process = models.ForeignKey(Process, on_delete=models.CASCADE)
+
+    def get_current_workflow_activities(self):
+        return self.workflow_activites.filter(status="Active")
+
+    def create_workflow_activity(self, activity):
+        workflow_activity = WorkflowActivity.objects.create(workflow=self, activity=activity, status="Inactive")
+        workflow_activity.save()
+        return workflow_activity
 
 
 class WorkflowActivity(models.Model):
@@ -57,9 +75,27 @@ class WorkflowActivity(models.Model):
         ("Inactive", "Inactive"),
         ("Next", "Next")
     )
-    workflow = models.ForeignKey(Workflow, on_delete=models.CASCADE)
+    workflow = models.ForeignKey(Workflow, on_delete=models.CASCADE, related_name="workflow_activites")
     activity = models.ForeignKey(Activity, on_delete=models.CASCADE)
     status = models.CharField(max_length=8, choices=STATUSES)
+
+    def set_workflow_activity_active(self):
+        self.status = "Active"
+        self.save()
+
+    def advance_workflow_activity(self):
+        workflow = self.workflow
+        self.status = "Complete"
+        self.save()
+        children = self.activity.children.all()
+        for activity in children:
+            # Keeping some other ways to do this commented out. Will eventually delete these comments.
+            # child_workflow_activity_set = WorkflowActivity.objects.filter(activity__pk__exact=activity.pk, workflow__pk__exact=workflow.pk)
+            # child_workflow_activity_set = WorkflowActivity.objects.filter(activity=activity, workflow=workflow)
+            child_workflow_activity_set = workflow.workflow_activites.filter(activity=activity)
+            for child_workflow_activity in child_workflow_activity_set:
+                child_workflow_activity.status = "Active"
+                child_workflow_activity.save()
 
 
 class TaskWorker:
