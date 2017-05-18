@@ -7,3 +7,4 @@ pyodbc
 python-dateutil
 requests
 djangorestframework-jwt
+django-cors-middleware
