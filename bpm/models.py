@@ -112,3 +112,6 @@ class TaskWorker:
 
         def task_update_employee_id(**kwargs):
             pass
+
+        def task_dummy(**kwargs):
+            pass
