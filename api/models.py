@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.auth.models import User
 
 
 # Vendor Classes
@@ -38,9 +39,30 @@ class Person(models.Model):
     ssn = models.CharField(max_length=9)
     tcp_id = models.IntegerField(null=True, blank=True)
     talented_id = models.IntegerField(null=True, blank=True)
-    onboarding_date = models.DateTimeField(null=True, blank=True)
+    is_onboarded = models.BooleanField(default=False)
+    onboarded_date = models.DateTimeField(null=True, blank=True)
+    onboarded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     is_tcp_fingerprinted = models.BooleanField(default=False)
+    tcp_fingerprinted_date = models.DateTimeField(null=True, blank=True)
+    tcp_fingerprinted_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="tcp_fingerprinted_user")
     is_badge_created = models.BooleanField(default=False)
+    badge_created_date = models.DateTimeField(null=True, blank=True)
+    badge_created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="badge_created_user")
+    is_emp_record_created = models.BooleanField(default=False)
+    emp_record_created_date = models.DateTimeField(null=True, blank=True)
+    emp_record_created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="emp_record_created_user")
+    is_position_linked = models.BooleanField(default=False)
+    position_linked_date = models.DateTimeField(null=True, blank=True)
+    position_linked_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="position_linked_user")
+    is_visions_account_created = models.BooleanField(default=False)
+    visions_account_created_date = models.DateTimeField(null=True, blank=True)
+    visions_account_created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="visions_account_created_user")
+    is_synergy_account_created = models.BooleanField(default=False)
+    synergy_account_created_date = models.DateTimeField(null=True, blank=True)
+    synergy_account_created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="synergy_account_created_user")
+    is_ad_account_created = models.BooleanField(default=False)
+    ad_account_created_date = models.DateTimeField(null=True, blank=True)
+    ad_account_created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="ad_account_created_user")
 
     # Convieniece function to verify if an Employee exists by talented_id
     @staticmethod
