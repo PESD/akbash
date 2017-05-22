@@ -857,18 +857,28 @@ viwPREmployees_data = [
 
 
 
-insert_viwPRPositions = None
+# It was a lot of work setting up the data for viwPREmployees. Skipping that
+# for viwPRPositions.
+# insert_viwPRPositions = "insert into viwPRPositions values (" \
+#     + "?," * 397 + "?)"  # 398 columns
+insert_viwPRPositions = "insert into viwPRPositions (ID) values (9999)"
 
 
 def setUpModule():
     # Create sqlite database.
     # Using empty string should auto create a temp DB file.
+    global db
+    global dbc
     db = sqlite3.connect('')
     dbc = db.cursor()
     dbc.execute(create_viwPREmployees)
+    dbc.executemany(insert_viwPREmployees, viwPREmployees_data)
+    dbc.execute(create_viwPRPositions)
+    dbc.execute(insert_viwPREmployees)
+
 
 def tearDownModule():
-    pass
+    db.close()
 
 
 """
