@@ -1,5 +1,6 @@
 from api.models import Employee, Contractor, Position, Location, Department, PositionType
 from api.serializers import EmployeeSerializer, ContractorSerializer, PositionSerializer, LocationSerializer, DepartmentSerializer, PositionTypeSerializer
+from bpm.models import Workflow
 from rest_framework.decorators import api_view
 from rest_framework.reverse import reverse
 from rest_framework.response import Response
@@ -18,6 +19,13 @@ def api_root(request, format=None):
 # ModelViewSet does all of the heavy lifting for REST framework.
 class EmployeeViewSet(viewsets.ModelViewSet):
     queryset = Employee.objects.all()
+    serializer_class = EmployeeSerializer
+
+
+class EmployeeNoWorkflowViewSet(viewsets.ModelViewSet):
+    queryset = Employee.objects.exclude(
+        id__in=Workflow.objects.all().values_list('person')
+    )
     serializer_class = EmployeeSerializer
 
 
