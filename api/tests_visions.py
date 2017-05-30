@@ -5,7 +5,8 @@ import os
 import sqlite3
 from time import time
 from unittest import TestCase
-from unittest.mock import patch, Mock, MagicMock
+from unittest.mock import patch
+# from unittest.mock import Mock, MagicMock
 # from django.conf import settings
 
 
@@ -875,7 +876,6 @@ def setUpModule():
     global db
     global dbc
     global dbfile
-    global mconn
     dbfile = "/tmp/tests_visions." + str(time()) + ".db"
     db = sqlite3.connect(dbfile)
     dbc = db.cursor()
@@ -883,7 +883,6 @@ def setUpModule():
     dbc.executemany(insert_viwPREmployees, viwPREmployees_data)
     dbc.execute(create_viwPRPositions)
     dbc.execute(insert_viwPRPositions)
-    mconn = MagicMock(return_value=db, create=True)
 
 
 def tearDownModule():
@@ -893,58 +892,31 @@ def tearDownModule():
     os.remove(dbfile)
 
 
-"""
-[default database]
-DATABASE_ENGINE: django.db.backends.sqlite3
-DATABASE_NAME: db.sqlite3
-"""
-
-
-"""
-# Override api.visions settings to use default database instead of visions DB.
-api.visions.cstring = (
-    'DSN=' + settings.DATABASES['default']['OPTIONS']['dsn'] +
-    ';PWD=' + settings.DATABASES['default']['PASSWORD'] +
-    ';DATABASE=' + settings.DATABASES['default']['NAME'] +
-    ';UID=' + settings.DATABASES['default']['USER']
-)
-"""
-
-# what if instead of swapping pyodbc.connect with sqlite3.connect, just mock
-# the function and have it return the already established connection
-# patch_conf = {'api.visions.pyodbc.connect.setdecoding.return_value': None,
-#               'api.visions.pyodbc.connect.setencoding.return_value': None,
-#               }
-# create=True for the timeout attribute. Probably won't test that though.
-# @patch('api.visions.pyodbc.connect', new_callable=sqlite3.connect, create=True, **patch_conf)
-
-
-# @patch.object(db, 'setencoding', return_value=None)
-# @patch.object(db, 'setdecoding', return_value=None)
-
-
-# New idea! in VisionsTestCase make a fake db connection stuff that can also
-# run the real stuff.
 class mconnection():
     "For mocking pyodbc connection objects and returning the sqlite3 objects."
+
     timeout = None
     autocommit = None
     cstring = None
-    def __init__(*args, **kwargs):
+
+    # def __init__(self, *args, **kwargs):
+    #     pass
+
+    @staticmethod
+    def setdecoding(*args, **kwargs):
         pass
-    def setdecoding(self, *args, **kwargs):
+    @staticmethod
+    def setencoding(*args, **kwargs):
         pass
-    def setencoding(self, *args, **kwargs):
-        pass
-    def cursor(self):
+    @staticmethod
+    def cursor():
         return dbc
 
-@patch('api.visions.pyodbc.connect', create=True, return_value=mconnection())
-class VisionsTestCase(TestCase):
-    "Setup data for api.visions test cases."
-    pass
-
-
-class ExecSQLTestCase(VisionsTestCase):
+@patch('api.visions.pyodbc.connect', create=True, return_value=mconnection)
+class ExecSQLTestCase(TestCase):
     "Test api.visions.exec_sql."
-    pass
+
+    # @patch('api.visions.pyodbc.connect', create=True, return_value=mconnection)
+    def test_execsql(self, *args):
+        result = api.visions.exec_sql("select * from viwPRPositions")
+        return result
