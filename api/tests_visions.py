@@ -1,8 +1,11 @@
 """Test cases for the visions module."""
 
-# import api.visions
+import api.visions
+import os
 import sqlite3
-# from unittest import TestCase
+from time import time
+from unittest import TestCase
+from unittest.mock import patch, Mock, MagicMock
 # from django.conf import settings
 
 
@@ -864,21 +867,30 @@ viwPREmployees_data = [
 insert_viwPRPositions = "insert into viwPRPositions (ID) values (9999)"
 
 
+
+# I'm wondering why it's better to setup this stuff here instead of the module
+# base. seems it would be easier in the base.
 def setUpModule():
     # Create sqlite database.
-    # Using empty string should auto create a temp DB file.
     global db
     global dbc
-    db = sqlite3.connect('')
+    global dbfile
+    global mconn
+    dbfile = "/tmp/tests_visions." + str(time()) + ".db"
+    db = sqlite3.connect(dbfile)
     dbc = db.cursor()
     dbc.execute(create_viwPREmployees)
     dbc.executemany(insert_viwPREmployees, viwPREmployees_data)
     dbc.execute(create_viwPRPositions)
-    dbc.execute(insert_viwPREmployees)
+    dbc.execute(insert_viwPRPositions)
+    mconn = MagicMock(return_value=db, create=True)
 
 
 def tearDownModule():
+    # Delete sqlite database.
+    dbc.close()
     db.close()
+    os.remove(dbfile)
 
 
 """
@@ -888,7 +900,7 @@ DATABASE_NAME: db.sqlite3
 """
 
 
-""" don't think I need this stuff if I use setUpModule to setup testing DB
+"""
 # Override api.visions settings to use default database instead of visions DB.
 api.visions.cstring = (
     'DSN=' + settings.DATABASES['default']['OPTIONS']['dsn'] +
@@ -896,6 +908,38 @@ api.visions.cstring = (
     ';DATABASE=' + settings.DATABASES['default']['NAME'] +
     ';UID=' + settings.DATABASES['default']['USER']
 )
+"""
+
+# what if instead of swapping pyodbc.connect with sqlite3.connect, just mock
+# the function and have it return the already established connection
+# patch_conf = {'api.visions.pyodbc.connect.setdecoding.return_value': None,
+#               'api.visions.pyodbc.connect.setencoding.return_value': None,
+#               }
+# create=True for the timeout attribute. Probably won't test that though.
+# @patch('api.visions.pyodbc.connect', new_callable=sqlite3.connect, create=True, **patch_conf)
+
+
+# @patch.object(db, 'setencoding', return_value=None)
+# @patch.object(db, 'setdecoding', return_value=None)
+
+
+# New idea! in VisionsTestCase make a fake db connection stuff that can also
+# run the real stuff.
+class mconnection():
+    "For mocking pyodbc connection objects and returning the sqlite3 objects."
+    timeout = None
+    autocommit = None
+    cstring = None
+    def __init__(*args, **kwargs):
+        pass
+    def setdecoding(self, *args, **kwargs):
+        pass
+    def setencoding(self, *args, **kwargs):
+        pass
+    def cursor(self):
+        return dbc
+
+@patch('api.visions.pyodbc.connect', create=True, return_value=mconnection())
 class VisionsTestCase(TestCase):
     "Setup data for api.visions test cases."
     pass
@@ -904,4 +948,3 @@ class VisionsTestCase(TestCase):
 class ExecSQLTestCase(VisionsTestCase):
     "Test api.visions.exec_sql."
     pass
-"""
