@@ -6,8 +6,6 @@ import sqlite3
 from time import time
 from unittest import TestCase
 from unittest.mock import patch
-# from unittest.mock import Mock, MagicMock
-# from django.conf import settings
 
 
 create_viwPREmployees = '''/* SQL create table statement for testing database version of viwPREmployees. */
@@ -916,7 +914,7 @@ class mconnection():
 class ExecSQLTestCase(TestCase):
     "Test api.visions.exec_sql."
 
-    # @patch('api.visions.pyodbc.connect', create=True, return_value=mconnection)
-    def test_execsql(self, *args):
-        result = api.visions.exec_sql("select * from viwPRPositions")
-        return result
+    def test_execsql(self, mock):
+        result = api.visions.exec_sql("select ID from viwPRPositions where ID = 9999")
+        result = result.fetchone()[0]
+        self.assertEqual(str(result), "9999")
