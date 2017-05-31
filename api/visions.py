@@ -57,7 +57,6 @@ cstring = (
 #   Multiple cursors inside transaction make sense. I'm not sure how this
 #   decision will effect paramaterized queries. I think SQL server will cache
 #   the query plan so it will be okay maybe?
-# TODO: write test for exec_sql().
 def exec_sql(sql, *params, timeout=None):
     "Execute SQL statement and return the results as a cursor object."
     connection = pyodbc.connect(cstring, autocommit=False)
@@ -109,7 +108,7 @@ def rowfetchall(cursor):
     Examples:
        result[0][0] # first column in the first row.
        result[0].ID # ID column in the first row
-       fieldname[0] for fieldname in cursor.description] # list of field names
+       [fieldname[0] for fieldname in cursor.description] # list of field names
     """
     return [row for row in cursor.fetchall()]
 

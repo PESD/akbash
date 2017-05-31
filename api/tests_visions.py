@@ -911,10 +911,35 @@ class mconnection():
         return dbc
 
 @patch('api.visions.pyodbc.connect', create=True, return_value=mconnection)
-class ExecSQLTestCase(TestCase):
-    "Test api.visions.exec_sql."
+class VisionsRawQuery(TestCase):
+    "Test api.visions.exec_sql and dictfetchall, rowfetchall."
 
     def test_execsql(self, mock):
-        result = api.visions.exec_sql("select ID from viwPRPositions where ID = 9999")
+        # The timeout option isn't actually tested.
+        result = api.visions.exec_sql("select ID from viwPRPositions " +
+                                      "where ID = 9999", timeout=1)
         result = result.fetchone()[0]
         self.assertEqual(str(result), "9999")
+
+        result = api.visions.exec_sql("select Name, JobTitle, BirthDate " +
+                                      "from viwPREmployees where ID = ?", "7965")
+        result = result.fetchone()[0]
+        self.assertEqual(result, "STONE, RAY ")
+
+    def test_rowfetchall(self, mock):
+        result = api.visions.exec_sql("select ID, LastName, FirstName " +
+                                      "from viwPREmployees")
+        emp = api.visions.rowfetchall(result)
+        self.assertEqual(emp, [('7965', 'STONE', 'RAY'),
+                               ('7967', 'CLAYTON', 'BARBARA'),
+                               ('7582', 'WILLIAM', 'WILLIAM')])
+
+    def test_dictfetchall(self, mock):
+        result = api.visions.exec_sql("select ID, LastName, FirstName " +
+                                      "from viwPREmployees " +
+                                      "where ID in ('7965', '7967')")
+        emp = api.visions.dictfetchall(result)
+        self.assertEqual(emp, [{'ID': '7965', 'LastName': 'STONE',
+                                'FirstName': 'RAY'},
+                               {'ID': '7967', 'LastName': 'CLAYTON',
+                                'FirstName': 'BARBARA'}])

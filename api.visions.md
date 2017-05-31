@@ -27,9 +27,30 @@ This function will create the database connection then execute the SQL statement
 ('STONE, RAY ', )
 ```
 ### Functions to help retreive data from the cursor
-These functions retreive all rows from a cursor.
-##### dictfetchall(cursor)
+These functions retreive all rows from a cursor. It's recommend to use the ```rowfetchall``` function over ```dictfetchall```. When using these functions, be mindful you will be loading all results into memory. For this reason, it's best to iterate through the cursor for queries that return results larger then what you want in memory.
+#### dictfetchall(cursor)
 Returns all rows from a cursor as a list of dictionaries.
-##### rowfetchall(cursor)
+```python
+>>> result = api.visions.exec_sql("select top 2 ID, LastName, FirstName from viwPREmployees")
+>>> emp = api.visions.dictfetchall(result)
+>>> emp
+[{'ID': 7965, 'LastName': 'STONE', 'FirstName': 'RAY'}, {'ID': 5465, 'LastName': 'CLAYTON', 'FirstName': 'BARBARA'}]
+>>> [r['LastName'] for r in emp]
+['STONE', 'CLAYTON']
+```
+#### rowfetchall(cursor)
+Return all rows from a cursor as a list of row objects. Row object behave similarly to a list of tuples. You can get column values by index or column name.
+```python
+>>> result = api.visions.exec_sql("select top 2 ID, LastName, FirstName from viwPREmployees")
+>>> emp = api.visions.rowfetchall(result)
+>>> emp
+[(7965, 'STONE', 'RAY'), (5465, 'CLAYTON', 'BARBARA')]
+>>> emp[0][0] # first column in the first row.
+7965
+>>> emp[0].ID # ID column in the first row
+7965
+>>> [fieldname[0] for fieldname in result.description] # list of field names
+['ID', 'LastName', 'FirstName']
+```
 ## The Select Class
 
