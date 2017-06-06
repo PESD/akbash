@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from bpm.models import Process, Activity, Workflow, WorkflowActivity
+from api.models import Person
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -68,3 +69,13 @@ class WorkflowActivitySerializer(serializers.ModelSerializer):
             "workflow",
             "activity",
         )
+
+
+class CreateWorkflowSerializer(serializers.Serializer):
+    process_id = serializers.IntegerField()
+    person_id = serializers.IntegerField()
+
+    def create(self, validated_data):
+        process = Process.objects.get(pk=validated_data["process_id"])
+        person = Person.objects.get(pk=validated_data["person_id"])
+        return process.start_workflow(person)

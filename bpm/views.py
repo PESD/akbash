@@ -1,9 +1,14 @@
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
+
 from rest_framework.decorators import api_view
+from rest_framework.views import APIView
 from rest_framework.reverse import reverse
 from rest_framework.response import Response
 from rest_framework import viewsets
+from rest_framework.parsers import JSONParser
 
-from bpm.serializers import UserSerializer, ActivitySerializer, ProcessSerializer, WorkflowSerializer, WorkflowActivitySerializer
+from bpm.serializers import UserSerializer, ActivitySerializer, ProcessSerializer, WorkflowSerializer, WorkflowActivitySerializer, CreateWorkflowSerializer
 from bpm.models import Process, Activity, Workflow, WorkflowActivity
 from django.contrib.auth.models import User
 
@@ -63,3 +68,14 @@ class WorkflowFromPersonViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         person_id = self.request.parser_context['kwargs']['person_id']
         return Workflow.objects.filter(person__id=person_id)
+
+
+@csrf_exempt
+def create_workflow_view(request):
+    if request.method == 'POST':
+        data = JSONParser().parse(request)
+        serializer = CreateWorkflowSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return JsonResponse(serializer.data, status=201)
+        return JsonResponse(serializer.errors, status=400)

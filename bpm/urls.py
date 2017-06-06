@@ -15,4 +15,5 @@ router.register(r'workflow-from-person/(?P<person_id>[0-9]+)', views.WorkflowFro
 
 urlpatterns = [
     url(r'^', include(router.urls)),
+    url(r'^create_workflow/$', views.create_workflow_view),
 ]
