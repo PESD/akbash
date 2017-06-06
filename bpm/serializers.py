@@ -58,23 +58,9 @@ class WorkflowSerializer(serializers.ModelSerializer):
         )
 
 
-class WorkflowCompleteSerializer(serializers.ModelSerializer):
-    api_url = serializers.HyperlinkedIdentityField(view_name='workflow-detail', format='html')
-    person = PersonSerializer(many=False, read_only=True)
-    process = ProcessSerializer(many=False, read_only=True)
-
-    class Meta:
-        model = Workflow
-        fields = (
-            "api_url",
-            "id",
-            "process",
-            "person",
-        )
-
-
 class WorkflowActivitySerializer(serializers.ModelSerializer):
     api_url = serializers.HyperlinkedIdentityField(view_name='workflowactivity-detail', format='html')
+    activity = ActivitySerializer(many=False, read_only=True)
 
     class Meta:
         model = WorkflowActivity
@@ -84,6 +70,23 @@ class WorkflowActivitySerializer(serializers.ModelSerializer):
             "status",
             "workflow",
             "activity",
+        )
+
+
+class WorkflowCompleteSerializer(serializers.ModelSerializer):
+    api_url = serializers.HyperlinkedIdentityField(view_name='workflow-detail', format='html')
+    person = PersonSerializer(many=False, read_only=True)
+    process = ProcessSerializer(many=False, read_only=True)
+    workflow_activites = WorkflowActivitySerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Workflow
+        fields = (
+            "api_url",
+            "id",
+            "process",
+            "person",
+            "workflow_activites",
         )
 
 
