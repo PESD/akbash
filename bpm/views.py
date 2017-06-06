@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from rest_framework import viewsets
 from rest_framework.parsers import JSONParser
 
-from bpm.serializers import UserSerializer, ActivitySerializer, ProcessSerializer, WorkflowSerializer, WorkflowActivitySerializer, CreateWorkflowSerializer
+from bpm.serializers import UserSerializer, ActivitySerializer, ProcessSerializer, WorkflowSerializer, WorkflowActivitySerializer, CreateWorkflowSerializer, WorkflowCompleteSerializer
 from bpm.models import Process, Activity, Workflow, WorkflowActivity
 from django.contrib.auth.models import User
 
@@ -39,6 +39,11 @@ class ProcessViewSet(viewsets.ModelViewSet):
 class WorkflowViewSet(viewsets.ModelViewSet):
     queryset = Workflow.objects.all()
     serializer_class = WorkflowSerializer
+
+
+class WorkflowCompleteViewSet(viewsets.ModelViewSet):
+    queryset = Workflow.objects.all()
+    serializer_class = WorkflowCompleteSerializer
 
 
 class WorkflowActivityViewSet(viewsets.ModelViewSet):

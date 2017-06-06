@@ -2,6 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth.models import User
 from bpm.models import Process, Activity, Workflow, WorkflowActivity
 from api.models import Person
+from api.serializers import PersonSerializer
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -46,6 +47,21 @@ class ProcessSerializer(serializers.ModelSerializer):
 
 class WorkflowSerializer(serializers.ModelSerializer):
     api_url = serializers.HyperlinkedIdentityField(view_name='workflow-detail', format='html')
+
+    class Meta:
+        model = Workflow
+        fields = (
+            "api_url",
+            "id",
+            "process",
+            "person",
+        )
+
+
+class WorkflowCompleteSerializer(serializers.ModelSerializer):
+    api_url = serializers.HyperlinkedIdentityField(view_name='workflow-detail', format='html')
+    person = PersonSerializer(many=False, read_only=True)
+    process = ProcessSerializer(many=False, read_only=True)
 
     class Meta:
         model = Workflow
