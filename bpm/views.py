@@ -75,6 +75,31 @@ class WorkflowFromPersonViewSet(viewsets.ModelViewSet):
         return Workflow.objects.filter(person__id=person_id)
 
 
+class WorkflowCompleteFromActiveUserViewSet(viewsets.ModelViewSet):
+    serializer_class = WorkflowCompleteSerializer
+
+    def get_queryset(self):
+        user_id = self.request.parser_context['kwargs']['user_id']
+        wf_activities = WorkflowActivity.objects.filter(status="Active").filter(activity__users__id=user_id)
+        workflow_list = []
+        for wfa in wf_activities:
+            workflow_list.append(wfa.workflow.id)
+        workflow_dedupped = list(set(workflow_list))
+        return Workflow.objects.filter(id__in=workflow_dedupped)
+
+
+class WorkflowCompleteActiveViewSet(viewsets.ModelViewSet):
+    serializer_class = WorkflowCompleteSerializer
+
+    def get_queryset(self):
+        wf_activities = WorkflowActivity.objects.filter(status="Active")
+        workflow_list = []
+        for wfa in wf_activities:
+            workflow_list.append(wfa.workflow.id)
+        workflow_dedupped = list(set(workflow_list))
+        return Workflow.objects.filter(id__in=workflow_dedupped)
+
+
 @csrf_exempt
 def create_workflow_view(request):
     if request.method == 'POST':
