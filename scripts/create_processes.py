@@ -11,7 +11,7 @@ def run():
     WorkflowActivity.objects.all().delete()
 
     # TEMP: Get tharris user to add to everything
-    tharris = Users.objects.get(username="tharris")
+    tharris = User.objects.get(username="tharris")
 
     # Create Processes
     new_hire_process = Process.objects.create(name="New Hire Process")
