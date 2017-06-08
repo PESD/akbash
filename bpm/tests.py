@@ -20,9 +20,9 @@ class WorkflowTestCase(TestCase):
         new_hire = Process.objects.create(name="New Hire Process")
         new_hire.save()
         # Create some tasks
-        update_name_task = Task.objects.create(name="Update Name", task_function="task_update_name")
+        update_name_task = Task.objects.create(name="Update Name", task_function="task_update_name", task_type="User")
         update_name_task.save()
-        update_employee_id_task = Task.objects.create(name="Update Employee ID", task_function="task_update_employee_id")
+        update_employee_id_task = Task.objects.create(name="Update Employee ID", task_function="task_update_employee_id", task_type="Observer")
         update_employee_id_task.save()
         # Create some activities
         update_name_activity = Activity.objects.create(name="Update Name", process=new_hire)
@@ -50,18 +50,17 @@ class WorkflowTestCase(TestCase):
         ned = Employee.objects.get(talented_id=11111)
         workflow = Workflow.objects.get(person=ned)
         current_activity = workflow.get_current_workflow_activities()[0]
-        activity = current_activity.activity
-        tasks = activity.tasks.all()
+        tasks = current_activity.workflow_tasks.all()
         i = 0
-        for t in tasks:
+        for task in tasks:
             args = {}
-            if t.name == 'Update Name':
+            if task.task.name == 'Update Name':
                 args = {
                     "workflow_activity": current_activity,
                     "first_name": "Eddard",
                     "last_name": "Starky",
                 }
-            tw = t.task_controller_function(args)
+            tw = task.run_task(args)
             i = i + 1
         # Does the number of tasks equal what we think it should?
         self.assertEqual(i, 1)
@@ -70,6 +69,7 @@ class WorkflowTestCase(TestCase):
         self.assertEqual(new_ned.first_name, "Eddard")
         # Make sure Jon Snow is the assigned user
         is_users_jon = False
+        activity = current_activity.activity
         users = activity.users.all()
         for u in users:
             if u.username == "jsnow":

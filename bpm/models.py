@@ -2,6 +2,7 @@ from django.db import models
 from api.models import Person
 from django.contrib.auth.models import User
 
+
 # A Process is something like "New Hire Process"
 # A Process is a a set of Activities
 # A Process defines a start_activity.
@@ -39,8 +40,14 @@ class Process(models.Model):
 
 
 class Task(models.Model):
+    TASK_TYPES = (
+        ("System", "System"),
+        ("Observer", "Observer"),
+        ("User", "User"),
+    )
     name = models.CharField(max_length=255)
     task_function = models.CharField(max_length=255)
+    task_type = models.CharField(max_length=9, choices=TASK_TYPES)
 
     def task_controller_function(self, args):
         return getattr(TaskWorker, self.task_function)(**args)
@@ -64,7 +71,25 @@ class Workflow(models.Model):
     def create_workflow_activity(self, activity):
         workflow_activity = WorkflowActivity.objects.create(workflow=self, activity=activity, status="Inactive")
         workflow_activity.save()
+        workflow_activity.create_workflow_tasks()
         return workflow_activity
+
+
+class WorkflowTask(models.Model):
+    STATUSES = (
+        ("Not Started", "Not Started"),
+        ("Running", "Running"),
+        ("Waiting", "Waiting"),
+        ("Error", "Error"),
+        ("Complete", "Complete")
+    )
+    task = models.ForeignKey(Task, on_delete=models.CASCADE)
+    status = models.CharField(max_length=12, choices=STATUSES)
+
+    def run_task(self, args):
+        status = self.task.task_controller_function(args)
+        self.status = "Complete" if status else "Error"
+        self.save()
 
 
 class WorkflowActivity(models.Model):
@@ -78,12 +103,32 @@ class WorkflowActivity(models.Model):
     workflow = models.ForeignKey(Workflow, on_delete=models.CASCADE, related_name="workflow_activites")
     activity = models.ForeignKey(Activity, on_delete=models.CASCADE)
     status = models.CharField(max_length=8, choices=STATUSES)
+    workflow_tasks = models.ManyToManyField(WorkflowTask)
+
+    def create_workflow_tasks(self):
+        tasks = self.activity.tasks.all()
+        for task in tasks:
+            workflow_task = WorkflowTask.objects.create(task=task, status="Not Started")
+            task.save()
+            self.workflow_tasks.add(workflow_task)
+        self.save()
+
+    def checkTasksStatuses(self):
+        tasks = self.workflow_tasks.all()
+        for t in tasks:
+            # If any tasks are anything but complete, return False immediately and stop checking.
+            if t.status != "Complete":
+                return False
+        return True
 
     def set_workflow_activity_active(self):
         self.status = "Active"
         self.save()
 
     def advance_workflow_activity(self):
+        # Make sure all tasks are complete. If not, immediately stop.
+        if not self.checkTasksStatuses():
+            return False
         workflow = self.workflow
         self.status = "Complete"
         self.save()
@@ -96,6 +141,7 @@ class WorkflowActivity(models.Model):
             for child_workflow_activity in child_workflow_activity_set:
                 child_workflow_activity.status = "Active"
                 child_workflow_activity.save()
+        return True
 
 
 class TaskWorker:
@@ -109,9 +155,10 @@ class TaskWorker:
             person.first_name = first_name
             person.last_name = last_name
             person.save()
+            return True
 
         def task_update_employee_id(**kwargs):
-            pass
+            return True
 
         def task_dummy(**kwargs):
-            pass
+            return True
