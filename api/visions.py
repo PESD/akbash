@@ -252,7 +252,7 @@ class Select():
 
         # get a list of column names
         # I could have used cursor.columns(table='cls.table'). Is that better?
-        sql = "select top 1 * from " + cls.table
+        sql = "select * from " + cls.table
         cursor = exec_sql(sql)
         columns = []
         for r in cursor.description:

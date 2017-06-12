@@ -1,4 +1,9 @@
-"""Test cases for the visions module."""
+""" Test cases for the visions module.
+
+The viwPREmployees test data are all strings so you have to referance the ID
+using a string. You wouldn't do that with the real data. Maybe I should fix
+that?
+"""
 
 import api.visions
 import os
@@ -943,3 +948,44 @@ class VisionsRawQuery(TestCase):
                                 'FirstName': 'RAY'},
                                {'ID': '7967', 'LastName': 'CLAYTON',
                                 'FirstName': 'BARBARA'}])
+
+
+@patch('api.visions.pyodbc.connect', create=True, return_value=mconnection)
+class VisionsSelect(TestCase):
+    "Test api.visions.Select."
+
+    def test_select(self, mock):
+        query = api.visions.Select("Name, JobTitle, BirthDate", "viwPREmployees",
+                                   ID="7965")
+        self.assertEqual(query.sql, "select Name, JobTitle, BirthDate from " +
+                                    "viwPREmployees where ID = '7965'")
+        query.execute()
+        name = query.cursor.fetchone()[0]
+        self.assertEqual(name, "STONE, RAY ")
+
+    def test_select_fetchallrow(self, mock):
+        query = api.visions.Select("ID, LastName, FirstName", "viwPREmployees")
+        query.execute()
+        emp = query.fetch_all_row()
+        self.assertEqual(emp, [('7965', 'STONE', 'RAY'),
+                               ('7967', 'CLAYTON', 'BARBARA'),
+                               ('7582', 'WILLIAM', 'WILLIAM')])
+
+    def test_select_fetchvalue(self, mock):
+        query = api.visions.Select("Name", "viwPREmployees", "ID='7965'")
+        name = query.fetch_value()
+        self.assertEqual(name, "STONE, RAY ")
+
+
+"""
+This is not working for some reason. I don't know why. I beleive it has
+something to do with the dynamically created class methods and the mock
+patcher.
+"""
+@patch('api.visions.pyodbc.connect', create=True, return_value=mconnection)
+class VisionsViwpremployees(TestCase):
+    "Test Viwpremployees class."
+
+    def test_asdf(self, mock):
+        name = api.visions.Viwpremployees().Name('7965')
+        self.assertEqual(name, "STONE, RAY ")
