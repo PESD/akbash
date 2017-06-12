@@ -124,7 +124,8 @@ class Select():
         # By default the class doesn't make use of paramaterized queries but
         # they can be very useful so let's put some support in.
         # Params should be a string containing each param separated by commas.
-        # should I make a set_params method?
+        # should I make a set_params method? I should add params to the
+        # arguments the class accepts when initialized.
         self.params = None
 
         # The Select clause in a sql statement
