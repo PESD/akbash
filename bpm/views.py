@@ -87,8 +87,8 @@ class WorkflowCompleteFromActiveUserViewSet(viewsets.ModelViewSet):
     serializer_class = WorkflowCompleteSerializer
 
     def get_queryset(self):
-        user_id = self.request.parser_context['kwargs']['user_id']
-        wf_activities = WorkflowActivity.objects.filter(status="Active").filter(activity__users__id=user_id)
+        username = self.request.parser_context['kwargs']['username']
+        wf_activities = WorkflowActivity.objects.filter(status="Active").filter(activity__users__username=username)
         workflow_list = []
         for wfa in wf_activities:
             workflow_list.append(wfa.workflow.id)
