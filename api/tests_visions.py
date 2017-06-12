@@ -972,11 +972,6 @@ class VisionsSelect(TestCase):
         self.assertEqual(name, "STONE, RAY ")
 
 
-"""
-This is not working for some reason. I don't know why. I beleive it has
-something to do with the dynamically created class methods and the mock
-patcher.
-"""
 @patch('api.visions.pyodbc.connect', create=True, return_value=mconnection)
 class VisionsViwpremployees(TestCase):
     "Test Viwpremployees class."
