@@ -1,9 +1,4 @@
-""" Test cases for the visions module.
-
-The viwPREmployees test data are all strings so you have to referance the ID
-using a string. You wouldn't do that with the real data. Maybe I should fix
-that?
-"""
+""" Test cases for the visions module. """
 
 import api.visions
 import os
@@ -756,7 +751,7 @@ insert_viwPREmployees = "insert into viwPREmployees values (" \
 
 viwPREmployees_data = [
     ('A12M', '27 Emerson Court', 'STONE, RAY ', '369700662',
-        'WHITE', '7965', 'ST93229', 'STONE', 'RAY', 'Jay', '1',
+        'WHITE', 7965, 'ST93229', 'STONE', 'RAY', 'Jay', '1',
         '107 HART RIDGE RD', '', 'PHOENIX', 'AZ', '85085', '9892845829', '1',
         '2', '22', '1983-04-03 00:00:00', '2016-10-24 00:00:00', '',
         '2019-10-24 00:00:00', '', '2016-11-01 00:00:00', '', '', '',
@@ -792,7 +787,7 @@ viwPREmployees_data = [
         '', '', '', '', '', '', '', '', '', '', '', '', 'True', '', '', '',
         'False', 'False', 'False', '', '', 'False', '', 'False'),
     ('HR', '13 Herrera', 'CLAYTON, BARBARA ASHLEY ', '560255898', 'WHITE',
-        '7967', 'CL22396', 'CLAYTON', 'BARBARA', 'ASHLEY', '19',
+        7967, 'CL22396', 'CLAYTON', 'BARBARA', 'ASHLEY', '19',
         '554 ELK STREET', '', 'PHOENIX', 'AZ', '85003', '9496080825',
         '1', '2', '12', '1995-05-03 00:00:00', '2016-10-26 00:00:00', '',
         '2016-01-26 00:00:00', '', '', '', '', '', 'PEER IA I', '1',
@@ -826,7 +821,7 @@ viwPREmployees_data = [
         '', '', '', '', '', '', '', '', '', '', '', '', '', '', 'True', '',
         '', '', 'False', 'False', 'False', '', '', 'False', '', 'False'),
     ('TEACHER', '04 Dunbar', 'BURGOS, WILLIAM C ', '024620323', 'WHITE',
-        '7582', 'BU95483', 'WILLIAM', 'WILLIAM', 'C', '7', '2757 JOANNE LANE', '',
+        7582, 'BU95483', 'WILLIAM', 'WILLIAM', 'C', '7', '2757 JOANNE LANE', '',
         'PHOENIX', 'AZ', '85006', '9785135875', '1', '1', '4',
         '1967-02-08 00:00:00', '2015-03-30 00:00:00', '',
         '2018-07-29 00:00:00', '', '2015-08-01 00:00:00', '', '', '',
@@ -927,7 +922,7 @@ class VisionsRawQuery(TestCase):
         self.assertEqual(str(result), "9999")
 
         result = api.visions.exec_sql("select Name, JobTitle, BirthDate " +
-                                      "from viwPREmployees where ID = ?", "7965")
+                                      "from viwPREmployees where ID = ?", 7965)
         result = result.fetchone()[0]
         self.assertEqual(result, "STONE, RAY ")
 
@@ -935,18 +930,18 @@ class VisionsRawQuery(TestCase):
         result = api.visions.exec_sql("select ID, LastName, FirstName " +
                                       "from viwPREmployees")
         emp = api.visions.rowfetchall(result)
-        self.assertEqual(emp, [('7965', 'STONE', 'RAY'),
-                               ('7967', 'CLAYTON', 'BARBARA'),
-                               ('7582', 'WILLIAM', 'WILLIAM')])
+        self.assertEqual(emp, [(7965, 'STONE', 'RAY'),
+                               (7967, 'CLAYTON', 'BARBARA'),
+                               (7582, 'WILLIAM', 'WILLIAM')])
 
     def test_dictfetchall(self, mock):
         result = api.visions.exec_sql("select ID, LastName, FirstName " +
                                       "from viwPREmployees " +
-                                      "where ID in ('7965', '7967')")
+                                      "where ID in (7965, 7967)")
         emp = api.visions.dictfetchall(result)
-        self.assertEqual(emp, [{'ID': '7965', 'LastName': 'STONE',
+        self.assertEqual(emp, [{'ID': 7965, 'LastName': 'STONE',
                                 'FirstName': 'RAY'},
-                               {'ID': '7967', 'LastName': 'CLAYTON',
+                               {'ID': 7967, 'LastName': 'CLAYTON',
                                 'FirstName': 'BARBARA'}])
 
 
@@ -956,9 +951,9 @@ class VisionsSelect(TestCase):
 
     def test_select(self, mock):
         query = api.visions.Select("Name, JobTitle, BirthDate", "viwPREmployees",
-                                   ID="7965")
+                                   ID=7965)
         self.assertEqual(query.sql, "select Name, JobTitle, BirthDate from " +
-                                    "viwPREmployees where ID = '7965'")
+                                    "viwPREmployees where ID = 7965")
         query.execute()
         name = query.cursor.fetchone()[0]
         self.assertEqual(name, "STONE, RAY ")
@@ -967,12 +962,12 @@ class VisionsSelect(TestCase):
         query = api.visions.Select("ID, LastName, FirstName", "viwPREmployees")
         query.execute()
         emp = query.fetch_all_row()
-        self.assertEqual(emp, [('7965', 'STONE', 'RAY'),
-                               ('7967', 'CLAYTON', 'BARBARA'),
-                               ('7582', 'WILLIAM', 'WILLIAM')])
+        self.assertEqual(emp, [(7965, 'STONE', 'RAY'),
+                               (7967, 'CLAYTON', 'BARBARA'),
+                               (7582, 'WILLIAM', 'WILLIAM')])
 
     def test_select_fetchvalue(self, mock):
-        query = api.visions.Select("Name", "viwPREmployees", "ID='7965'")
+        query = api.visions.Select("Name", "viwPREmployees", "ID=7965")
         name = query.fetch_value()
         self.assertEqual(name, "STONE, RAY ")
 
@@ -987,5 +982,5 @@ class VisionsViwpremployees(TestCase):
     "Test Viwpremployees class."
 
     def test_asdf(self, mock):
-        name = api.visions.Viwpremployees().Name('7965')
+        name = api.visions.Viwpremployees().Name(7965)
         self.assertEqual(name, "STONE, RAY ")
