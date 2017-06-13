@@ -44,6 +44,11 @@ You must edit `/etc/freetds/freetds.conf` and add all SQL servers you need to co
         host = your.sqlserver.hostname
         port = 1433
         tds version = 8.0
+
+[VSDB]
+        host = your.visions.hostname
+        port = 1433
+        tds version = 8.0
 ```
 
 *Note: It is important to use tds version 8.0*
@@ -65,6 +70,12 @@ Finally, you must edit `/etc/odbc.ini`. Here is an example:
 Description         = My SQL Server
 Driver              = FreeTDS
 Servername          = VSQL
+TDS_Version         = 8.0
+
+[VSDB]
+Description         = Visions SQL Server
+Driver              = FreeTDS
+Servername          = VSDB
 TDS_Version         = 8.0
 ```
 
@@ -96,7 +107,7 @@ To wipe out your database and start from scratch without having to worry about m
 Akbash uses JSON Web Tokens (JWT) for authentication. This can be turned on and off in the [Configuration File](#configuration-file). When on, the browser or application MUST send a valid token to retrieve any information.
 
 ## Configuration File
-Local settings and sensitive information are stored in an .ini syle configuration file. By default the file, akbash.ini, is located besides the base directory in a directory named akbash_private_settings (```BASE_DIR\..\akbash_private_settings\akbash.ini```). You may set "AKBASH_CONFIG_FILE" as an environment variable with your own filename and location. Refer to the example below and settings.py for what you should put in the config file.
+Local settings and sensitive information are stored in an .ini style configuration file. By default the file, akbash.ini, is located besides the base directory in a directory named akbash_private_settings (```BASE_DIR\..\akbash_private_settings\akbash.ini```). You may set "AKBASH_CONFIG_FILE" as an environment variable with your own filename and location. Refer to the example below and settings.py for what you should put in the config file.
 
 ```
 [secrets]
@@ -104,12 +115,18 @@ SECRET_KEY:
 TALENTED_API_KEY:
 
 [default database]
-DATABASE_ENGINE: django.db.backends.sqlite3
-DATABASE_NAME: db.sqlite3
-DATABASE_USER:
-DATABASE_PASSWORD:
-DATABASE_DRIVER:
-DATABASE_DSN:
+ENGINE: django.db.backends.sqlite3
+NAME: db.sqlite3
+USER:
+PASSWORD:
+OPTIONS-DRIVER:
+OPTIONS-DSN:
+
+[visions database]
+NAME: dbname
+USER: username
+PASSWORD: password
+OPTIONS-DSN: VSDB
 
 [debug]
 DEBUG: True
