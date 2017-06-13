@@ -23,22 +23,22 @@ class Vendor(models.Model):
 # Person Classes
 
 class Person(models.Model):
-    first_name = models.CharField(max_length=50)
-    middle_name = models.CharField(max_length=50)
-    last_name = models.CharField(max_length=50)
-    badge_number = models.IntegerField(null=True, blank=True)
+    first_name = models.CharField(max_length=50, blank=True)
+    middle_name = models.CharField(max_length=50, blank=True)
+    last_name = models.CharField(max_length=50, blank=True)
+    badge_number = models.IntegerField(null=True)
     birth_date = models.DateField(null=True, blank=True)
-    gender = models.CharField(max_length=1)
+    gender = models.CharField(max_length=1, blank=True)
     race_white = models.BooleanField(default=False)
     race_asian = models.BooleanField(default=False)
     race_black = models.BooleanField(default=False)
     race_islander = models.BooleanField(default=False)
     race_american_indian = models.BooleanField(default=False)
-    ethnicity = models.CharField(max_length=50)
-    hqt = models.CharField(max_length=16)
-    ssn = models.CharField(max_length=9)
-    tcp_id = models.IntegerField(null=True, blank=True)
-    talented_id = models.IntegerField(null=True, blank=True)
+    ethnicity = models.CharField(max_length=50, blank=True)
+    hqt = models.CharField(max_length=16, blank=True)
+    ssn = models.CharField(max_length=9, blank=True)
+    tcp_id = models.IntegerField(null=True)
+    talented_id = models.IntegerField(null=True)
     is_onboarded = models.BooleanField(default=False)
     onboarded_date = models.DateTimeField(null=True, blank=True)
     onboarded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
@@ -84,9 +84,9 @@ class Person(models.Model):
 
 
 class Employee(Person):
-    employee_id = models.CharField(max_length=7)
+    employee_id = models.CharField(max_length=7, blank=True)
     visions_id = models.IntegerField(null=True, blank=True)
-    sub_type = models.CharField(max_length=1)
+    sub_type = models.CharField(max_length=1, blank=True)
     marked_as_hired = models.DateField(null=True, blank=True)
     epar_id = models.IntegerField(null=True, blank=True)
 
