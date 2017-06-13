@@ -111,7 +111,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, "static/")
 # CORS Access Controls. Currently set to allow all hosts
 CORS_ORIGIN_ALLOW_ALL = True
 
-# Private and local configurations
+# Private and local configurations read from a config file
 
 private_config_file = os.environ.get(
     'AKBASH_CONFIG_FILE',
@@ -144,26 +144,52 @@ DEBUG = config.getboolean('debug', 'DEBUG')
 # Database
 # https://docs.djangoproject.com/en/1.10/ref/settings/#databases
 
-if config['default database']['DATABASE_ENGINE'] == "django.db.backends.sqlite3":
-    DATABASES = {
-        'default': {
-            'ENGINE': config['default database']['DATABASE_ENGINE'],
-            'NAME': config['default database']['DATABASE_NAME'],
-        }
-    }
-elif config['default database']['DATABASE_ENGINE'] == "sql_server.pyodbc":
-    DATABASES = {
-        'default': {
-            'ENGINE': config['default database']['DATABASE_ENGINE'],
-            'NAME': config['default database']['DATABASE_NAME'],
-            'USER': config['default database']['DATABASE_USER'],
-            'PASSWORD': config['default database']['DATABASE_PASSWORD'],
-            'OPTIONS': {
-                'driver': config['default database']['DATABASE_DRIVER'],
-                'dsn': config['default database']['DATABASE_DSN'],
-            },
-        }
-    }
+# check database config for unrecognized options.
+for k in config['default database']:
+    if k.startswith('option'):
+        continue
+    elif k.startswith('test'):
+        continue
+    elif k.upper() in (
+            'ATOMIC_REQUESTS',
+            'AUTOCOMMIT',
+            'ENGINE',
+            'HOST',
+            'NAME',
+            'CONN_MAX_AGE',
+            'PASSWORD',
+            'PORT',
+            'TIME_ZONE',
+            'USER'):
+        continue
+    else:
+        raise KeyError("Unrecognized default database option: {}".format(k))
+
+# setup DATABASES settings dictionary
+DATABASES = {
+    'default': {}
+}
+for k in config['default database']:
+    if k.startswith('option'):
+        DATABASES['default']['OPTIONS'] = {}
+        break
+for k in config['default database']:
+    if k.startswith('test'):
+        DATABASES['default']['TEST'] = {}
+        break
+
+# iterate through default databases config and add to DATABASES dictionary.
+# configparser "section" and "option" are always lowercase
+for po, v in config['default database'].items():
+    o = po.split('-')
+    # django-pyodbc-azure options use lowercase
+    if o[0] == 'options':
+        DATABASES['default']['OPTIONS'][o[1]] = v
+    elif o[0] == 'test':
+        DATABASES['default']['TEST'][o[1].upper()] = v
+    else:
+        DATABASES['default'][o[0].upper()] = v
+
 
 # Talented API key
 TALENTED_API_KEY = config['secrets']['TALENTED_API_KEY']
