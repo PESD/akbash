@@ -1,5 +1,5 @@
-from api.models import Employee, Contractor, Position, Location, Department, PositionType
-from api.serializers import EmployeeSerializer, ContractorSerializer, PositionSerializer, LocationSerializer, DepartmentSerializer, PositionTypeSerializer
+from api.models import Employee, Contractor, Position, Location, Department, PositionType, Person
+from api.serializers import EmployeeSerializer, ContractorSerializer, PositionSerializer, LocationSerializer, DepartmentSerializer, PositionTypeSerializer, PersonSerializer
 from bpm.models import Workflow
 from rest_framework.decorators import api_view
 from rest_framework.reverse import reverse
@@ -20,6 +20,11 @@ def api_root(request, format=None):
 class EmployeeViewSet(viewsets.ModelViewSet):
     queryset = Employee.objects.all()
     serializer_class = EmployeeSerializer
+
+
+class PersonViewSet(viewsets.ModelViewSet):
+    queryset = Person.objects.all()
+    serializer_class = PersonSerializer
 
 
 class EmployeeNoWorkflowViewSet(viewsets.ModelViewSet):
