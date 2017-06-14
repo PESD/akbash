@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     'django_extensions',
     'api.apps.ApiConfig',
     'bpm.apps.BpmConfig',
+    'akjob.apps.AkjobConfig',
 ]
 
 MIDDLEWARE = [

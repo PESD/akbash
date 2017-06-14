@@ -9,4 +9,5 @@ requests
 djangorestframework-jwt
 django-cors-middleware
 django-extensions
+python-daemon
 pid
