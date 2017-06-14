@@ -59,6 +59,14 @@ class WorkflowActivityViewSet(viewsets.ModelViewSet):
     serializer_class = WorkflowActivitySerializer
 
 
+class WorkflowActivityFromActiveWorkflowViewSet(viewsets.ModelViewSet):
+    serializer_class = WorkflowActivitySerializer
+
+    def get_queryset(self):
+        workflow_id = self.request.parser_context['kwargs']['workflow_id']
+        return WorkflowActivity.objects.filter(status="Active").filter(workflow__id=workflow_id)
+
+
 class WorkflowActivityActiveUserViewSet(viewsets.ModelViewSet):
     serializer_class = WorkflowActivitySerializer
 
@@ -106,6 +114,11 @@ class WorkflowCompleteActiveViewSet(viewsets.ModelViewSet):
             workflow_list.append(wfa.workflow.id)
         workflow_dedupped = list(set(workflow_list))
         return Workflow.objects.filter(id__in=workflow_dedupped)
+
+
+class TaskViewSet(viewsets.ModelViewSet):
+    queryset = Task.objects.all()
+    serializer_class = TaskSerializer
 
 
 class WorkflowTaskViewSet(viewsets.ModelViewSet):

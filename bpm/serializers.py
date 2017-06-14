@@ -58,9 +58,38 @@ class WorkflowSerializer(serializers.ModelSerializer):
         )
 
 
+class TaskSerializer(serializers.ModelSerializer):
+    api_url = serializers.HyperlinkedIdentityField(view_name='task-detail', format='html')
+
+    class Meta:
+        model = Task
+        fields = (
+            "api_url",
+            "id",
+            "name",
+            "task_function",
+            "task_type",
+        )
+
+
+class WorkflowTaskSerializer(serializers.ModelSerializer):
+    api_url = serializers.HyperlinkedIdentityField(view_name='workflowtask-detail', format='html')
+    task = TaskSerializer(many=False, read_only=True)
+
+    class Meta:
+        model = WorkflowTask
+        fields = (
+            "api_url",
+            "id",
+            "status",
+            "task",
+        )
+
+
 class WorkflowActivitySerializer(serializers.ModelSerializer):
     api_url = serializers.HyperlinkedIdentityField(view_name='workflowactivity-detail', format='html')
     activity = ActivitySerializer(many=False, read_only=True)
+    workflow_tasks = WorkflowTaskSerializer(many=True, read_only=True)
 
     class Meta:
         model = WorkflowActivity
@@ -70,6 +99,7 @@ class WorkflowActivitySerializer(serializers.ModelSerializer):
             "status",
             "workflow",
             "activity",
+            "workflow_tasks",
         )
 
 
@@ -98,31 +128,3 @@ class CreateWorkflowSerializer(serializers.Serializer):
         process = Process.objects.get(pk=validated_data["process_id"])
         person = Person.objects.get(pk=validated_data["person_id"])
         return process.start_workflow(person)
-
-
-class TaskSerializer(serializers.Serializer):
-    api_url = serializers.HyperlinkedIdentityField(view_name='task-detail', format='html')
-
-    class Meta:
-        model = Task
-        fields = (
-            "api_url",
-            "id",
-            "name",
-            "task_function",
-            "task_type",
-        )
-
-
-class WorkflowTaskSerializer(serializers.Serializer):
-    api_url = serializers.HyperlinkedIdentityField(view_name='workflowtask-detail', format='html')
-    task = TaskSerializer(many=False, read_only=True)
-
-    class Meta:
-        model = WorkflowTask
-        fields = (
-            "api_url",
-            "id",
-            "status",
-            "task",
-        )
