@@ -8,8 +8,8 @@ from rest_framework.response import Response
 from rest_framework import viewsets
 from rest_framework.parsers import JSONParser
 
-from bpm.serializers import UserSerializer, ActivitySerializer, ProcessSerializer, WorkflowSerializer, WorkflowActivitySerializer, CreateWorkflowSerializer, WorkflowCompleteSerializer
-from bpm.models import Process, Activity, Workflow, WorkflowActivity
+from bpm.serializers import UserSerializer, ActivitySerializer, ProcessSerializer, WorkflowSerializer, WorkflowActivitySerializer, CreateWorkflowSerializer, WorkflowCompleteSerializer, WorkflowTaskSerializer, TaskSerializer
+from bpm.models import Process, Activity, Workflow, WorkflowActivity, WorkflowTask, Task
 from django.contrib.auth.models import User
 
 
@@ -106,6 +106,11 @@ class WorkflowCompleteActiveViewSet(viewsets.ModelViewSet):
             workflow_list.append(wfa.workflow.id)
         workflow_dedupped = list(set(workflow_list))
         return Workflow.objects.filter(id__in=workflow_dedupped)
+
+
+class WorkflowTaskViewSet(viewsets.ModelViewSet):
+    queryset = WorkflowTask.objects.all()
+    serializer_class = WorkflowTaskSerializer
 
 
 @csrf_exempt
