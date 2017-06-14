@@ -11,6 +11,7 @@ router.register(r'location', views.LocationViewSet)
 router.register(r'department', views.DepartmentViewSet)
 router.register(r'position-type', views.PositionTypeViewSet)
 router.register(r'employee-no-workflow', views.EmployeeNoWorkflowViewSet)
+router.register(r'person', views.PersonViewSet)
 
 urlpatterns = [
     url(r'^', include(router.urls)),
