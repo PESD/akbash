@@ -24,4 +24,5 @@ router.register(r'workflowtask', views.WorkflowTaskViewSet)
 urlpatterns = [
     url(r'^', include(router.urls)),
     url(r'^create_workflow/$', views.create_workflow_view),
+    url(r'^task_set_epar_id/$', views.task_set_epar_id_view),
 ]

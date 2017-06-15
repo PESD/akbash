@@ -1,6 +1,7 @@
 from django.db import models
-from api.models import Person
+from api.models import Person, Employee
 from django.contrib.auth.models import User
+from bpm.visions_helper import VisionsHelper
 
 
 # A Process is something like "New Hire Process"
@@ -147,6 +148,15 @@ class WorkflowActivity(models.Model):
 class TaskWorker:
 
         # Proof of concept on a TaskWorker function. Needs to be cleaned up.
+        def get_person_from_workflow_task(workflow_task):
+            workflow_activities = workflow_task.workflowactivity_set.all()
+            for workflow_activity in workflow_activities:
+                return workflow_activity.workflow.person
+
+        def get_employee_from_workflow_task(workflow_task):
+            person = TaskWorker.get_person_from_workflow_task(workflow_task)
+            return person.employee
+
         def task_update_name(**kwargs):
             workflow_activity = kwargs["workflow_activity"]
             first_name = kwargs["first_name"]
@@ -161,4 +171,14 @@ class TaskWorker:
             return True
 
         def task_dummy(**kwargs):
+            return True
+
+        def task_set_epar_id(**kwargs):
+            workflow_task = kwargs["workflow_task"]
+            epar_id = kwargs["epar_id"]
+            if not VisionsHelper.verify_epar(epar_id):
+                return False
+            employee = TaskWorker.get_employee_from_workflow_task(workflow_task)
+            employee.epar_id = epar_id
+            employee.save()
             return True
