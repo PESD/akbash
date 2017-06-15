@@ -1,5 +1,5 @@
 from django.apps import AppConfig
-import akjob.daemon
+# import akjob.akjob_daemon
 
 
 class AkjobConfig(AppConfig):
@@ -7,4 +7,5 @@ class AkjobConfig(AppConfig):
 
     def ready(self):
         "Start the daemon when akbash starts up."
-        akjob.daemon.main()
+        # akjob.akjob_daemon.start_daemon()
+        pass

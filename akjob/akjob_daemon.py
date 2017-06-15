@@ -13,21 +13,19 @@ import pid
 from time import sleep
 
 
-def do_the_things():
-    pass
+# def do_the_things():
+#     pass
 
 
-def start_daemon():
-    with daemon.DaemonContext(pidfile=pid.Pidfile('akjob.pid')):
-        while True:
-            do_the_things()
-            sleep(10)
-
-
-def __init__():
-    start_daemon()
+# def start_daemon():
+with daemon.DaemonContext(pidfile=pid.PidFile('/Users/robwirk/dev/akbash/akjob.pid')):
+    # with daemon.DaemonContext(): # This works. The above with pidfile doesn't
+    # work.
+    while True:
+        # do_the_things()
+        sleep(6)
 
 
 # Enable to daemon to be started from the command line.
-if __name__ == '__main__':
-    start_daemon()
+# if __name__ == '__main__':
+#     start_daemon()
