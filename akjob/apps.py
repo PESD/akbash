@@ -1,3 +1,4 @@
+import subprocess
 from django.apps import AppConfig
 # import akjob.akjob_daemon
 
@@ -7,5 +8,5 @@ class AkjobConfig(AppConfig):
 
     def ready(self):
         "Start the daemon when akbash starts up."
-        # akjob.akjob_daemon.start_daemon()
+        subprocess.run(['python', '/Users/robwirk/dev/akbash/akjob/akjobd.py'])
         pass
