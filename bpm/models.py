@@ -88,9 +88,10 @@ class WorkflowTask(models.Model):
     status = models.CharField(max_length=12, choices=STATUSES)
 
     def run_task(self, args):
-        status = self.task.task_controller_function(args)
+        status, message = self.task.task_controller_function(args)
         self.status = "Complete" if status else "Error"
         self.save()
+        return (status, message)
 
 
 class WorkflowActivity(models.Model):
@@ -177,8 +178,8 @@ class TaskWorker:
             workflow_task = kwargs["workflow_task"]
             epar_id = kwargs["epar_id"]
             if not VisionsHelper.verify_epar(epar_id):
-                return False
+                return (False, "ePAR not found")
             employee = TaskWorker.get_employee_from_workflow_task(workflow_task)
             employee.epar_id = epar_id
             employee.save()
-            return True
+            return (True, "Success")
