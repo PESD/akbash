@@ -32,6 +32,7 @@ class Process(models.Model):
     def start_workflow(self, person):
         workflow = Workflow.objects.create(person=person, process=self)
         workflow.save()
+        person.generate_badge()
         activities = self.activities.all()
         for activity in activities:
             workflow_activity = workflow.create_workflow_activity(activity)
