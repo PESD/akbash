@@ -60,7 +60,9 @@ class WorkflowTestCase(TestCase):
                     "first_name": "Eddard",
                     "last_name": "Starky",
                 }
-            task.run_task(args)
+            status, message = task.run_task(args)
+            self.assertIs(status, True)
+            self.assertEqual("Success", message)
             i = i + 1
         # Does the number of tasks equal what we think it should?
         self.assertEqual(i, 1)
@@ -78,3 +80,4 @@ class WorkflowTestCase(TestCase):
         current_activity.advance_workflow_activity()
         new_current_activity = workflow.get_current_workflow_activities()[0]
         self.assertEqual("Update Employee ID", new_current_activity.activity.name)
+        self.assertNotEqual(None, ned.badge_number)

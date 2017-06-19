@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import Max
 from django.contrib.auth.models import User
 
 
@@ -81,6 +82,15 @@ class Person(models.Model):
             return True
         else:
             return False
+
+    def generate_badge(self):
+        max_badge = Person.objects.all().aggregate(Max('badge_number'))['badge_number__max']
+        if not max_badge:
+            max_badge = 11000
+        badge = max_badge + 1
+        self.badge_number = badge
+        self.save()
+        return self.badge_number
 
 
 class Employee(Person):
