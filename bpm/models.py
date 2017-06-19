@@ -166,13 +166,13 @@ class TaskWorker:
             person.first_name = first_name
             person.last_name = last_name
             person.save()
-            return True
+            return (True, "Success")
 
         def task_update_employee_id(**kwargs):
-            return True
+            return (True, "Success")
 
         def task_dummy(**kwargs):
-            return True
+            return (True, "Success")
 
         def task_set_epar_id(**kwargs):
             workflow_task = kwargs["workflow_task"]
