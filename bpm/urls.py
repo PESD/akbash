@@ -25,4 +25,5 @@ urlpatterns = [
     url(r'^', include(router.urls)),
     url(r'^create_workflow/$', views.create_workflow_view),
     url(r'^task_set_epar_id/$', views.task_set_epar_id_view),
+    url(r'^task_set_visions_id/$', views.task_set_visions_id_view),
 ]

@@ -19,37 +19,37 @@ def run():
 
     # Create Tasks
     # Step 1
-    create_epar_task = Task.objects.create(name="Create ePAR", task_function="task_dummy", task_type="Observer")
+    create_epar_task = Task.objects.create(name="Create ePAR", task_function="task_set_epar_id", task_type="Observer")
     create_epar_task.save()
 
     # Step 2
-    create_visions_record_task = Task.objects.create(name="Create Employee Maintenance Record", task_function="task_dummy", task_type="Observer")
+    create_visions_record_task = Task.objects.create(name="Create Employee Maintenance Record", task_function="task_set_visions_id", task_type="Observer")
     create_visions_record_task.save()
 
     # Step 3
-    assign_to_position_task = Task.objects.create(name="Assign Employee to Visions Position", task_function="task_dummy", task_type="Observer")
+    assign_to_position_task = Task.objects.create(name="Assign Employee to Visions Position", task_function="task_update_position", task_type="Observer")
     assign_to_position_task.save()
 
-    create_ad_account_task = Task.objects.create(name="Create Active Directory Account", task_function="task_dummy", task_type="Observer")
+    create_ad_account_task = Task.objects.create(name="Create Active Directory Account", task_function="task_check_ad", task_type="Observer")
     create_ad_account_task.save()
 
-    create_synergy_account_task = Task.objects.create(name="Create Synergy Account", task_function="task_dummy", task_type="Observer")
+    create_synergy_account_task = Task.objects.create(name="Create Synergy Account", task_function="task_check_synergy", task_type="Observer")
     create_synergy_account_task.save()
 
     # Step 4
-    create_tcp_account_task = Task.objects.create(name="Create TCP Account", task_function="task_dummy", task_type="User")
+    create_tcp_account_task = Task.objects.create(name="Create TCP Account", task_function="task_set_tcp_id", task_type="User")
     create_tcp_account_task.save()
 
     # Step 5
-    onboard_employee_task = Task.objects.create(name="Onboard Employee", task_function="task_dummy", task_type="User")
+    onboard_employee_task = Task.objects.create(name="Onboard Employee", task_function="task_is_onboarded", task_type="User")
     onboard_employee_task.save()
 
     # Step 6
-    tcp_fingerprint_employee_task = Task.objects.create(name="TCP Fingerprint Employee", task_function="task_dummy", task_type="User")
+    tcp_fingerprint_employee_task = Task.objects.create(name="TCP Fingerprint Employee", task_function="task_is_fingerprinted", task_type="User")
     tcp_fingerprint_employee_task.save()
 
     # Step 7
-    badge_created_task = Task.objects.create(name="Employee Badge Printed", task_function="task_dummy", task_type="User")
+    badge_created_task = Task.objects.create(name="Employee Badge Printed", task_function="task_is_badge_created", task_type="User")
     badge_created_task.save()
 
     # Create Activities

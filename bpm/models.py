@@ -184,3 +184,13 @@ class TaskWorker:
             employee.epar_id = epar_id
             employee.save()
             return (True, "Success")
+
+        def task_set_visions_id(**kwargs):
+            workflow_task = kwargs["workflow_task"]
+            visions_id = kwargs["visions_id"]
+            if not VisionsHelper.verify_employee(visions_id):
+                return (False, "Employee not found")
+            employee = TaskWorker.get_employee_from_workflow_task(workflow_task)
+            employee.visions_id = visions_id
+            employee.save()
+            return (True, "Success")

@@ -15,3 +15,8 @@ class VisionsHelper:
         vsresult = vsquery.fetch_value()
         if(vsresult):
             return True
+
+    def verify_employee(visions_id):
+        if not visions.Viwpremployees().ID(visions_id):
+            return False
+        return True

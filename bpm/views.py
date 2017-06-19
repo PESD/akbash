@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from rest_framework import viewsets
 from rest_framework.parsers import JSONParser
 
-from bpm.serializers import UserSerializer, ActivitySerializer, ProcessSerializer, WorkflowSerializer, WorkflowActivitySerializer, CreateWorkflowSerializer, WorkflowCompleteSerializer, WorkflowTaskSerializer, TaskSerializer, TaskEparSerializer
+from bpm.serializers import UserSerializer, ActivitySerializer, ProcessSerializer, WorkflowSerializer, WorkflowActivitySerializer, CreateWorkflowSerializer, WorkflowCompleteSerializer, WorkflowTaskSerializer, TaskSerializer, TaskEparSerializer, TaskVisionsIDSerializer
 from bpm.models import Process, Activity, Workflow, WorkflowActivity, WorkflowTask, Task
 from django.contrib.auth.models import User
 
@@ -142,6 +142,17 @@ def task_set_epar_id_view(request):
     if request.method == 'POST':
         data = JSONParser().parse(request)
         serializer = TaskEparSerializer(data=data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return JsonResponse(serializer.data, status=201)
+        return JsonResponse(serializer.errors, status=400)
+
+
+@csrf_exempt
+def task_set_visions_id_view(request):
+    if request.method == 'POST':
+        data = JSONParser().parse(request)
+        serializer = TaskVisionsIDSerializer(data=data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return JsonResponse(serializer.data, status=201)
