@@ -217,7 +217,10 @@ class Select():
         of the first row"""
         cursor = self.execute()
         result = cursor.fetchone()
-        return result[0]
+        # Check to make sure there is actually a result. Return a None object if not.
+        if result:
+            return result[0]
+        return None
 
 
     """

@@ -1,6 +1,7 @@
 from django.db import models
-from api.models import Person
+from api.models import Person, Employee
 from django.contrib.auth.models import User
+from bpm.visions_helper import VisionsHelper
 
 
 # A Process is something like "New Hire Process"
@@ -87,9 +88,10 @@ class WorkflowTask(models.Model):
     status = models.CharField(max_length=12, choices=STATUSES)
 
     def run_task(self, args):
-        status = self.task.task_controller_function(args)
+        status, message = self.task.task_controller_function(args)
         self.status = "Complete" if status else "Error"
         self.save()
+        return (status, message)
 
 
 class WorkflowActivity(models.Model):
@@ -147,6 +149,15 @@ class WorkflowActivity(models.Model):
 class TaskWorker:
 
         # Proof of concept on a TaskWorker function. Needs to be cleaned up.
+        def get_person_from_workflow_task(workflow_task):
+            workflow_activities = workflow_task.workflowactivity_set.all()
+            for workflow_activity in workflow_activities:
+                return workflow_activity.workflow.person
+
+        def get_employee_from_workflow_task(workflow_task):
+            person = TaskWorker.get_person_from_workflow_task(workflow_task)
+            return person.employee
+
         def task_update_name(**kwargs):
             workflow_activity = kwargs["workflow_activity"]
             first_name = kwargs["first_name"]
@@ -155,10 +166,20 @@ class TaskWorker:
             person.first_name = first_name
             person.last_name = last_name
             person.save()
-            return True
+            return (True, "Success")
 
         def task_update_employee_id(**kwargs):
-            return True
+            return (True, "Success")
 
         def task_dummy(**kwargs):
-            return True
+            return (True, "Success")
+
+        def task_set_epar_id(**kwargs):
+            workflow_task = kwargs["workflow_task"]
+            epar_id = kwargs["epar_id"]
+            if not VisionsHelper.verify_epar(epar_id):
+                return (False, "ePAR not found")
+            employee = TaskWorker.get_employee_from_workflow_task(workflow_task)
+            employee.epar_id = epar_id
+            employee.save()
+            return (True, "Success")

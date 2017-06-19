@@ -1,7 +1,7 @@
 from django.test import TestCase
 from django.contrib.auth.models import User
 from api.models import Person, Employee
-from bpm.models import Process, Task, Activity, Workflow, WorkflowActivity, TaskWorker
+from bpm.models import Process, Task, Activity, Workflow, WorkflowActivity, TaskWorker, WorkflowTask
 
 # Create your tests here.
 
@@ -60,7 +60,7 @@ class WorkflowTestCase(TestCase):
                     "first_name": "Eddard",
                     "last_name": "Starky",
                 }
-            tw = task.run_task(args)
+            task.run_task(args)
             i = i + 1
         # Does the number of tasks equal what we think it should?
         self.assertEqual(i, 1)

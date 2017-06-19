@@ -1,8 +1,9 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from bpm.models import Process, Activity, Workflow, WorkflowActivity, WorkflowTask, Task
+from bpm.models import Process, Activity, Workflow, WorkflowActivity, WorkflowTask, Task, TaskWorker
 from api.models import Person
 from api.serializers import PersonSerializer
+from bpm.visions_helper import VisionsHelper
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -128,3 +129,24 @@ class CreateWorkflowSerializer(serializers.Serializer):
         process = Process.objects.get(pk=validated_data["process_id"])
         person = Person.objects.get(pk=validated_data["person_id"])
         return process.start_workflow(person)
+
+
+class TaskEparSerializer(serializers.Serializer):
+    workflow_task_id = serializers.IntegerField()
+    epar_id = serializers.IntegerField()
+    status = serializers.BooleanField()
+    message = serializers.CharField(max_length=200, allow_blank=True)
+
+    def create(self, validated_data):
+        workflow_task = WorkflowTask.objects.get(pk=validated_data["workflow_task_id"])
+        epar = validated_data["epar_id"]
+        args = {
+            "workflow_task": workflow_task,
+            "epar_id": epar
+        }
+        status, message = workflow_task.run_task(args)
+        if workflow_task.status == "Complete":
+            workflow_activities = workflow_task.workflowactivity_set.all()
+            for workflow_activity in workflow_activities:
+                workflow_activity.advance_workflow_activity()
+        return {"workflow_task_id": workflow_task.id, "epar_id": epar, "status": status, "message": message}
