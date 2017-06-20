@@ -12,7 +12,7 @@ import os
 import sys
 from django.conf import settings
 from django.db import connection
-from subprocess import call
+from subprocess import run
 from django.core.management import execute_from_command_line
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "akbash.settings")
@@ -73,8 +73,8 @@ cmd1 = 'find {} -path "*/migrations/*.py" -not -name "__init__.py" -delete -prin
 cmd2 = 'find {} -path "*/migrations/*.pyc"  -delete -print'.format(BASE_DIR)
 
 if prompt("\nDelete migration files?"):
-    call(cmd1, shell=True)
-    call(cmd2, shell=True)
+    run(cmd1, shell=True)
+    run(cmd2, shell=True)
 
 # rerun migrations
 if prompt("\nMake migrations and migrate?"):
