@@ -1,6 +1,7 @@
 """ A script to start the akjob daemon.
 
-This script is not designed to be imported.
+This script is not designed to be imported. Run from the command line or
+subprocess.run.
 
 python-daemon asks for pylockfile but that package is depreciated. Instead I'm
 using pid which is python-daemon compatible.
@@ -8,51 +9,72 @@ using pid which is python-daemon compatible.
 
 import os
 import sys
+import argparse
 import pid
 import daemon
 import logging
 from time import sleep
-from django.conf import settings
 
-
-# pidfile location
-# It's best to setup a directory under /var/run for the lockfile but will
-# probably only do that in production and we need the sysadmin to set that up.
-# Probably need an init script that creates the akjob dir under /var/run and
-# set permissions so akjob can write to it.
-# Or... maybe use the /tmp dir if it's cleaned when the system starts.
-# Or... maybe write code look at the processes once in a while and delete the
-# pidfile if it exists but the daemon isn't running.
-sys.path.insert(1, os.getcwd())
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "akbash.settings")
-piddir = settings.BASE_DIR
-pidfile = "akjobd.pid"
 
 # Set up logging
 logging.basicConfig()
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger = logging.getLogger("akjobd")
+logger.setLevel(logging.DEBUG)
+
+# setup piddir and pidname from command line arguments.
+parser = argparse.ArgumentParser()
+parser.add_argument("action",
+                    choices=["start", "stop"],
+                    help="Action to perform.")
+parser.add_argument("-pd", "--piddir",
+                    required=True,
+                    help="The directory used to store the pid file.")
+parser.add_argument("-pn", "--pidname",
+                    required=True,
+                    help="The name of the pid file.")
+parser.add_argument("-ld", "--logdir",
+                    help="The directory used to store the log file.")
+parser.add_argument("-ln", "--logname",
+                    help="The name of the log file.")
+args = parser.parse_args()
+
+piddir = args.piddir
+pidfile = args.pidname
+
+
+def stop_daemon(pid):
+    logger.info("Stopping Daemon. Sending SIGTERM to pid " + str(pid))
+    os.kill(pid, 15)  # 15 = SIGTERM - "Software termination signal"
+    raise SystemExit
+
+def start_daemon():
+    logger.info("Starting the akjob daemon.")
+    with daemon.DaemonContext(pidfile=pid.PidFile(pidname=pidfile, piddir=piddir)):
+        while True:
+            sleep(10)
 
 
 # Before the daemon starts it checks the pid file but I can't monitor the
 # results so here I'm doing a pre-check on the pidfile.
-"""
-logger.info("Attempting to start the akjob daemon.")
+# logger.info("Checking PID file.")
+pidcheck = pid.PidFile(pidname=pidfile, piddir=piddir)
+pidstatus = None
 try:
-    with pid.PidFile(pidname=pidfile, piddir=piddir):
-        pass
-except pid.PidFileAlreadyLockedError as err:
-    logger.info("pid.PidFileAlreadyLockedError. The daemon is probably already running.")
+    pidstatus = pidcheck.check()
+    if pidstatus:
+        logger.info(pidstatus)
+except pid.PidFileAlreadyRunningError as err:
+    logger.info(err)
+    if args.action == "stop":
+        stop_daemon(pidcheck.pid)
     raise SystemExit
 except:
-    logger.info('pid stuff error')
+    logger.error('Unknown pid related error: ' + str(sys.exc_info()[1:2]))
     raise SystemExit
-"""
-pidcheck = pid.PidFile(pidname=pidfile, piddir=piddir)
-pidcheck.check()
 
-
-# Start the daemon
-with daemon.DaemonContext(pidfile=pid.PidFile(pidname=pidfile, piddir=piddir)):
-    while True:
-        sleep(10)
+if args.action == "stop":
+    stop_daemon(pidcheck.pid)
+elif args.action == "start":
+    start_daemon()
+else:
+    logger.error("Didn't receive start or stop command.")
