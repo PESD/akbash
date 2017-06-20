@@ -131,6 +131,14 @@ class CreateWorkflowSerializer(serializers.Serializer):
         return process.start_workflow(person)
 
 
+# Visions Serializers
+class EparSerializer(serializers.Serializer):
+    id = serializers.IntegerField(read_only=True)
+    name = serializers.CharField(max_length=200, allow_blank=True)
+    position_title = serializers.CharField(max_length=200, allow_blank=True)
+
+
+# Task Serializers
 class TaskEparSerializer(serializers.Serializer):
     workflow_task_id = serializers.IntegerField()
     epar_id = serializers.IntegerField()

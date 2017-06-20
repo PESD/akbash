@@ -8,8 +8,9 @@ from rest_framework.response import Response
 from rest_framework import viewsets
 from rest_framework.parsers import JSONParser
 
-from bpm.serializers import UserSerializer, ActivitySerializer, ProcessSerializer, WorkflowSerializer, WorkflowActivitySerializer, CreateWorkflowSerializer, WorkflowCompleteSerializer, WorkflowTaskSerializer, TaskSerializer, TaskEparSerializer, TaskVisionsIDSerializer
+from bpm.serializers import UserSerializer, ActivitySerializer, ProcessSerializer, WorkflowSerializer, WorkflowActivitySerializer, CreateWorkflowSerializer, WorkflowCompleteSerializer, WorkflowTaskSerializer, EparSerializer, TaskSerializer, TaskEparSerializer, TaskVisionsIDSerializer
 from bpm.models import Process, Activity, Workflow, WorkflowActivity, WorkflowTask, Task
+from bpm.visions_helper import VisionsHelper
 from django.contrib.auth.models import User
 
 
@@ -137,6 +138,24 @@ def create_workflow_view(request):
         return JsonResponse(serializer.errors, status=400)
 
 
+# Visions Views
+class EparViewSet(viewsets.ViewSet):
+    # Required for the Browsable API renderer to have a nice form.
+    serializer_class = EparSerializer
+
+    def list(self, request):
+        # epar_id = self.request.parser_context['kwargs']['epar_id']
+        epars = VisionsHelper.get_all_epars()
+        serializer = EparSerializer(instance=epars, many=True)
+        return Response(serializer.data)
+
+    def retrieve(self, request, pk=None):
+        epar = VisionsHelper.get_epar(pk)
+        serializer = EparSerializer(instance=epar)
+        return Response(serializer.data)
+
+
+# Task Views
 @csrf_exempt
 def task_set_epar_id_view(request):
     if request.method == 'POST':
