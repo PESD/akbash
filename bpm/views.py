@@ -8,8 +8,27 @@ from rest_framework.response import Response
 from rest_framework import viewsets
 from rest_framework.parsers import JSONParser
 
-from bpm.serializers import UserSerializer, ActivitySerializer, ProcessSerializer, WorkflowSerializer, WorkflowActivitySerializer, CreateWorkflowSerializer, WorkflowCompleteSerializer, WorkflowTaskSerializer, EparSerializer, TaskSerializer, TaskEparSerializer, TaskVisionsIDSerializer
-from bpm.models import Process, Activity, Workflow, WorkflowActivity, WorkflowTask, Task
+from bpm.serializers import (UserSerializer,
+                             ActivitySerializer,
+                             ProcessSerializer,
+                             WorkflowSerializer,
+                             WorkflowActivitySerializer,
+                             CreateWorkflowSerializer,
+                             WorkflowCompleteSerializer,
+                             WorkflowTaskSerializer,
+                             EparSerializer,
+                             VisionsEmployeeSerializer,
+                             TaskSerializer,
+                             TaskEparSerializer,
+                             TaskVisionsIDSerializer,
+                             )
+from bpm.models import (Process,
+                        Activity,
+                        Workflow,
+                        WorkflowActivity,
+                        WorkflowTask,
+                        Task,
+                        )
 from bpm.visions_helper import VisionsHelper
 from django.contrib.auth.models import User
 
@@ -144,7 +163,6 @@ class EparViewSet(viewsets.ViewSet):
     serializer_class = EparSerializer
 
     def list(self, request):
-        # epar_id = self.request.parser_context['kwargs']['epar_id']
         epars = VisionsHelper.get_all_epars()
         serializer = EparSerializer(instance=epars, many=True)
         return Response(serializer.data)
@@ -152,6 +170,21 @@ class EparViewSet(viewsets.ViewSet):
     def retrieve(self, request, pk=None):
         epar = VisionsHelper.get_epar(pk)
         serializer = EparSerializer(instance=epar)
+        return Response(serializer.data)
+
+
+class VisionsEmployeeViewSet(viewsets.ViewSet):
+    # Required for the Browsable API renderer to have a nice form.
+    serializer_class = VisionsEmployeeSerializer
+
+    def list(self, request):
+        employees = VisionsHelper.get_all_employees()
+        serializer = VisionsEmployeeSerializer(instance=employees, many=True)
+        return Response(serializer.data)
+
+    def retrieve(self, request, pk=None):
+        employee = VisionsHelper.get_employee(pk)
+        serializer = VisionsEmployeeSerializer(instance=employee)
         return Response(serializer.data)
 
 

@@ -20,6 +20,7 @@ router.register(r'workflow-from-person/(?P<person_id>[0-9]+)', views.WorkflowFro
 router.register(r'task', views.TaskViewSet)
 router.register(r'workflowtask', views.WorkflowTaskViewSet)
 router.register(r'epar', views.EparViewSet, base_name='epar')
+router.register(r'visions-employee', views.VisionsEmployeeViewSet, base_name='visions-employee')
 
 
 urlpatterns = [

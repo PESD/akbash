@@ -12,6 +12,15 @@ class Epar:
         self.position_title = position_title
 
 
+class VisionsEmployee:
+    id = None
+    name = None
+
+    def __init__(self, id, name):
+        self.id = id
+        self.name = name
+
+
 class VisionsHelper:
     def verify_epar(epar_id):
         vsquery = visions.Select("ID", "viwHPEmpPARs", ID=epar_id)
@@ -24,7 +33,6 @@ class VisionsHelper:
             return False
         return True
 
-    @staticmethod
     def get_epar(epar_id):
         vsquery = visions.Select("ID, Name, PositionDescription", "viwHPEmpPARs", ID=epar_id)
         vsresult = vsquery.fetch_all_dict()
@@ -41,3 +49,14 @@ class VisionsHelper:
             epar = Epar(row["ID"], row["Name"], row["PositionDescription"])
             epars.append(epar)
         return epars
+
+    def get_employee(id):
+        return VisionsEmployee(id, visions.Viwpremployees().Name(id))
+
+    def get_all_employees():
+        db_employees = visions.Viwpremployees("ID, Name", status="Active").fetch_all_dict()
+        employees = []
+        for row in db_employees:
+            employee = VisionsEmployee(row["ID"], row["Name"])
+            employees.append(employee)
+        return employees
