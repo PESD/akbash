@@ -39,5 +39,6 @@ class AkjobConfig(AppConfig):
     def ready(self):
         "Start the akjob daemon when akbash starts up."
         run(["python", "akjob/akjobd.py",
+            "start",
              "-pd", AKJOB_PID_DIR,
              "-pn", AKJOB_PID_FILE])
