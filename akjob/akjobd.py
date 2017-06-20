@@ -27,7 +27,7 @@ def parse_args():
     global pidfile
     parser = argparse.ArgumentParser()
     parser.add_argument("action",
-                        choices=["start", "stop"],
+                        choices=["start", "stop", "restart"],
                         help="Action to perform.")
     parser.add_argument("-pd", "--piddir",
                         required=True,
@@ -48,7 +48,6 @@ def parse_args():
 def stop_daemon(pid):
     logger.info("Stopping Daemon. Sending SIGTERM to pid " + str(pid))
     os.kill(pid, 15)  # 15 = SIGTERM - "Software termination signal"
-    raise SystemExit
 
 def start_daemon():
     logger.info("Starting the akjob daemon.")
@@ -92,13 +91,21 @@ def main():
     if status == "AlreadyRunning":
         if args.action == "stop":
             stop_daemon(get_pid_from_pidfile())
+        elif args.action == "restart":
+            stop_daemon(get_pid_from_pidfile())
+            sleep(1)
+            start_daemon()
         raise SystemExit
     if args.action == "stop":
         if status == "PID_CHECK_NOFILE":
             logger.info("Stop command given but the pid file wasn't found.")
         else:
             stop_daemon(get_pid_from_pidfile())
+            raise SystemExit
     elif args.action == "start":
+        start_daemon()
+    elif args.action == "restart":
+        logger.info("restart command given but the pid file wasn't found.")
         start_daemon()
     else:
         logger.error("Didn't receive start or stop command.")
