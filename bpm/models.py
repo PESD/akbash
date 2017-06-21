@@ -159,6 +159,18 @@ class TaskWorker:
             person = TaskWorker.get_person_from_workflow_task(workflow_task)
             return person.employee
 
+        def is_epar_dup(epar_id):
+            a = Employee.objects.filter(epar_id=epar_id)
+            if a:
+                return True
+            return False
+
+        def is_visions_id_dup(visions_id):
+            a = Employee.objects.filter(visions_id=visions_id)
+            if a:
+                return True
+            return False
+
         def task_update_name(**kwargs):
             workflow_activity = kwargs["workflow_activity"]
             first_name = kwargs["first_name"]
@@ -180,6 +192,8 @@ class TaskWorker:
             epar_id = kwargs["epar_id"]
             if not VisionsHelper.verify_epar(epar_id):
                 return (False, "ePAR not found")
+            if TaskWorker.is_epar_dup(epar_id):
+                return (False, "ePAR already linked to an Employee")
             employee = TaskWorker.get_employee_from_workflow_task(workflow_task)
             employee.epar_id = epar_id
             employee.save()
@@ -190,6 +204,8 @@ class TaskWorker:
             visions_id = kwargs["visions_id"]
             if not VisionsHelper.verify_employee(visions_id):
                 return (False, "Employee not found")
+            if TaskWorker.is_visions_id_dup(visions_id):
+                return (False, "Visions Employee already linked to an Employee")
             employee = TaskWorker.get_employee_from_workflow_task(workflow_task)
             employee.visions_id = visions_id
             employee.save()
