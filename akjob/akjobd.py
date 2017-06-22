@@ -53,7 +53,7 @@ def start_daemon():
     logger.info("Starting the akjob daemon.")
     with daemon.DaemonContext(pidfile=pid.PidFile(pidname=pidfile, piddir=piddir)):
         while True:
-            sleep(10)
+            sleep(60)
 
 # To get the pid module to do this for me proved tricky. I'll get it myself.
 def get_pid_from_pidfile():
