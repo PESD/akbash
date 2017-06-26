@@ -1,6 +1,7 @@
 from django.db import models
 from django.db.models import Max
 from django.contrib.auth.models import User
+from django.core.exceptions import ObjectDoesNotExist
 
 
 # Vendor Classes
@@ -24,6 +25,11 @@ class Vendor(models.Model):
 # Person Classes
 
 class Person(models.Model):
+    TYPES = (
+        ("Contractor", "Contractor"),
+        ("Employee", "Employee"),
+    )
+    type = models.CharField(max_length=16, choices=TYPES)
     first_name = models.CharField(max_length=50, blank=True)
     middle_name = models.CharField(max_length=50, blank=True)
     last_name = models.CharField(max_length=50, blank=True)
@@ -82,6 +88,13 @@ class Person(models.Model):
             return True
         else:
             return False
+
+    def personType(self):
+        try:
+            if self.contractor.id:
+                return "Contractor"
+        except ObjectDoesNotExist:
+            return "Employee"
 
     def generate_badge(self):
         max_badge = Person.objects.all().aggregate(Max('badge_number'))['badge_number__max']
@@ -160,10 +173,21 @@ class PositionType(models.Model):
 
 
 class Position(models.Model):
-    location = models.ForeignKey(Location, on_delete=models.CASCADE)
-    department = models.ForeignKey(Department, on_delete=models.CASCADE)
+    location = models.ForeignKey(Location, on_delete=models.SET_NULL, null=True)
+    department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True)
     person = models.ForeignKey(Person, on_delete=models.CASCADE)
-    position_type = models.ForeignKey(PositionType, on_delete=models.CASCADE)
+    position_type = models.ForeignKey(PositionType, on_delete=models.SET_NULL, null=True)
+    title = models.CharField(max_length=255, blank=True)
+    is_primary = models.BooleanField(default=False)
+    last_updated_date = models.DateTimeField(null=True, blank=True)
+    last_updated_by = models.CharField(max_length=255, blank=True)
+
+    def position_exists_for_user(person):
+        positions = Position.objects.filter(person__id=person.id)
+        if positions.exists():
+            return True
+        else:
+            return False
 
 
 # Function for updating data. Use this instead of updating objects directly

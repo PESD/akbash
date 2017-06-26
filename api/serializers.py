@@ -306,6 +306,10 @@ class PositionSerializer(serializers.ModelSerializer):
         fields = (
             "api_url",
             "id",
+            "title",
+            "person",
+            "last_updated_date",
+            "last_updated_by",
             "location",
             "department",
             "position_type",

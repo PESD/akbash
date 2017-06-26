@@ -1,5 +1,8 @@
 from bpm.models import Process, Task, Activity, Workflow, WorkflowActivity
+from api.models import Person, Employee, Contractor, Location, Position, PositionType
 from django.contrib.auth.models import User
+from api.xml_parse import parse_hires
+from bpm.xml_request import get_talented_xml
 
 
 def run():
@@ -9,6 +12,39 @@ def run():
     Task.objects.all().delete()
     Workflow.objects.all().delete()
     WorkflowActivity.objects.all().delete()
+    Position.objects.all().delete()
+    Employee.objects.all().delete()
+    Contractor.objects.all().delete()
+    PositionType.objects.all().delete()
+    Location.objects.all().delete()
+
+    # Locations
+    locations = [
+        {"name": "Bethune", "short_name": "Bethune", "number": "101"},
+        {"name": "Capitol", "short_name": "Capitol", "number": "102"},
+        {"name": "Dunbar", "short_name": "Dunbar", "number": "104"},
+        {"name": "Edison", "short_name": "Edison", "number": "105"},
+        {"name": "Emerson", "short_name": "Emerson", "number": "106"},
+        {"name": "Garfield", "short_name": "Garfield", "number": "108"},
+        {"name": "Magnet", "short_name": "Magnet", "number": "109"},
+        {"name": "Heard", "short_name": "Heard", "number": "112"},
+        {"name": "Herrera", "short_name": "Herrera", "number": "113"},
+        {"name": "Kenilworth", "short_name": "Kenilworth", "number": "115"},
+        {"name": "Lowell", "short_name": "Lowell", "number": "118"},
+        {"name": "Monterey Park", "short_name": "Monterey Park", "number": "121"},
+        {"name": "Shaw Montessori", "short_name": "Shaw", "number": "123"},
+        {"name": "Faith North", "short_name": "Faith North", "number": "130"},
+        {"name": "Emerson Court", "short_name": "Emerson Court", "number": "127"},
+        {"name": "Plant Services", "short_name": "Plant Services", "number": "128"},
+    ]
+
+    for location in locations:
+        loc = Location.objects.create(name=location["name"], short_name=location["short_name"], location_number=location["number"])
+        loc.save()
+
+    # Parse TalentEd
+    # get_talented_xml()
+    parse_hires()
 
     # TEMP: Get tharris user to add to everything
     tharris = User.objects.get(username="tharris")

@@ -12,6 +12,7 @@ router.register(r'department', views.DepartmentViewSet)
 router.register(r'position-type', views.PositionTypeViewSet)
 router.register(r'employee-no-workflow', views.EmployeeNoWorkflowViewSet, 'employee-no-workflow')
 router.register(r'person', views.PersonViewSet)
+router.register(r'position-from-person/(?P<person_id>[0-9]+)', views.PositionFromPersonViewSet, "position-from-person")
 
 urlpatterns = [
     url(r'^', include(router.urls)),
