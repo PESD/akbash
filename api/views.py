@@ -57,3 +57,11 @@ class DepartmentViewSet(viewsets.ModelViewSet):
 class PositionTypeViewSet(viewsets.ModelViewSet):
     queryset = PositionType.objects.all()
     serializer_class = PositionTypeSerializer
+
+
+class PositionFromPersonViewSet(viewsets.ModelViewSet):
+    serializer_class = PositionSerializer
+
+    def get_queryset(self):
+        person_id = self.request.parser_context['kwargs']['person_id']
+        return Position.objects.filter(person__id=person_id)

@@ -51,6 +51,7 @@ class PersonSerializer(serializers.ModelSerializer):
         fields = (
             "api_url",
             "id",
+            "type",
             "first_name",
             "last_name",
             "middle_name",
@@ -125,6 +126,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
         fields = (
             "api_url",
             "id",
+            "type",
             "employee_id",
             "first_name",
             "last_name",
@@ -306,6 +308,10 @@ class PositionSerializer(serializers.ModelSerializer):
         fields = (
             "api_url",
             "id",
+            "title",
+            "person",
+            "last_updated_date",
+            "last_updated_by",
             "location",
             "department",
             "position_type",

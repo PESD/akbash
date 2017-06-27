@@ -1,7 +1,8 @@
 import xml.etree.ElementTree as ET
-from .models import Person, Employee, update_field
+from .models import Person, Employee, Position, Location, update_field
 from datetime import date
 import os
+from django.core.exceptions import ObjectDoesNotExist
 
 
 # Django doesn't allow null strings, so must convert any None objects
@@ -72,6 +73,9 @@ def parse_hires():
         else:
             hire = Employee.objects.get(talented_id=tid)
 
+        # Type
+        update_field(hire, "type", "Employee")
+
         # Name
         name_info = emp_info.find("PersonName")
         update_field(hire, "first_name", get_xml_text(name_info.find("GivenName")))
@@ -117,3 +121,19 @@ def parse_hires():
         hire_date = date_from_talented(hire_string)
         if hire_date != date(1900, 1, 1):
             update_field(hire, "marked_as_hired", hire_date)
+
+        # Position
+        if not Position.position_exists_for_user(hire):
+            job_info = newhire.find("Job")
+            title = get_xml_text(job_info.find("Title"))
+            job_location = job_info.find("JobLocation")
+            location_tag = job_location.find("Location")
+            location_number = get_xml_text(location_tag.find("LocationCode"))
+            # print(location_number)
+            try:
+                location = Location.objects.get(location_number=location_number)
+                position = Position.objects.create(person=hire, location=location, title=title, is_primary=True, last_updated_by="TalentEd", last_updated_date=date.today())
+                position.save()
+            except ObjectDoesNotExist:
+                position = Position.objects.create(person=hire, title=title, is_primary=True, last_updated_by="TalentEd", last_updated_date=date.today())
+                position.save()
