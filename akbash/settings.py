@@ -195,6 +195,14 @@ for po, v in config['default database'].items():
 # Talented API key
 TALENTED_API_KEY = config['secrets']['TALENTED_API_KEY']
 
+# Email settings (use private settings file)
+if 'email' in config:
+    EMAIL_HOST = config['email']['EMAIL_HOST']
+    EMAIL_PORT = config['email']['EMAIL_PORT']
+    EMAIL_HOST_USER = config['email']['EMAIL_HOST_USER']
+    EMAIL_HOST_PASSWORD = config['email']['EMAIL_HOST_PASSWORD']
+    EMAIL_USE_TLS = config['email']['EMAIL_USE_TLS']
+
 # REST Framework authentication settings. Defaulting to JWT Auth.
 # See: http://getblimp.github.io/django-rest-framework-jwt/
 REST_FRAMEWORK = {

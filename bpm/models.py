@@ -1,4 +1,6 @@
 from django.db import models
+from django.core.mail import send_mail
+from django.conf import settings
 from api.models import Person, Employee
 from django.contrib.auth.models import User
 from bpm.visions_helper import VisionsHelper
@@ -127,6 +129,7 @@ class WorkflowActivity(models.Model):
     def set_workflow_activity_active(self):
         self.status = "Active"
         self.save()
+        self.email_users()
 
     def advance_workflow_activity(self):
         # Make sure all tasks are complete. If not, immediately stop.
@@ -142,9 +145,14 @@ class WorkflowActivity(models.Model):
             # child_workflow_activity_set = WorkflowActivity.objects.filter(activity=activity, workflow=workflow)
             child_workflow_activity_set = workflow.workflow_activites.filter(activity=activity)
             for child_workflow_activity in child_workflow_activity_set:
-                child_workflow_activity.status = "Active"
-                child_workflow_activity.save()
+                child_workflow_activity.set_workflow_activity_active()
         return True
+
+    def email_users(self):
+        subject = "Action required: " + self.activity.name
+        for user in self.activity.users.all():
+            body = "Hello, " + user.username + " you have a new task to complete."
+            send_mail(subject, body, settings.EMAIL_HOST_USER, [user.email], fail_silently=True)
 
 
 class TaskWorker:
