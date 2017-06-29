@@ -121,7 +121,9 @@ class RestTestCase(TestCase):
         data = JSONParser().parse(stream)
         self.assertEqual(data["first_name"], "Ned")
         # Make sure the Vendor information came over properly
-        self.assertEqual(data["vendor"]["vendor_type"], "castle")
-        self.assertEqual(data["vendor"]["name"], "Winterfell")
+        vendor = Vendor.objects.get(id=data["vendor"])
+        self.assertEqual(data["vendor"], vendor.id)
+        self.assertEqual(vendor.name, "Winterfell")
+        self.assertEqual(vendor.vendor_type.name, "castle")
         # Check services for good measure
         self.assertEqual(data["services"][0]["user_info"], "nstark")

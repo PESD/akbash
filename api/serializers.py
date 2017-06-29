@@ -199,13 +199,14 @@ class ContractorSerializer(serializers.ModelSerializer):
     ad_account_created_by = serializers.SlugRelatedField(many=False, read_only=True, slug_field='username')
     # Will pull in any Service usernames (Visions, Synergy, etc)
     services = ServiceSerializer(many=True, read_only=True)
-    vendor = VendorSerializer(many=False, read_only=True)
+    # vendor = VendorSerializer(many=False, read_only=True)
 
     class Meta:
         model = Contractor
         fields = (
             "api_url",
             "id",
+            "type",
             "first_name",
             "last_name",
             "middle_name",
@@ -299,7 +300,7 @@ class PositionTypeSerializer(serializers.ModelSerializer):
 class PositionSerializer(serializers.ModelSerializer):
     # Expose the URL to access position-detail
     api_url = serializers.HyperlinkedIdentityField(view_name='position-detail', format='html')
-    location = LocationSerializer(many=False, read_only=True)
+    location = LocationSerializer(many=False, read_only=False)
     department = DepartmentSerializer(many=False, read_only=True)
     position_type = PositionTypeSerializer(many=False, read_only=True)
 
@@ -316,3 +317,13 @@ class PositionSerializer(serializers.ModelSerializer):
             "department",
             "position_type",
         )
+
+    def create(self, validated_data):
+        print(validated_data)
+        location_data = validated_data.pop('location')
+        location_number = location_data["location_number"]
+        location = Location.objects.get(location_number=location_number)
+        position = Position.objects.create(**validated_data)
+        position.location = location
+        position.save()
+        return position

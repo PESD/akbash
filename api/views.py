@@ -1,5 +1,13 @@
-from api.models import Employee, Contractor, Position, Location, Department, PositionType, Person
-from api.serializers import EmployeeSerializer, ContractorSerializer, PositionSerializer, LocationSerializer, DepartmentSerializer, PositionTypeSerializer, PersonSerializer
+from api.models import Employee, Contractor, Position, Location, Department, PositionType, Person, Vendor
+from api.serializers import (EmployeeSerializer,
+                             ContractorSerializer,
+                             PositionSerializer,
+                             LocationSerializer,
+                             DepartmentSerializer,
+                             PositionTypeSerializer,
+                             PersonSerializer,
+                             VendorSerializer,
+                             )
 from bpm.models import Workflow
 from rest_framework.decorators import api_view
 from rest_framework.reverse import reverse
@@ -32,6 +40,11 @@ class EmployeeNoWorkflowViewSet(viewsets.ModelViewSet):
         id__in=Workflow.objects.all().values_list('person')
     )
     serializer_class = EmployeeSerializer
+
+
+class VendorViewSet(viewsets.ModelViewSet):
+    queryset = Vendor.objects.all()
+    serializer_class = VendorSerializer
 
 
 class ContractorViewSet(viewsets.ModelViewSet):

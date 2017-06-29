@@ -1,5 +1,5 @@
 from bpm.models import Process, Task, Activity, Workflow, WorkflowActivity
-from api.models import Person, Employee, Contractor, Location, Position, PositionType
+from api.models import Person, Employee, Contractor, Location, Position, PositionType, Vendor, VendorType
 from django.contrib.auth.models import User
 from api.xml_parse import parse_hires
 from bpm.xml_request import get_talented_xml
@@ -17,6 +17,8 @@ def run():
     Contractor.objects.all().delete()
     PositionType.objects.all().delete()
     Location.objects.all().delete()
+    Vendor.objects.all().delete()
+    VendorType.objects.all().delete()
 
     # Locations
     locations = [
@@ -42,6 +44,12 @@ def run():
         loc = Location.objects.create(name=location["name"], short_name=location["short_name"], location_number=location["number"])
         loc.save()
 
+    # Vendors
+    vt = VendorType.objects.create(name="Retire/Rehire")
+    vt.save()
+    v = Vendor.objects.create(name="Educational Services, Inc.", short_name="ESI", vendor_type=vt)
+    v.save()
+
     # Parse TalentEd
     # get_talented_xml()
     parse_hires()
@@ -53,7 +61,14 @@ def run():
     new_hire_process = Process.objects.create(name="New Hire Process")
     new_hire_process.save()
 
+    contractor_process = Process.objects.create(name="New Contractor Process")
+    contractor_process.save()
+
     # Create Tasks
+    # Contractor Step 1
+    select_contractor_services_task = Task.objects.create(name="Select Contractor Services", task_function="task_select_contractor_services", task_type="User")
+    select_contractor_services_task.save()
+
     # Step 1
     create_epar_task = Task.objects.create(name="Create ePAR", task_function="task_set_epar_id", task_type="Observer")
     create_epar_task.save()
@@ -89,34 +104,57 @@ def run():
     badge_created_task.save()
 
     # Create Activities
-    # Step 7
+    # Step 7 - Badge Created
     badge_created_activity = Activity.objects.create(name="Employee Badge Printed", process=new_hire_process)
     badge_created_activity.tasks.add(badge_created_task)
     badge_created_activity.users.add(tharris)
     badge_created_activity.save()
 
-    # Step 6
+    contractor_badge_created_activity = Activity.objects.create(name="Contractor Badge Printed", process=contractor_process)
+    contractor_badge_created_activity.tasks.add(badge_created_task)
+    contractor_badge_created_activity.users.add(tharris)
+    contractor_badge_created_activity.save()
+
+    # Step 6 - TCP Fingerprinted
     tcp_fingerprint_employee_activity = Activity.objects.create(name="TCP Fingerprint Employee", process=new_hire_process)
     tcp_fingerprint_employee_activity.tasks.add(tcp_fingerprint_employee_task)
     tcp_fingerprint_employee_activity.users.add(tharris)
     tcp_fingerprint_employee_activity.children.add(badge_created_activity)
     tcp_fingerprint_employee_activity.save()
 
-    # Step 5
+    tcp_fingerprint_contractor_activity = Activity.objects.create(name="TCP Fingerprint Contractor", process=contractor_process)
+    tcp_fingerprint_contractor_activity.tasks.add(tcp_fingerprint_employee_task)
+    tcp_fingerprint_contractor_activity.users.add(tharris)
+    tcp_fingerprint_contractor_activity.children.add(contractor_badge_created_activity)
+    tcp_fingerprint_contractor_activity.save()
+
+    # Step 5 - Onboarded
     onboard_employee_activity = Activity.objects.create(name="Onboard Employee", process=new_hire_process)
     onboard_employee_activity.tasks.add(onboard_employee_task)
     onboard_employee_activity.users.add(tharris)
     onboard_employee_activity.children.add(tcp_fingerprint_employee_activity)
     onboard_employee_activity.save()
 
-    # Step 4
+    onboard_contractor_activity = Activity.objects.create(name="Onboard Contractor", process=contractor_process)
+    onboard_contractor_activity.tasks.add(onboard_employee_task)
+    onboard_contractor_activity.users.add(tharris)
+    onboard_contractor_activity.children.add(tcp_fingerprint_contractor_activity)
+    onboard_contractor_activity.save()
+
+    # Step 4 - TCP Account
     create_tcp_account_activity = Activity.objects.create(name="Create TCP Account", process=new_hire_process)
     create_tcp_account_activity.tasks.add(create_tcp_account_task)
     create_tcp_account_activity.users.add(tharris)
     create_tcp_account_activity.children.add(onboard_employee_activity)
     create_tcp_account_activity.save()
 
-    # Step 3
+    create_contractor_tcp_account_activity = Activity.objects.create(name="Create Contractor TCP Account", process=contractor_process)
+    create_contractor_tcp_account_activity.tasks.add(create_tcp_account_task)
+    create_contractor_tcp_account_activity.users.add(tharris)
+    create_contractor_tcp_account_activity.children.add(onboard_contractor_activity)
+    create_contractor_tcp_account_activity.save()
+
+    # Step 3 - Parallel: Assign to Position (Employee Only), Synergy Account, AD Account
     assign_to_position_activity = Activity.objects.create(name="Assign Employee to Visions Position", process=new_hire_process)
     assign_to_position_activity.tasks.add(assign_to_position_task)
     assign_to_position_activity.users.add(tharris)
@@ -128,10 +166,21 @@ def run():
     create_ad_account_activity.users.add(tharris)
     create_ad_account_activity.save()
 
+    create_contractor_ad_account_activity = Activity.objects.create(name="Create Contractor Active Directory Account", process=contractor_process)
+    create_contractor_ad_account_activity.tasks.add(create_ad_account_task)
+    create_contractor_ad_account_activity.users.add(tharris)
+    create_contractor_ad_account_activity.children.add(create_contractor_tcp_account_activity)
+    create_contractor_ad_account_activity.save()
+
     create_synergy_account_activity = Activity.objects.create(name="Create Synergy Account", process=new_hire_process)
     create_synergy_account_activity.tasks.add(create_synergy_account_task)
     create_synergy_account_activity.users.add(tharris)
     create_synergy_account_activity.save()
+
+    create_contractor_synergy_account_activity = Activity.objects.create(name="Create Contractor Synergy Account", process=contractor_process)
+    create_contractor_synergy_account_activity.tasks.add(create_synergy_account_task)
+    create_contractor_synergy_account_activity.users.add(tharris)
+    create_contractor_synergy_account_activity.save()
 
     # Step 2
     create_visions_record_activity = Activity.objects.create(name="Create Employee Maintenance Record", process=new_hire_process)
@@ -149,6 +198,17 @@ def run():
     create_epar_activity.children.add(create_visions_record_activity)
     create_epar_activity.save()
 
+    # Contractor Step 1
+    select_contractor_services = Activity.objects.create(name="Select Contractor Services", process=contractor_process)
+    select_contractor_services.tasks.add(select_contractor_services_task)
+    select_contractor_services.users.add(tharris)
+    select_contractor_services.children.add(create_contractor_synergy_account_activity)
+    select_contractor_services.children.add(create_contractor_ad_account_activity)
+    select_contractor_services.save()
+
     # Add Start Activities to Processes
     new_hire_process.start_activity = create_epar_activity
     new_hire_process.save()
+
+    contractor_process.start_activity = select_contractor_services
+    contractor_process.save()
