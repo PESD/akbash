@@ -1,7 +1,9 @@
 from django.db import models
 from django.core.mail import send_mail
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
 from api.models import Person, Employee
+from api import ldap
 from django.contrib.auth.models import User
 from bpm.visions_helper import VisionsHelper
 
@@ -179,6 +181,12 @@ class TaskWorker:
                 return True
             return False
 
+        def get_user_or_false(username):
+            try:
+                return User.objects.get(username=username)
+            except ObjectDoesNotExist:
+                return False
+
         def task_update_name(**kwargs):
             workflow_activity = kwargs["workflow_activity"]
             first_name = kwargs["first_name"]
@@ -218,3 +226,18 @@ class TaskWorker:
             employee.visions_id = visions_id
             employee.save()
             return (True, "Success")
+
+        def task_check_ad(**kwargs):
+            workflow_task = kwargs["workflow_task"]
+            employee = TaskWorker.get_employee_from_workflow_task(workflow_task)
+            ad_username = ldap.get_ad_username_from_visions_id(employee.visions_id)
+            user = TaskWorker.get_user_or_false(kwargs["username"])
+            if not user:
+                return (False, "Invalid User")
+            if not ad_username:
+                return (False, "Active Directory user not found")
+            did_update = employee.update_ad_service(ad_username, user)
+            if did_update:
+                return (True, "Success")
+            else:
+                return (False, "Unknown Error")

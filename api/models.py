@@ -105,6 +105,28 @@ class Person(models.Model):
         self.save()
         return self.badge_number
 
+    def update_ad_service(self, ad_username, created_by):
+        self.is_ad_account_created = True
+        self.ad_account_created_by = created_by
+        if self.services.filter(type="ad"):
+            ad_service = self.services.get(type="ad")
+            ad_service.user_info = ad_username
+            ad_service.save()
+        else:
+            ad_service = self.services.create(type="ad", person=self, user_info=ad_username)
+            ad_service.save()
+        if ad_service.user_info == ad_username:
+            self.save()
+            return True
+        return False
+
+    def get_ad_username_or_blank(self):
+        try:
+            ad_service = self.services.get(type="ad")
+            return ad_service.user_info
+        except ObjectDoesNotExist:
+            return ""
+
 
 class Employee(Person):
     employee_id = models.CharField(max_length=7, blank=True)

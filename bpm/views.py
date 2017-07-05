@@ -21,6 +21,7 @@ from bpm.serializers import (UserSerializer,
                              TaskSerializer,
                              TaskEparSerializer,
                              TaskVisionsIDSerializer,
+                             TaskEmployeeADSerializer,
                              )
 from bpm.models import (Process,
                         Activity,
@@ -205,6 +206,17 @@ def task_set_visions_id_view(request):
     if request.method == 'POST':
         data = JSONParser().parse(request)
         serializer = TaskVisionsIDSerializer(data=data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return JsonResponse(serializer.data, status=201)
+        return JsonResponse(serializer.errors, status=400)
+
+
+@csrf_exempt
+def task_check_employee_ad_view(request):
+    if request.method == 'POST':
+        data = JSONParser().parse(request)
+        serializer = TaskEmployeeADSerializer(data=data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return JsonResponse(serializer.data, status=201)
