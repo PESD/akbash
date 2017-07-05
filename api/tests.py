@@ -1,4 +1,5 @@
 from django.test import TestCase
+from django.contrib.auth.models import User
 from api.models import Person, Employee, update_field, Service, Vendor, VendorType, Contractor
 from api.xml_parse import parse_hires
 from bpm.xml_request import get_talented_xml
@@ -20,6 +21,8 @@ class PersonTestCase(TestCase):
         arya = Person.objects.create(first_name="Arya", last_name="Stark")
         jon.employee_id = "SN12345"
         jon.talented_id = 12345
+        sansa_user = User.objects.create_user('sstark', 'sstark@winterfell.com', 'lady')
+        sansa_user.save()
         jon.save()
         arya.save()
 
@@ -60,6 +63,16 @@ class PersonTestCase(TestCase):
         self.assertEqual(emp3.first_name, "Jennifer")
         self.assertIs(emp3.race_white, True)
         self.assertIs(emp.race_asian, False)
+
+    def test_services(self):
+        arya = Person.objects.get(first_name="Arya")
+        sansa = User.objects.get(username="sstark")
+        arya.update_ad_service("arya.stark", sansa)
+        ad_arya = arya.services.get(type='ad')
+        self.assertEqual(ad_arya.user_info, 'arya.stark')
+        arya.update_ad_service("a.stark", sansa)
+        ad_arya = arya.services.get(type='ad')
+        self.assertEqual(ad_arya.user_info, 'a.stark')
 
 
 class RestTestCase(TestCase):

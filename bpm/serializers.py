@@ -184,3 +184,27 @@ class TaskVisionsIDSerializer(serializers.Serializer):
             for workflow_activity in workflow_activities:
                 workflow_activity.advance_workflow_activity()
         return {"workflow_task_id": workflow_task.id, "visions_id": visions_id, "status": status, "message": message}
+
+
+class TaskEmployeeADSerializer(serializers.Serializer):
+    workflow_task_id = serializers.IntegerField()
+    ad_username = serializers.CharField(max_length=50, allow_blank=True)
+    username = serializers.CharField(max_length=50, allow_blank=True)
+    status = serializers.BooleanField()
+    message = serializers.CharField(max_length=200, allow_blank=True)
+
+    def create(self, validated_data):
+        workflow_task = WorkflowTask.objects.get(pk=validated_data["workflow_task_id"])
+        username = validated_data["username"]
+        args = {
+            "workflow_task": workflow_task,
+            "username": username
+        }
+        status, message = workflow_task.run_task(args)
+        if workflow_task.status == "Complete":
+            employee = get_employee_from_workflow_task(workflow_task)
+            ad_username = employee.get_ad_username_or_blank()
+            workflow_activities = workflow_task.workflowactivity_set.all()
+            for workflow_activity in workflow_activities:
+                workflow_activity.advance_workflow_activity()
+        return {"workflow_task_id": workflow_task.id, "ad_username": ad_username, "username": username, "status": status, "message": message}
