@@ -227,7 +227,7 @@ class TaskWorker:
             employee.save()
             return (True, "Success")
 
-        def task_check_employee_ad(**kwargs):
+        def task_check_ad(**kwargs):
             workflow_task = kwargs["workflow_task"]
             employee = TaskWorker.get_employee_from_workflow_task(workflow_task)
             ad_username = ldap.get_ad_username_from_visions_id(employee.visions_id)

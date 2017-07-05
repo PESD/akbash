@@ -201,8 +201,9 @@ class TaskEmployeeADSerializer(serializers.Serializer):
             "username": username
         }
         status, message = workflow_task.run_task(args)
+        ad_username = ""
         if workflow_task.status == "Complete":
-            employee = get_employee_from_workflow_task(workflow_task)
+            employee = TaskWorker.get_employee_from_workflow_task(workflow_task)
             ad_username = employee.get_ad_username_or_blank()
             workflow_activities = workflow_task.workflowactivity_set.all()
             for workflow_activity in workflow_activities:
