@@ -29,4 +29,5 @@ urlpatterns = [
     url(r'^task_set_epar_id/$', views.task_set_epar_id_view),
     url(r'^task_set_visions_id/$', views.task_set_visions_id_view),
     url(r'^task_check_employee_ad/$', views.task_check_employee_ad_view),
+    url(r'^task_update_position/$', views.task_update_position_view),
 ]

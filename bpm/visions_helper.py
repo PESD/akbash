@@ -21,6 +21,19 @@ class VisionsEmployee:
         self.name = name
 
 
+class VisionsPosition:
+    id = None
+    description = None
+    dac = None
+    position_ranking = None
+
+    def __init__(self, id, description, dac, position_ranking):
+        self.id = id
+        self.description = description
+        self.dac = dac
+        self.position_ranking = position_ranking
+
+
 class VisionsHelper:
     def verify_epar(epar_id):
         vsquery = visions.Select("ID", "viwHPEmpPARs", ID=epar_id)
@@ -60,3 +73,14 @@ class VisionsHelper:
             employee = VisionsEmployee(row["ID"], row["Name"])
             employees.append(employee)
         return employees
+
+    def get_positions_for_employee(visions_id):
+        db_positions = visions.Viwprpositions(
+            "ID, Description, DAC, PositionRankingType",
+            "tblPREmployeesID={} AND RecordType='Position' AND PositionType='Open'".format(visions_id)
+        )
+        positions = []
+        for row in db_positions.fetch_all_dict():
+            position = VisionsPosition(row["ID"], row["Description"], row["DAC"], row["PositionRankingType"])
+            positions.append(position)
+        return positions

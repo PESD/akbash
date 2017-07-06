@@ -209,3 +209,21 @@ class TaskEmployeeADSerializer(serializers.Serializer):
             for workflow_activity in workflow_activities:
                 workflow_activity.advance_workflow_activity()
         return {"workflow_task_id": workflow_task.id, "ad_username": ad_username, "username": username, "status": status, "message": message}
+
+
+class TaskUpdateEmployeePosition(serializers.Serializer):
+    workflow_task_id = serializers.IntegerField()
+    status = serializers.BooleanField()
+    message = serializers.CharField(max_length=200, allow_blank=True)
+
+    def create(self, validated_data):
+        workflow_task = WorkflowTask.objects.get(pk=validated_data["workflow_task_id"])
+        args = {
+            "workflow_task": workflow_task,
+        }
+        status, message = workflow_task.run_task(args)
+        if workflow_task.status == "Complete":
+            workflow_activities = workflow_task.workflowactivity_set.all()
+            for workflow_activity in workflow_activities:
+                workflow_activity.advance_workflow_activity()
+        return {"workflow_task_id": workflow_task.id, "status": status, "message": message}

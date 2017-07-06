@@ -1,9 +1,11 @@
+from datetime import date
 from django.db import models
 from django.core.mail import send_mail
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
-from api.models import Person, Employee
+from api.models import Person, Employee, Position
 from api import ldap
+from api import visions
 from django.contrib.auth.models import User
 from bpm.visions_helper import VisionsHelper
 
@@ -224,6 +226,7 @@ class TaskWorker:
                 return (False, "Visions Employee already linked to an Employee")
             employee = TaskWorker.get_employee_from_workflow_task(workflow_task)
             employee.visions_id = visions_id
+            employee.employee_id = visions.Viwpremployees().EmployeeID(visions_id)
             employee.save()
             return (True, "Success")
 
@@ -241,3 +244,37 @@ class TaskWorker:
                 return (True, "Success")
             else:
                 return (False, "Unknown Error")
+
+        def task_update_position(**kwargs):
+            workflow_task = kwargs["workflow_task"]
+            employee = TaskWorker.get_employee_from_workflow_task(workflow_task)
+            visions_positions = VisionsHelper.get_positions_for_employee(employee.visions_id)
+            if not visions_positions:
+                return (False, "No positions found")
+            secondary_positions = []
+            primary_position = employee.positions.get(is_primary=True)
+            did_update = False
+            for position in visions_positions:
+                if position.position_ranking == "Primary":
+                    primary_position.title = position.description
+                    primary_position.visions_position_id = position.id
+                    primary_position.last_updated_by = "Visions"
+                    primary_position.last_updated_date = date.today()
+                    primary_position.save()
+                    did_update = True
+                else:
+                    secondary_positions.append(position)
+            if secondary_positions:
+                for secondary_position in secondary_positions:
+                    new_position = Position.objects.create(
+                        person=employee,
+                        title=secondary_position.description,
+                        is_primary=False,
+                        last_updated_by="Visions",
+                        last_updated_date=date.today()
+                    )
+                    new_position.save()
+                    did_update = True
+            if did_update:
+                return (True, "Success")
+            return (False, "Nothing Updated")

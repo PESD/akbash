@@ -201,6 +201,7 @@ class Position(models.Model):
     position_type = models.ForeignKey(PositionType, on_delete=models.SET_NULL, null=True)
     title = models.CharField(max_length=255, blank=True)
     is_primary = models.BooleanField(default=False)
+    visions_position_id = models.IntegerField(null=True)
     last_updated_date = models.DateTimeField(null=True, blank=True)
     last_updated_by = models.CharField(max_length=255, blank=True)
 
