@@ -213,6 +213,15 @@ class Position(models.Model):
             return False
 
 
+# Comments
+
+class Comment(models.Model):
+    person = models.ForeignKey(Person, on_delete=models.CASCADE)
+    text = models.TextField(blank=True)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    created_date = models.DateTimeField(auto_now_add=True)
+
+
 # Function for updating data. Use this instead of updating objects directly
 # in order to potentially capture in a future changelog/audit model.
 def update_field(data_object, column, new_value):

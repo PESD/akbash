@@ -1,4 +1,4 @@
-from api.models import Employee, Contractor, Position, Location, Department, PositionType, Person, Vendor
+from api.models import Employee, Contractor, Position, Location, Department, PositionType, Person, Vendor, Comment
 from api.serializers import (EmployeeSerializer,
                              ContractorSerializer,
                              PositionSerializer,
@@ -7,6 +7,7 @@ from api.serializers import (EmployeeSerializer,
                              PositionTypeSerializer,
                              PersonSerializer,
                              VendorSerializer,
+                             CommentSerializer,
                              )
 from bpm.models import Workflow
 from rest_framework.decorators import api_view
@@ -78,3 +79,8 @@ class PositionFromPersonViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         person_id = self.request.parser_context['kwargs']['person_id']
         return Position.objects.filter(person__id=person_id)
+
+
+class CommentViewSet(viewsets.ModelViewSet):
+    queryset = Comment.objects.all()
+    serializer_class = CommentSerializer
