@@ -14,6 +14,9 @@ router.register(r'position-type', views.PositionTypeViewSet)
 router.register(r'employee-no-workflow', views.EmployeeNoWorkflowViewSet, 'employee-no-workflow')
 router.register(r'person', views.PersonViewSet)
 router.register(r'position-from-person/(?P<person_id>[0-9]+)', views.PositionFromPersonViewSet, "position-from-person")
+router.register(r'comment', views.CommentViewSet)
+router.register(r'comment-from-person/(?P<person_id>[0-9]+)', views.CommentFromPersonViewSet, "comment-from-person")
+router.register(r'user', views.UserViewSet)
 
 urlpatterns = [
     url(r'^', include(router.urls)),

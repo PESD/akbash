@@ -1,5 +1,18 @@
 from rest_framework import serializers
-from api.models import Employee, Service, Contractor, Vendor, Position, Location, Department, PositionType, Person
+from api.models import Employee, Service, Contractor, Vendor, Position, Location, Department, PositionType, Person, Comment
+from django.contrib.auth.models import User
+
+
+class UserSerializer(serializers.ModelSerializer):
+    api_url = serializers.HyperlinkedIdentityField(view_name='user-detail', format='html')
+
+    class Meta:
+        model = User
+        fields = (
+            "api_url",
+            "id",
+            "username",
+        )
 
 
 # As of now, Services are never directly exposed through REST
@@ -327,3 +340,16 @@ class PositionSerializer(serializers.ModelSerializer):
         position.location = location
         position.save()
         return position
+
+
+class CommentSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Comment
+        fields = (
+            "id",
+            "person",
+            "text",
+            "user",
+            "created_date",
+        )
