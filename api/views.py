@@ -8,8 +8,10 @@ from api.serializers import (EmployeeSerializer,
                              PersonSerializer,
                              VendorSerializer,
                              CommentSerializer,
+                             UserSerializer,
                              )
 from bpm.models import Workflow
+from django.contrib.auth.models import User
 from rest_framework.decorators import api_view
 from rest_framework.reverse import reverse
 from rest_framework.response import Response
@@ -84,3 +86,16 @@ class PositionFromPersonViewSet(viewsets.ModelViewSet):
 class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
+
+
+class CommentFromPersonViewSet(viewsets.ModelViewSet):
+    serializer_class = CommentSerializer
+
+    def get_queryset(self):
+        person_id = self.request.parser_context['kwargs']['person_id']
+        return Comment.objects.filter(person__id=person_id)
+
+
+class UserViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer

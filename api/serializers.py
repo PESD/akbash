@@ -343,7 +343,6 @@ class PositionSerializer(serializers.ModelSerializer):
 
 
 class CommentSerializer(serializers.ModelSerializer):
-    user = UserSerializer(many=False, read_only=True)
 
     class Meta:
         model = Comment
