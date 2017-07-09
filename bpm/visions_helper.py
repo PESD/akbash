@@ -84,3 +84,13 @@ class VisionsHelper:
             position = VisionsPosition(row["ID"], row["Description"], row["DAC"], row["PositionRankingType"])
             positions.append(position)
         return positions
+
+    def get_tcp_id_for_employee(visions_id):
+        db_result = visions.Viwprpositions(
+            "TCIJob",
+            "tblPREmployeesID={}".format(visions_id)
+        )
+        tcp_id = db_result.fetch_value()
+        if tcp_id:
+            return tcp_id
+        return False
