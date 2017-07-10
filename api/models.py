@@ -79,6 +79,7 @@ class Person(models.Model):
     is_desk_phone_created = models.BooleanField(default=False)
     desk_phone_created_date = models.DateTimeField(null=True, blank=True)
     desk_phone_created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="desk_phone_created_user")
+    start_date = models.DateField(null=True, blank=True)
 
     # Convieniece function to verify if an Employee exists by talented_id
     @staticmethod
