@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 from django.db import models
 from django.core.mail import send_mail
 from django.conf import settings
@@ -278,3 +278,44 @@ class TaskWorker:
             if did_update:
                 return (True, "Success")
             return (False, "Nothing Updated")
+
+        def task_set_tcp_id(**kwargs):
+            workflow_task = kwargs["workflow_task"]
+            employee = TaskWorker.get_employee_from_workflow_task(workflow_task)
+            tcp_id = VisionsHelper.get_tcp_id_for_employee(employee.visions_id)
+            if not tcp_id:
+                return (False, "No Time Clock Plus record found in Visions")
+            else:
+                employee.tcp_id = tcp_id
+                employee.save()
+                return (True, "Success")
+
+        def task_is_onboarded(**kwargs):
+            workflow_task = kwargs["workflow_task"]
+            user = TaskWorker.get_user_or_false(kwargs["username"])
+            person = TaskWorker.get_person_from_workflow_task(workflow_task)
+            person.is_onboarded = True
+            person.onboarded_by = user
+            person.onboarded_date = datetime.now()
+            person.save()
+            return (True, "Success")
+
+        def task_is_fingerprinted(**kwargs):
+            workflow_task = kwargs["workflow_task"]
+            user = TaskWorker.get_user_or_false(kwargs["username"])
+            person = TaskWorker.get_person_from_workflow_task(workflow_task)
+            person.is_tcp_fingerprinted = True
+            person.tcp_fingerprinted_by = user
+            person.tcp_fingerprinted_date = datetime.now()
+            person.save()
+            return (True, "Success")
+
+        def task_is_badge_created(**kwargs):
+            workflow_task = kwargs["workflow_task"]
+            user = TaskWorker.get_user_or_false(kwargs["username"])
+            person = TaskWorker.get_person_from_workflow_task(workflow_task)
+            person.is_badge_created = True
+            person.badge_created_by = user
+            person.badge_created_date = datetime.now()
+            person.save()
+            return (True, "Success")

@@ -23,6 +23,8 @@ from bpm.serializers import (UserSerializer,
                              TaskVisionsIDSerializer,
                              TaskEmployeeADSerializer,
                              TaskUpdateEmployeePosition,
+                             TaskGenericCheck,
+                             TaskGenericTodo,
                              )
 from bpm.models import (Process,
                         Activity,
@@ -229,6 +231,28 @@ def task_update_position_view(request):
     if request.method == 'POST':
         data = JSONParser().parse(request)
         serializer = TaskUpdateEmployeePosition(data=data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return JsonResponse(serializer.data, status=201)
+        return JsonResponse(serializer.errors, status=400)
+
+
+@csrf_exempt
+def task_generic_check_view(request):
+    if request.method == 'POST':
+        data = JSONParser().parse(request)
+        serializer = TaskGenericCheck(data=data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return JsonResponse(serializer.data, status=201)
+        return JsonResponse(serializer.errors, status=400)
+
+
+@csrf_exempt
+def task_generic_todo_view(request):
+    if request.method == 'POST':
+        data = JSONParser().parse(request)
+        serializer = TaskGenericTodo(data=data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return JsonResponse(serializer.data, status=201)

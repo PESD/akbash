@@ -115,6 +115,7 @@ class PersonSerializer(serializers.ModelSerializer):
             "desk_phone_created_date",
             "desk_phone_created_by",
             "services",
+            "start_date",
         )
 
 
@@ -195,6 +196,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
             "desk_phone_created_date",
             "desk_phone_created_by",
             "services",
+            "start_date",
         )
 
 
@@ -262,6 +264,7 @@ class ContractorSerializer(serializers.ModelSerializer):
             "ad_account_created_by",
             "services",
             "vendor",
+            "start_date",
         )
 
 
