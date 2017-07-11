@@ -52,19 +52,23 @@ class Job(models.Model):
     run_every = models.DurationField(
         null=True,
         blank=True,
-        help_text="Run every ___. Format: [DD] [HH:[MM:]]ss. Schedule the job" +
-                  "to repeatedly run after a time interval. Ex., Run every" +
-                  "05:00 (5 minutes)")
+        help_text="Schedule a reoccuring job that runs every time " +
+                  "interval. Ex., Run every 5 minutes. Submit a " +
+                  "timedelta object. ex., datetime.timedelta(minutes=5)")
+    # TODO: make validation to check for comma separatated list.
     run_monthly = models.CharField(
         max_length=124,
         null=True,
         blank=True,
         help_text="Comma seperated list of days of the month to run the job." +
                   " Ex., 1,15 means run on the 1st and 15th of each month.")
+    # TODO: make validation to check for date if run_monthly is set or fill in
+    # default time if no time is given and run_monthly is set.
     run_monthly_time = models.TimeField(
         null=True,
         blank=True,
         help_text="Time of day to run the monthly / days of month jobs.")
+    # TODO: same as monthly
     run_weekly = models.CharField(
         max_length=21,
         null=True,
@@ -72,10 +76,13 @@ class Job(models.Model):
         help_text="Comma seperated list of days of the week to run the job. " +
                   "Use integers for each day starting at 0 for Sunday, 1 for " +
                   "Monday, and so on to 6 for Saturday.")
+    # TODO: same as monthly
     run_weekly_time = models.TimeField(
         null=True,
         blank=True,
         help_text="Time of day to run the weekly / days of week jobs.")
+
+    """ Limit number of runs. """
     run_count_limit = models.IntegerField(
         null=True,
         blank=True,
@@ -85,6 +92,7 @@ class Job(models.Model):
                   "longer scheduled to run.")
 
     """ Limit job run to a window of time. """
+    # TODO: need validator to check for both dates.
     active_time_begin = models.TimeField(
         null=True,
         blank=True,
@@ -95,6 +103,7 @@ class Job(models.Model):
         blank=True,
         help_text="Limit job runs to a time of day window between " +
                   "active_time_begin and active_time_end.")
+    # TODO: need validator
     active_dow = models.CharField(
         max_length=21,
         null=True,
@@ -103,6 +112,7 @@ class Job(models.Model):
                   "Comma seperated list of days of the week. " +
                   "Use integers for each day starting at 0 for Sunday, 1 for" +
                   "Monday, and so on to 6 for Saturday.")
+    # TODO: need validator
     active_days = models.CharField(
         max_length=124,
         null=True,
@@ -110,6 +120,7 @@ class Job(models.Model):
         help_text="Limit job runs to the listed days. Comma seperated list of " +
                   "days of the month to limit the job run times to. Ex., 1,15 " +
                   "means limit the run to the 1st and 15th of each month.")
+    # TODO: need validator
     active_months = models.CharField(
         max_length=48,
         null=True,
@@ -117,6 +128,7 @@ class Job(models.Model):
         help_text="Limit job runs to the listed months. Comma seperated list " +
                   "of integer months to limit the job run times to. " +
                   "1 for January, 2 for February, 12 for December.")
+    # TODO: need validator to check for both dates
     active_date_begin = models.DateField(
         null=True,
         blank=True,
@@ -141,6 +153,8 @@ class Job(models.Model):
     job_running = models.BooleanField(default=False)
     # how many times the job has been run
     run_count = models.IntegerField(default=0)
+    # A generic enabled / disabled toggle so jobs can be paused
+    enable = models.BooleanField(default=True)
 
 
     def __str__(self):
@@ -152,6 +166,16 @@ class Job(models.Model):
             return "No id - " + self.name
         else:
             return "No id - Unsaved Job"
+
+
+    """ Validate before saving.
+        This does not apply to creating or updating objects in bulk. """
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super(Job, self).save(*args, **kwargs)
+        # I'm tempted to refresh the instance from the DB at this poing so that
+        # pendulum objects will be swapped out with standard datetime objects.
+        # I've decided against doing this.
 
 
     """ Shortcuts to pendulum """

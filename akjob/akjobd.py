@@ -45,15 +45,20 @@ def parse_args():
     pidfile = args.pidname
 
 
+def daemonize():
+    with daemon.DaemonContext(pidfile=pid.PidFile(pidname=pidfile, piddir=piddir)):
+        while True:
+            # run akjob.py stuff
+            sleep(60)
+
+
 def stop_daemon(pid):
     logger.info("Stopping Daemon. Sending SIGTERM to pid " + str(pid))
     os.kill(pid, 15)  # 15 = SIGTERM - "Software termination signal"
 
 def start_daemon():
     logger.info("Starting the akjob daemon.")
-    with daemon.DaemonContext(pidfile=pid.PidFile(pidname=pidfile, piddir=piddir)):
-        while True:
-            sleep(60)
+    daemonize()
 
 # To get the pid module to do this for me proved tricky. I'll get it myself.
 def get_pid_from_pidfile():
