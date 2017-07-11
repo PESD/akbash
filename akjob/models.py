@@ -1,4 +1,3 @@
-import pendulum
 from django.db import models
 
 """ I thought I needed these for field "choices" options. Don't need them.
@@ -173,20 +172,3 @@ class Job(models.Model):
     def save(self, *args, **kwargs):
         self.full_clean()
         super(Job, self).save(*args, **kwargs)
-        # I'm tempted to refresh the instance from the DB at this poing so that
-        # pendulum objects will be swapped out with standard datetime objects.
-        # I've decided against doing this.
-
-
-    """ Shortcuts to pendulum """
-    interval = pendulum.interval
-    datetime = pendulum.Pendulum
-    dtcreate = pendulum.create
-    now = pendulum.now
-    timezone = pendulum.timezone
-
-
-
-
-# class Akjobs(models.Model):
-#     pass

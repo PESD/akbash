@@ -11,4 +11,3 @@ django-cors-middleware
 django-extensions
 python-daemon
 pid
-pendulum
