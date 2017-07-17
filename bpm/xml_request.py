@@ -15,7 +15,7 @@ def get_talented_xml():
     # The date range we pull New Hires for. We need to not hard code this.
     post_vars = {
         "sStartDate": "20170101000000",
-        "sEndDate": "20170320000000",
+        "sEndDate": "20180630000000",
         "sKey": talented_key,
     }
 
