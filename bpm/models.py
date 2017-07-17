@@ -70,8 +70,15 @@ class Activity(models.Model):
 
 
 class Workflow(models.Model):
+    STATUSES = (
+        ("Complete", "Complete"),
+        ("Error", "Error"),
+        ("Active", "Active"),
+        ("Inactive", "Inactive"),
+    )
     person = models.ForeignKey(Person, on_delete=models.CASCADE)
     process = models.ForeignKey(Process, on_delete=models.CASCADE)
+    status = models.CharField(max_length=12, choices=STATUSES, default="Active")
 
     def get_current_workflow_activities(self):
         return self.workflow_activites.filter(status="Active")
@@ -81,6 +88,15 @@ class Workflow(models.Model):
         workflow_activity.save()
         workflow_activity.create_workflow_tasks()
         return workflow_activity
+
+    def check_for_completeness(self):
+        workflow_activites = self.workflow_activites.all()
+        for workflow_activity in workflow_activites:
+            if workflow_activity.status != "Complete":
+                return False
+        self.status = "Complete"
+        self.save()
+        return True
 
 
 class WorkflowTask(models.Model):
@@ -150,6 +166,7 @@ class WorkflowActivity(models.Model):
             child_workflow_activity_set = workflow.workflow_activites.filter(activity=activity)
             for child_workflow_activity in child_workflow_activity_set:
                 child_workflow_activity.set_workflow_activity_active()
+        self.workflow.check_for_completeness()
         return True
 
     def email_users(self):

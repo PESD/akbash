@@ -102,6 +102,7 @@ dbauth.py
 *.xml
 **/*.xml
 api_keys.py
+create_users.py
 
 # Test XML files
 RetrieveHiresXML.xml
