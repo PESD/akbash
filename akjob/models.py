@@ -67,8 +67,6 @@ class Job(models.Model):
     # #### Monthly ####
     monthly_days = models.ManyToManyField(DayOfMonth, through=JobMonthlyDays)
 
-    # TODO: Finish making this property. IM HERE
-    #       Test with job id 9
     @property
     def monthly_days_list(self):
         days = []
@@ -242,8 +240,9 @@ class Job(models.Model):
 
 """ Populate the DayOfMonth and DayOfWeek models
     https://docs.djangoproject.com/en/1.11/howto/initial-data/
-    The data is loaded using fixtures but here are some function if you need to
-    manually load the data.
+    The data may be loaded using the functions below or be loaded from the
+    fixtures:
+        python manage.py loaddata akjob_dayofweek.json akjob_dayofmonth.json
 """
 def load_DayOfMonth():
     for d in range(1, 32):
