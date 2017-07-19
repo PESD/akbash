@@ -1,11 +1,12 @@
 """
 Drop all tables in the default database and remove migration files.
-This is a SQL Server specific. This won't work with sqlite.
+This is a MS SQL Server specific. This won't work with sqlite.
 
 The SQL code was grabbed from here:
 http://stackoverflow.com/questions/8439650/how-to-drop-all-tables-in-a-sql-server-database
 
-I didn't know about the "flush" management command when I created this script.
+I didn't know about the "reset_db" or "flush" management command when I created
+this script. They don't work with MS SQL Server so this script is still useful.
 """
 
 import os
@@ -80,3 +81,13 @@ if prompt("\nDelete migration files?"):
 if prompt("\nMake migrations and migrate?"):
     execute_from_command_line(['', 'makemigrations'])
     execute_from_command_line(['', 'migrate'])
+
+# Load fixtures
+fixtures = [
+    "akjob_dayofweek.json",
+    "akjob_dayofmonth.json",
+]
+
+print("\nFixtures: " + str(fixtures))
+if prompt("Load fixtures?"):
+    execute_from_command_line(['', 'loaddata'] + fixtures)
