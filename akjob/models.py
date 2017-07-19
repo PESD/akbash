@@ -27,12 +27,14 @@ class JobMonthlyDays(models.Model):
             return "Job " + str(self.job.id) + " Day " + str(self.day.day)
 
 
+""" I want to see if I don't define an intermediate model.
 class JobWeeklyDays(models.Model):
     job = models.ForeignKey('Job', on_delete=models.CASCADE)
     day = models.ForeignKey(DayOfWeek, on_delete=models.CASCADE)
     def __str__(self):
         if self.job and self.day:
             return self.job.__str__() + " | " + self.day.__str__()
+"""
 
 
 class Job(models.Model):
@@ -64,7 +66,9 @@ class Job(models.Model):
                   "timedelta object. ex., datetime.timedelta(minutes=5)")
 
 
-    # #### Monthly ####
+    # ##### Monthly #####
+    # Using a set of days of the month, the job will run on each of those days.
+    # TODO: make Monthly like Weekly. remove JobMonthlyDays
     monthly_days = models.ManyToManyField(DayOfMonth, through=JobMonthlyDays)
 
     @property
@@ -89,17 +93,39 @@ class Job(models.Model):
     def monthly_days_list(self):
         JobMonthlyDays.objects.filter(job=self).delete()
 
-    # TODO: make validation to check for date if run_monthly is set or fill in
+    # TODO: make validation to check for date if monthly_days is set or fill in
     # default time if no time is given and run_monthly is set.
-    run_monthly_time = models.TimeField(
+    monthly_time = models.TimeField(
         null=True,
         blank=True,
         help_text="Time of day to run the monthly / days of month jobs.")
 
 
-    # #### Weekly ####
-    # TODO: Change weekly to be like monthly above.
-    # TODO: validation stuff, same as monthly
+    # ##### Weekly #####
+    # Using a set of days of the week, the job will run on each of those days.
+    # Use integers or DayOfWeek objects starting at 1 for Sunday, 2 for Monday,
+    # and so on to 7 for Saturday.
+    weekly_days = models.ManyToManyField(DayOfWeek)
+
+    # alternate interface with the weekly days related set using a list
+    @property
+    def weekly_days_list(self):
+        days = []
+        qs = self.weekly_days.all()
+        for i in qs:
+            days.append(i.day)
+        if days:
+            return days
+
+    @weekly_days_list.setter
+    def weekly_days_list(self, days):
+        self.weekly_days.set(days)
+
+    @weekly_days_list.deleter
+    def weekly_days_list(self):
+        self.weekly_days.clear()
+
+
     run_weekly = models.CharField(
         max_length=21,
         null=True,
