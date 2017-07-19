@@ -29,9 +29,6 @@ This module should be moved under it's own package?
 I think I could start the scheduler daemon from akbash.__init__? I guess that's
 not correct and your supposed to use AppConfig.ready()?
 
-Should I make this more fancy using daemon.runner() to enable start, stop, and
-restart commands and stuff like that?
-
 TODO:
 * Create job class
 * Create model

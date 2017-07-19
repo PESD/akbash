@@ -2,35 +2,41 @@ from django.db import models
 # import api.jobs
 # import bpm.jobs
 
-""" I thought I needed these for field "choices" options. Don't need them.
-MONTHS = (
-    (1, "January"),
-    (2, "February"),
-    (3, "March"),
-    (4, "April"),
-    (5, "May"),
-    (6, "June"),
-    (7, "July"),
-    (8, "August"),
-    (9, "September"),
-    (10, "October"),
-    (11, "November"),
-    (12, "December")
-)
 
-DAYS = (
-    (1, "Sunday"),
-    (2, "Monday"),
-    (3, "Tuesday"),
-    (4, "Wednesday"),
-    (5, "Thursday"),
-    (6, "Friday"),
-    (7, "Saturday"),
-)
-"""
+class DayOfMonth(models.Model):
+    "Day of the month."
+    day = models.IntegerField(primary_key=True)
+    def __str__(self):
+        return str(self.day)
+
+
+class DayOfWeek (models.Model):
+    "Day of the week."
+    day = models.IntegerField(primary_key=True)
+    name = models.CharField(max_length=9)
+    def __str__(self):
+        return self.name
+
+
+class JobMonthlyDays(models.Model):
+    job = models.ForeignKey('Job', on_delete=models.CASCADE)
+    day = models.ForeignKey(DayOfMonth, on_delete=models.CASCADE)
+    def __str__(self):
+        if self.job and self.day:
+            # return self.job.__str__() + " | " + self.day.__str__()
+            return "Job " + str(self.job.id) + " Day " + str(self.day.day)
+
+
+class JobWeeklyDays(models.Model):
+    job = models.ForeignKey('Job', on_delete=models.CASCADE)
+    day = models.ForeignKey(DayOfWeek, on_delete=models.CASCADE)
+    def __str__(self):
+        if self.job and self.day:
+            return self.job.__str__() + " | " + self.day.__str__()
+
 
 class Job(models.Model):
-    "Job definitions"
+    "Job definition"
 
 
     name = models.CharField(
@@ -56,27 +62,34 @@ class Job(models.Model):
         help_text="Schedule a reoccuring job that runs every time " +
                   "interval. Ex., Run every 5 minutes. Submit a " +
                   "timedelta object. ex., datetime.timedelta(minutes=5)")
-    # TODO: make validation to check for comma separatated list.
-    _run_monthly = models.CharField(
-        max_length=124,
-        null=True,
-        blank=True,
-        help_text="Comma seperated list of days of the month to run the job." +
-                  " Ex., 1,15 means run on the 1st and 15th of each month.")
-    # It's cleaner to store the list with another model with a one to many
-    # relationship.
+
+
+    # #### Monthly ####
+    monthly_days = models.ManyToManyField(DayOfMonth, through=JobMonthlyDays)
+
+    # TODO: Finish making this property. IM HERE
+    #       Test with job id 9
     @property
-    def run_monthly(self):
-        if self._run_monthly:
-            return self._run_monthly.split(",")
+    def monthly_days_list(self):
+        days = []
+        qs = DayOfMonth.objects.filter(job=self)
+        for i in qs:
+            days.append(i.day)
+        if days:
+            return days
 
-    @run_monthly.setter
-    def run_monthly(self, value):
-        self._run_monthly = ",".join(str(i) for i in value)
+    @monthly_days_list.setter
+    def monthly_days_list(self, days):
+        # delete days not in list
+        JobMonthlyDays.objects.filter(job=self).exclude(day__in=days).delete()
+        # add days from list
+        for i in days:
+            DOM = DayOfMonth.objects.get(day=i)
+            JobMonthlyDays.objects.update_or_create(job=self, day=DOM)
 
-    @run_monthly.deleter
-    def run_monthly(self):
-        del self._run_monthly
+    @monthly_days_list.deleter
+    def monthly_days_list(self):
+        JobMonthlyDays.objects.filter(job=self).delete()
 
     # TODO: make validation to check for date if run_monthly is set or fill in
     # default time if no time is given and run_monthly is set.
@@ -84,7 +97,11 @@ class Job(models.Model):
         null=True,
         blank=True,
         help_text="Time of day to run the monthly / days of month jobs.")
-    # TODO: same as monthly
+
+
+    # #### Weekly ####
+    # TODO: Change weekly to be like monthly above.
+    # TODO: validation stuff, same as monthly
     run_weekly = models.CharField(
         max_length=21,
         null=True,
@@ -92,6 +109,7 @@ class Job(models.Model):
         help_text="Comma seperated list of days of the week to run the job. " +
                   "Use integers for each day starting at 1 for Sunday, 2 for " +
                   "Monday, and so on to 7 for Saturday.")
+
     # TODO: same as monthly
     run_weekly_time = models.TimeField(
         null=True,
@@ -214,8 +232,30 @@ class Job(models.Model):
         self.full_clean()
         super(Job, self).save(*args, **kwargs)
         # self.refresh_from_db()
-        """ The only reason I relead from the DB is we've been using
-            pendulum a lot but when pendulum objects are saved they get turned
-            into datetime objects. Reloading right away helps avoid errors by
-            reminding you not to do special pendulum things unless you first
-            turn the datetime objects to pendulum objects. """
+        """ The only reason I reload from the DB, using self.refresh_from_db(),
+            is I've been using pendulum a lot but when pendulum objects are
+            saved they get turned into datetime objects. Reloading right away
+            helps avoid errors by reminding me not to do special pendulum
+            things unless you first turn the datetime objects to pendulum
+            objects. """
+
+
+""" Populate the DayOfMonth and DayOfWeek models
+    https://docs.djangoproject.com/en/1.11/howto/initial-data/
+    The data is loaded using fixtures but here are some function if you need to
+    manually load the data.
+"""
+def load_DayOfMonth():
+    for d in range(1, 32):
+        DayOfMonth.objects.update_or_create(day=d)
+
+# Using days 1-7 starting on Sunday because that's what the queryset field lookup
+# week_day uses.
+def load_DayOfWeek():
+    DayOfWeek.objects.update_or_create(day=1, name="Sunday")
+    DayOfWeek.objects.update_or_create(day=2, name="Monday")
+    DayOfWeek.objects.update_or_create(day=3, name="Tuesday")
+    DayOfWeek.objects.update_or_create(day=4, name="Wednesday")
+    DayOfWeek.objects.update_or_create(day=5, name="Thursday")
+    DayOfWeek.objects.update_or_create(day=6, name="Friday")
+    DayOfWeek.objects.update_or_create(day=7, name="Saturday")
