@@ -8,7 +8,7 @@ Things to test:
 
 # import akjob.akjob
 from datetime import datetime, timedelta, timezone, time
-from akjob.models import Job
+from akjob.models import Job, load_DayOfMonth, load_DayOfWeek
 from django.test import TestCase
 
 utc = timezone.utc
@@ -28,6 +28,8 @@ class JobsToRunTestCase(TestCase):
     "Test that akjob can figure out which jobs to run"
 
     def setUp(self):
+        load_DayOfMonth()
+        load_DayOfWeek()
         self.now = datetime.now(tz=utc)
         self.future = datetime.now(tz=utc) + timedelta(minutes=5)
         self.past = datetime.now(tz=utc) - timedelta(minutes=5)
@@ -42,15 +44,33 @@ class JobsToRunTestCase(TestCase):
         Job.objects.create(
             name="Run every job", run_every=timedelta(minutes=5))
 
-        Job.objects.create(
-            name="Run Montly job 1", run_monthly="1,15",
-            run_monthly_time=time(00, 30))
-        Job.objects.create(
-            name="Run Montly job 2", run_monthly=[2, 16],
-            run_monthly_time=time(23, 30))
-        Job.objects.create(
-            name="Run Montly no time fail", run_monthly="7")
+        rmj1 = Job.objects.create(name="Run Monthly job 1",
+                                  monthly_time=time(00, 30))
+        rmj1.monthly_days.add(1, 15)
+        rmj2 = Job.objects.create(name="Run Monthly job 2",
+                                  monthly_time=time(12, 1))
+        rmj2.monthly_days_list = [7, 28]
+        rmj3 = Job.objects.create(name="Run Monthly no time fail")
+        rmj3.monthly_days.add(7)
+
+        rwj1 = Job.objects.create(name="Run Weekly job 1",
+                                  weekly_time=time(00, 30))
+        rwj1.weekly_days.add(2, 4, 6)
+        rwj2 = Job.objects.create(name="Run Weekly job 2",
+                                  weekly_time=time(12, 1))
+        rwj2.weekly_days_list = [1, 7]
+        rwj3 = Job.objects.create(name="Run Weekly no time fail")
+        rwj3.weekly_days.add(3)
 
 
     def test_find_jobs(self):
         pass
+
+
+
+""" These dictionaries are to help me with manual testing from the console. """
+def jdict():
+    jobdict = dict()
+    for j in Job.objects.all():
+        jobdict["j" + str(j.id)] = j
+    return jobdict

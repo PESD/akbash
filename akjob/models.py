@@ -32,6 +32,8 @@ class Job(models.Model):
 
 
     """ Schedule One off job """
+    # should I make it so you can submit multiple dates? I could set it so it
+    # uses a list of datetimess, similar to how monthly takes a list of days.
     run_once_at = models.DateTimeField(
         null=True,
         blank=True,
@@ -49,7 +51,6 @@ class Job(models.Model):
 
     # ##### Monthly #####
     # Using a set of days of the month, the job will run on each of those days.
-    # TODO: make Monthly like Weekly. remove JobMonthlyDays
     monthly_days = models.ManyToManyField(DayOfMonth)
 
     @property
@@ -61,16 +62,28 @@ class Job(models.Model):
         if days:
             return days
 
+    # WARNING: list methods do not fire off the setter. so
+    #   Job().monthly_days_list.append(9) does nothing.
     @monthly_days_list.setter
     def monthly_days_list(self, days):
-        self.monthly_days.set(days)
+        if isinstance(days, (int, DayOfMonth)):
+            self.monthly_days.set([days])
+        elif isinstance(days, (list, tuple)):
+            for d in days:
+                if not isinstance(d, (int, DayOfMonth)):
+                    raise TypeError("List may only contain integers and " +
+                                    "DayOfMonth instances")
+            self.monthly_days.set(days)
+        else:
+            raise TypeError("List, integer, or DayOfMonth instance required.")
 
     @monthly_days_list.deleter
     def monthly_days_list(self):
         self.monthly_days.clear()
 
     # TODO: make validation to check for date if monthly_days is set or fill in
-    # default time if no time is given and run_monthly is set.
+    #       default time if no time is given and run_monthly is set.
+    #       Also check for timezone. Assume utc if no timezone
     monthly_time = models.TimeField(
         null=True,
         blank=True,
@@ -93,16 +106,28 @@ class Job(models.Model):
         if days:
             return days
 
+    # WARNING: list methods do not fire off the setter. so
+    #   Job().weekly_days_list.append(9) does nothing.
     @weekly_days_list.setter
     def weekly_days_list(self, days):
-        self.weekly_days.set(days)
+        if isinstance(days, (int, DayOfWeek)):
+            self.weekly_days.set([days])
+        elif isinstance(days, (list, tuple)):
+            for d in days:
+                if not isinstance(d, (int, DayOfWeek)):
+                    raise TypeError("List may only contain integers and " +
+                                    "DayOfWeek instances")
+            self.weekly_days.set(days)
+        else:
+            raise TypeError("List, integer, or DayOfWeek instance required.")
+
 
     @weekly_days_list.deleter
     def weekly_days_list(self):
         self.weekly_days.clear()
 
-    # TODO: same as monthly
-    run_weekly_time = models.TimeField(
+    # TODO: same as monthly - Validation stuff. timezone stuff
+    weekly_time = models.TimeField(
         null=True,
         blank=True,
         help_text="Time of day to run the weekly / days of week jobs.")
