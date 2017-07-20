@@ -18,25 +18,6 @@ class DayOfWeek (models.Model):
         return self.name
 
 
-class JobMonthlyDays(models.Model):
-    job = models.ForeignKey('Job', on_delete=models.CASCADE)
-    day = models.ForeignKey(DayOfMonth, on_delete=models.CASCADE)
-    def __str__(self):
-        if self.job and self.day:
-            # return self.job.__str__() + " | " + self.day.__str__()
-            return "Job " + str(self.job.id) + " Day " + str(self.day.day)
-
-
-""" I want to see if I don't define an intermediate model.
-class JobWeeklyDays(models.Model):
-    job = models.ForeignKey('Job', on_delete=models.CASCADE)
-    day = models.ForeignKey(DayOfWeek, on_delete=models.CASCADE)
-    def __str__(self):
-        if self.job and self.day:
-            return self.job.__str__() + " | " + self.day.__str__()
-"""
-
-
 class Job(models.Model):
     "Job definition"
 
@@ -69,12 +50,12 @@ class Job(models.Model):
     # ##### Monthly #####
     # Using a set of days of the month, the job will run on each of those days.
     # TODO: make Monthly like Weekly. remove JobMonthlyDays
-    monthly_days = models.ManyToManyField(DayOfMonth, through=JobMonthlyDays)
+    monthly_days = models.ManyToManyField(DayOfMonth)
 
     @property
     def monthly_days_list(self):
         days = []
-        qs = DayOfMonth.objects.filter(job=self)
+        qs = self.monthly_days.all()
         for i in qs:
             days.append(i.day)
         if days:
@@ -82,16 +63,11 @@ class Job(models.Model):
 
     @monthly_days_list.setter
     def monthly_days_list(self, days):
-        # delete days not in list
-        JobMonthlyDays.objects.filter(job=self).exclude(day__in=days).delete()
-        # add days from list
-        for i in days:
-            DOM = DayOfMonth.objects.get(day=i)
-            JobMonthlyDays.objects.update_or_create(job=self, day=DOM)
+        self.monthly_days.set(days)
 
     @monthly_days_list.deleter
     def monthly_days_list(self):
-        JobMonthlyDays.objects.filter(job=self).delete()
+        self.monthly_days.clear()
 
     # TODO: make validation to check for date if monthly_days is set or fill in
     # default time if no time is given and run_monthly is set.
@@ -125,20 +101,12 @@ class Job(models.Model):
     def weekly_days_list(self):
         self.weekly_days.clear()
 
-
-    run_weekly = models.CharField(
-        max_length=21,
-        null=True,
-        blank=True,
-        help_text="Comma seperated list of days of the week to run the job. " +
-                  "Use integers for each day starting at 1 for Sunday, 2 for " +
-                  "Monday, and so on to 7 for Saturday.")
-
     # TODO: same as monthly
     run_weekly_time = models.TimeField(
         null=True,
         blank=True,
         help_text="Time of day to run the weekly / days of week jobs.")
+
 
     """ Limit number of runs. """
     run_count_limit = models.IntegerField(
