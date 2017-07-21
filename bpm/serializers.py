@@ -103,6 +103,13 @@ class WorkflowActivitySerializer(serializers.ModelSerializer):
             "workflow_tasks",
         )
 
+    @staticmethod
+    def setup_eager_loading(queryset):
+            """ Perform necessary eager loading of data. """
+            queryset = queryset.select_related('activity')
+            queryset = queryset.prefetch_related('workflow_tasks')
+            return queryset
+
 
 class WorkflowCompleteSerializer(serializers.ModelSerializer):
     api_url = serializers.HyperlinkedIdentityField(view_name='workflow-detail', format='html')
@@ -119,6 +126,14 @@ class WorkflowCompleteSerializer(serializers.ModelSerializer):
             "person",
             "workflow_activites",
         )
+
+    @staticmethod
+    def setup_eager_loading(queryset):
+        """ Perform necessary eager loading of data. """
+        queryset = queryset.select_related('person')
+        queryset = queryset.select_related('process')
+        queryset = queryset.prefetch_related('workflow_activites')
+        return queryset
 
 
 class CreateWorkflowSerializer(serializers.Serializer):
