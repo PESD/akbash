@@ -65,12 +65,3 @@ class JobsToRunTestCase(TestCase):
 
     def test_find_jobs(self):
         pass
-
-
-
-""" These dictionaries are to help me with manual testing from the console. """
-def jdict():
-    jobdict = dict()
-    for j in Job.objects.all():
-        jobdict["j" + str(j.id)] = j
-    return jobdict

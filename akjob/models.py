@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from django.db import models
 # import api.jobs
 # import bpm.jobs
@@ -10,12 +11,27 @@ class DayOfMonth(models.Model):
         return str(self.day)
 
 
-class DayOfWeek (models.Model):
+class DayOfWeek(models.Model):
     "Day of the week."
     day = models.IntegerField(primary_key=True)
     name = models.CharField(max_length=9)
     def __str__(self):
         return self.name
+
+
+# So it could be confusing naming the foreign key manager "dates" (the
+# related_name) and using other variables named "jobdates" as that makes things
+# totally backwards but I think naming the manager "dates" creates a nice,
+# easier to understand interface for the users of the Job model.
+class JobDates(models.Model):
+    "Jobs and dates (datetimes) they're scheduled to run."
+    job = models.ForeignKey(
+        "Job",
+        on_delete=models.CASCADE,
+        related_name='dates')
+    job_datetime = models.DateTimeField()
+    def __str__(self):
+        return "Job " + str(self.job.id) + " -> " + str(self.job_datetime)
 
 
 class Job(models.Model):
@@ -31,13 +47,42 @@ class Job(models.Model):
         help_text="Name the job. Repeat names are allowed. Required Field.")
 
 
-    """ Schedule One off job """
-    # should I make it so you can submit multiple dates? I could set it so it
-    # uses a list of datetimess, similar to how monthly takes a list of days.
-    run_once_at = models.DateTimeField(
-        null=True,
-        blank=True,
-        help_text="Date and time to run the job.")
+    """ Schedule job to run at specific datetimes. """
+    # Working in reverse direction with the foreign key manager sucks. here
+    # are properties as an alternate method for setting dates.
+    @property
+    def dates_list(self):
+        jobdates = []
+        qs = self.dates.all()
+        # I could probably use list comprehension for this. but I forgot how.
+        for d in qs:
+            jobdates.append(d.job_datetime)
+        if jobdates:
+            return jobdates
+
+    @dates_list.setter
+    def dates_list(self, jobdates):
+        if isinstance(jobdates, datetime):
+            JobDates.objects.filter(job=self).delete()
+            self.dates.create(job_datetime=jobdates)
+            return self.dates.all()
+        elif isinstance(jobdates, (list, tuple)):
+            for d in jobdates:
+                if not isinstance(d, datetime):
+                    raise TypeError("List may only contain datetimes")
+        else:
+            raise TypeError("Datetime or a list containing datetime values " +
+                            "are required.")
+
+        JobDates.objects.filter(job=self).delete()
+        for d in jobdates:
+            self.dates.create(job_datetime=d)
+        return self.dates.all()
+
+    @dates_list.deleter
+    def dates_list(self):
+        JobDates.objects.filter(job=self).delete()
+
 
     """ Schedule reoccuring jobs """
     # TODO: make a validation to only allow positive duration.
@@ -53,6 +98,8 @@ class Job(models.Model):
     # Using a set of days of the month, the job will run on each of those days.
     monthly_days = models.ManyToManyField(DayOfMonth)
 
+    # Working with the relational manager is great in this case but I'm making
+    # properties anyway since it fits my original vision of using a list.
     @property
     def monthly_days_list(self):
         days = []
@@ -255,6 +302,49 @@ class Job(models.Model):
             helps avoid errors by reminding me not to do special pendulum
             things unless you first turn the datetime objects to pendulum
             objects. """
+
+
+    def print(self):
+        "Display the job's defined values on the console."
+        # from pprint import pprint
+        print("\n" + self.name)
+
+        qs = self.dates.filter(
+            job_datetime__gte=datetime.now(tz=timezone.utc))
+        if qs:
+            st = True
+            print("\nThis job is scheduled to run at the following times:")
+            for d in qs:
+                print("    " + str(d.job_datetime))
+        qs = self.dates.filter(
+            job_datetime__lt=datetime.now(tz=timezone.utc))
+        if qs:
+            st = True
+            print("\nThe following scheduled times have already passed:")
+            for d in qs:
+                print("    " + str(d.job_datetime))
+
+        if self.monthly_days.all():
+            md = True
+            print("\nThis job is scheduled to run on the following days of " +
+                  "the month:")
+            print("    ", end='')
+            for d in self.monthly_days.all():
+                print(str(d.day), end=' ')
+            print("\nMontly jobs are ran at: " + str(self.monthly_time))
+
+        if self.weekly_days.all():
+            wd = True
+            print("\nThis job is scheduled to run on the following days of " +
+                  "the week:")
+            for d in self.weekly_days.all():
+                print("    " + d.name)
+            print("Weekly jobs are ran at: " + str(self.weekly_time))
+
+        if self.run_every:
+            re = True
+            print("\nThis job is a reoccuring job that runs every: ", end='')
+            print(self.run_every)
 
 
 """ Populate the DayOfMonth and DayOfWeek models
