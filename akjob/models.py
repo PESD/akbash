@@ -293,7 +293,7 @@ class Job(models.Model):
         months = []
         qs = self.active_months.all()
         for i in qs:
-            months.append(i.day)
+            months.append(i.month)
         if months:
             return months
 
@@ -304,13 +304,13 @@ class Job(models.Model):
         if isinstance(months, (int, Months)):
             self.active_months.set([months])
         elif isinstance(months, (list, tuple)):
-            for d in months:
-                if not isinstance(d, (int, Months)):
+            for m in months:
+                if not isinstance(m, (int, Months)):
                     raise TypeError("List may only contain integers and " +
-                                    "DayOfMonth instances")
+                                    "Months instances")
             self.active_months.set(months)
         else:
-            raise TypeError("List, integer, or DayOfMonth instance required.")
+            raise TypeError("List, integer, or Months instance required.")
 
     @active_months_list.deleter
     def active_months_list(self):
