@@ -19,6 +19,13 @@ class DayOfWeek(models.Model):
         return self.name
 
 
+class Months(models.Model):
+    month = models.IntegerField(primary_key=True)
+    name = models.CharField(max_length=9)
+    def __str__(self):
+        return self.name
+
+
 # So it could be confusing naming the foreign key manager "dates" (the
 # related_name) and using other variables named "jobdates" as that makes things
 # totally backwards but I think naming the manager "dates" creates a nice,
@@ -168,7 +175,6 @@ class Job(models.Model):
         else:
             raise TypeError("List, integer, or DayOfWeek instance required.")
 
-
     @weekly_days_list.deleter
     def weekly_days_list(self):
         self.weekly_days.clear()
@@ -201,23 +207,81 @@ class Job(models.Model):
         blank=True,
         help_text="Limit job runs to a time of day window between " +
                   "active_time_begin and active_time_end.")
-    # TODO: need validator
-    active_dow = models.CharField(
-        max_length=21,
-        null=True,
-        blank=True,
-        help_text="Limit job runs to the listed days of week. " +
-                  "Comma seperated list of days of the week. " +
-                  "Use integers for each day starting at 1 for Sunday, 2 for" +
-                  "Monday, and so on to 7 for Saturday.")
-    # TODO: need validator
-    active_days = models.CharField(
-        max_length=124,
-        null=True,
-        blank=True,
-        help_text="Limit job runs to the listed days. Comma seperated list of " +
-                  "days of the month to limit the job run times to. Ex., 1,15 " +
-                  "means limit the run to the 1st and 15th of each month.")
+    # ##### Active Days Of Week #####
+    # Limit job runs to the given days of week. Use integers or DayOfWeek
+    # objects for each day starting at 1 for Sunday, 2 for Monday, and so on to
+    # 7 for Saturday.
+    active_dow = models.ManyToManyField(
+        DayOfWeek,
+        related_name='ActiveDayOfWeek')
+
+    # alternate interface with the weekly days related set using a list
+    @property
+    def active_dow_list(self):
+        days = []
+        qs = self.active_dow.all()
+        for i in qs:
+            days.append(i.day)
+        if days:
+            return days
+
+    # WARNING: list methods do not fire off the setter. so
+    #   Job().active_dow_list.append(9) does nothing.
+    @active_dow_list.setter
+    def active_dow_list(self, days):
+        if isinstance(days, (int, DayOfWeek)):
+            self.active_dow.set([days])
+        elif isinstance(days, (list, tuple)):
+            for d in days:
+                if not isinstance(d, (int, DayOfWeek)):
+                    raise TypeError("List may only contain integers and " +
+                                    "DayOfWeek instances")
+            self.active_dow.set(days)
+        else:
+            raise TypeError("List, integer, or DayOfWeek instance required.")
+
+    @active_dow_list.deleter
+    def active_dow_list(self):
+        self.active_dow.clear()
+
+
+    # ##### Active Days Of Month #####
+    # Limit job runs to the given days of the month. Use integers or DayOfMonth
+    # objects for each day you want to limit activity to. Ex., 1,15 means limit
+    # the run to the 1st and 15th of each month.
+    active_monthly_days = models.ManyToManyField(
+        DayOfMonth,
+        related_name='ActiveDayOfMonth')
+
+    @property
+    def active_monthly_days_list(self):
+        days = []
+        qs = self.active_monthly_days.all()
+        for i in qs:
+            days.append(i.day)
+        if days:
+            return days
+
+    # WARNING: list methods do not fire off the setter. so
+    #   Job().active_monthly_days_list.append(9) does nothing.
+    @active_monthly_days_list.setter
+    def active_monthly_days_list(self, days):
+        if isinstance(days, (int, DayOfMonth)):
+            self.active_monthly_days.set([days])
+        elif isinstance(days, (list, tuple)):
+            for d in days:
+                if not isinstance(d, (int, DayOfMonth)):
+                    raise TypeError("List may only contain integers and " +
+                                    "DayOfMonth instances")
+            self.active_monthly_days.set(days)
+        else:
+            raise TypeError("List, integer, or DayOfMonth instance required.")
+
+    @active_monthly_days_list.deleter
+    def active_monthly_days_list(self):
+        self.active_monthly_days.clear()
+
+
     # TODO: need validator
     active_months = models.CharField(
         max_length=48,
@@ -367,3 +431,17 @@ def load_DayOfWeek():
     DayOfWeek.objects.update_or_create(day=5, name="Thursday")
     DayOfWeek.objects.update_or_create(day=6, name="Friday")
     DayOfWeek.objects.update_or_create(day=7, name="Saturday")
+
+def load_Months():
+    Months.objects.update_or_create(month=1, name="January")
+    Months.objects.update_or_create(month=2, name="February")
+    Months.objects.update_or_create(month=3, name="March")
+    Months.objects.update_or_create(month=4, name="April")
+    Months.objects.update_or_create(month=5, name="May")
+    Months.objects.update_or_create(month=6, name="June")
+    Months.objects.update_or_create(month=7, name="July")
+    Months.objects.update_or_create(month=8, name="August")
+    Months.objects.update_or_create(month=9, name="September")
+    Months.objects.update_or_create(month=10, name="October")
+    Months.objects.update_or_create(month=11, name="November")
+    Months.objects.update_or_create(month=12, name="December")

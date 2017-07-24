@@ -87,6 +87,7 @@ if prompt("\nMake migrations and migrate?"):
 fixtures = [
     "akjob_dayofweek.json",
     "akjob_dayofmonth.json",
+    "akjob_months.json",
 ]
 
 print("\nFixtures: " + str(fixtures))

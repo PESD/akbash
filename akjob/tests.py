@@ -7,8 +7,8 @@ Things to test:
 """
 
 # import akjob.akjob
-from datetime import datetime, timedelta, timezone, time
-from akjob.models import Job, load_DayOfMonth, load_DayOfWeek
+from datetime import datetime, timedelta, timezone, time, date
+from akjob.models import Job, load_DayOfMonth, load_DayOfWeek, load_Months
 from django.test import TestCase
 
 utc = timezone.utc
@@ -30,16 +30,18 @@ class JobsToRunTestCase(TestCase):
     def setUp(self):
         load_DayOfMonth()
         load_DayOfWeek()
+        load_Months()
         self.now = datetime.now(tz=utc)
         self.future = datetime.now(tz=utc) + timedelta(minutes=5)
         self.past = datetime.now(tz=utc) - timedelta(minutes=5)
+        self.pastday = datetime.now(tz=utc) - timedelta(days=1)
 
-        Job.objects.create(
-            name="Run once job - now", run_once_at=self.now)
-        Job.objects.create(
-            name="Run once job - future", run_once_at=self.future)
-        Job.objects.create(
-            name="Run once job - past", run_once_at=self.past)
+        ra1 = Job.objects.create(name="Run once job - now")
+        ra1.dates_list = self.now
+        ra2 = Job.objects.create(name="Run once job - future")
+        ra2.dates.create(job_datetime=self.future)
+        ra3 = Job.objects.create(name="Run once job - past")
+        ra3.dates_list = [self.past, self.pastday]
 
         Job.objects.create(
             name="Run every job", run_every=timedelta(minutes=5))
@@ -61,6 +63,16 @@ class JobsToRunTestCase(TestCase):
         rwj2.weekly_days_list = [1, 7]
         rwj3 = Job.objects.create(name="Run Weekly no time fail")
         rwj3.weekly_days.add(3)
+
+        lat1 = Job.objects.create(
+            name="Limit active time",
+            run_every=timedelta(minutes=45),
+            active_time_begin=time(2, 0, tzinfo=utc),
+            active_time_end=time(4, 0, tzinfo=utc))
+        lat2 = Job.objects.create(
+            name="Limit active time",
+            run_every=timedelta(minutes=45),
+            active_time_begin=time(2, 0, tzinfo=utc))
 
 
     def test_find_jobs(self):
