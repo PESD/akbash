@@ -31,6 +31,12 @@ class ActivitySerializer(serializers.ModelSerializer):
             "users",
         )
 
+    @staticmethod
+    def setup_eager_loading(queryset):
+        """ Perform necessary eager loading of data. """
+        queryset = queryset.prefetch_related('users')
+        return queryset
+
 
 class ProcessSerializer(serializers.ModelSerializer):
     api_url = serializers.HyperlinkedIdentityField(view_name='process-detail', format='html')
@@ -44,6 +50,12 @@ class ProcessSerializer(serializers.ModelSerializer):
             "name",
             "start_activity",
         )
+
+    @staticmethod
+    def setup_eager_loading(queryset):
+        """ Perform necessary eager loading of data. """
+        queryset = queryset.select_related('start_activity')
+        return queryset
 
 
 class WorkflowSerializer(serializers.ModelSerializer):
@@ -85,6 +97,12 @@ class WorkflowTaskSerializer(serializers.ModelSerializer):
             "status",
             "task",
         )
+
+    @staticmethod
+    def setup_eager_loading(queryset):
+        """ Perform necessary eager loading of data. """
+        queryset = queryset.select_related('task')
+        return queryset
 
 
 class WorkflowActivitySerializer(serializers.ModelSerializer):

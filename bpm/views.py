@@ -59,13 +59,19 @@ class UserFromUsernameViewSet(viewsets.ModelViewSet):
 
 
 class ActivityViewSet(viewsets.ModelViewSet):
-    queryset = Activity.objects.all()
     serializer_class = ActivitySerializer
+
+    def get_queryset(self):
+        queryset = Activity.objects.all()
+        return self.get_serializer_class().setup_eager_loading(queryset)
 
 
 class ProcessViewSet(viewsets.ModelViewSet):
-    queryset = Process.objects.all()
     serializer_class = ProcessSerializer
+
+    def get_queryset(self):
+        queryset = Process.objects.all()
+        return self.get_serializer_class().setup_eager_loading(queryset)
 
 
 class WorkflowViewSet(viewsets.ModelViewSet):
@@ -104,7 +110,8 @@ class WorkflowActivityActiveUserViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user_id = self.request.parser_context['kwargs']['user_id']
-        return WorkflowActivity.objects.filter(status="Active").filter(activity__users__id=user_id)
+        queryset = WorkflowActivity.objects.filter(status="Active").filter(activity__users__id=user_id)
+        return self.get_serializer_class().setup_eager_loading(queryset)
 
 
 class WorkflowFromWorkflowActivityViewSet(viewsets.ModelViewSet):
@@ -157,8 +164,11 @@ class TaskViewSet(viewsets.ModelViewSet):
 
 
 class WorkflowTaskViewSet(viewsets.ModelViewSet):
-    queryset = WorkflowTask.objects.all()
     serializer_class = WorkflowTaskSerializer
+
+    def get_queryset(self):
+        queryset = WorkflowTask.objects.all()
+        return self.get_serializer_class().setup_eager_loading(queryset)
 
 
 @csrf_exempt

@@ -41,6 +41,12 @@ class VendorSerializer(serializers.ModelSerializer):
             "vendor_type",
         )
 
+    @staticmethod
+    def setup_eager_loading(queryset):
+        """ Perform necessary eager loading of data. """
+        queryset = queryset.select_related('vendor_type')
+        return queryset
+
 
 # The following serializers are exposed in the API
 class PersonSerializer(serializers.ModelSerializer):
@@ -117,6 +123,20 @@ class PersonSerializer(serializers.ModelSerializer):
             "services",
             "start_date",
         )
+
+    @staticmethod
+    def setup_eager_loading(queryset):
+        """ Perform necessary eager loading of data. """
+        queryset = queryset.select_related('onboarded_by')
+        queryset = queryset.select_related('tcp_fingerprinted_by')
+        queryset = queryset.select_related('badge_created_by')
+        queryset = queryset.select_related('emp_record_created_by')
+        queryset = queryset.select_related('position_linked_by')
+        queryset = queryset.select_related('visions_account_created_by')
+        queryset = queryset.select_related('synergy_account_created_by')
+        queryset = queryset.select_related('ad_account_created_by')
+        queryset = queryset.prefetch_related('services')
+        return queryset
 
 
 class EmployeeSerializer(serializers.ModelSerializer):
@@ -199,6 +219,20 @@ class EmployeeSerializer(serializers.ModelSerializer):
             "start_date",
         )
 
+    @staticmethod
+    def setup_eager_loading(queryset):
+        """ Perform necessary eager loading of data. """
+        queryset = queryset.select_related('onboarded_by')
+        queryset = queryset.select_related('tcp_fingerprinted_by')
+        queryset = queryset.select_related('badge_created_by')
+        queryset = queryset.select_related('emp_record_created_by')
+        queryset = queryset.select_related('position_linked_by')
+        queryset = queryset.select_related('visions_account_created_by')
+        queryset = queryset.select_related('synergy_account_created_by')
+        queryset = queryset.select_related('ad_account_created_by')
+        queryset = queryset.prefetch_related('services')
+        return queryset
+
 
 class ContractorSerializer(serializers.ModelSerializer):
     # Expose the URL to access contractor-detail
@@ -266,6 +300,20 @@ class ContractorSerializer(serializers.ModelSerializer):
             "vendor",
             "start_date",
         )
+
+    @staticmethod
+    def setup_eager_loading(queryset):
+        """ Perform necessary eager loading of data. """
+        queryset = queryset.select_related('onboarded_by')
+        queryset = queryset.select_related('tcp_fingerprinted_by')
+        queryset = queryset.select_related('badge_created_by')
+        queryset = queryset.select_related('emp_record_created_by')
+        queryset = queryset.select_related('position_linked_by')
+        queryset = queryset.select_related('visions_account_created_by')
+        queryset = queryset.select_related('synergy_account_created_by')
+        queryset = queryset.select_related('ad_account_created_by')
+        queryset = queryset.prefetch_related('services')
+        return queryset
 
 
 class LocationSerializer(serializers.ModelSerializer):
@@ -343,6 +391,14 @@ class PositionSerializer(serializers.ModelSerializer):
         position.location = location
         position.save()
         return position
+
+    @staticmethod
+    def setup_eager_loading(queryset):
+        """ Perform necessary eager loading of data. """
+        queryset = queryset.select_related('location')
+        queryset = queryset.select_related('department')
+        queryset = queryset.select_related('position_type')
+        return queryset
 
 
 class CommentSerializer(serializers.ModelSerializer):
