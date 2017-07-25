@@ -67,12 +67,12 @@ class JobsToRunTestCase(TestCase):
         lat1 = Job.objects.create(
             name="Limit active time",
             run_every=timedelta(minutes=45),
-            active_time_begin=time(2, 0, tzinfo=utc),
-            active_time_end=time(4, 0, tzinfo=utc))
+            active_time_begin=time(2, 0),
+            active_time_end=time(4, 0))
         lat2 = Job.objects.create(
             name="Limit active time",
             run_every=timedelta(minutes=45),
-            active_time_begin=time(2, 0, tzinfo=utc))
+            active_time_begin=time(2, 0))
 
 
     def test_find_jobs(self):
