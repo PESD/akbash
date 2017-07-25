@@ -29,13 +29,19 @@ def api_root(request, format=None):
 
 # ModelViewSet does all of the heavy lifting for REST framework.
 class EmployeeViewSet(viewsets.ModelViewSet):
-    queryset = Employee.objects.all()
     serializer_class = EmployeeSerializer
+
+    def get_queryset(self):
+        queryset = Employee.objects.all()
+        return self.get_serializer_class().setup_eager_loading(queryset)
 
 
 class PersonViewSet(viewsets.ModelViewSet):
-    queryset = Person.objects.all()
     serializer_class = PersonSerializer
+
+    def get_queryset(self):
+        queryset = Person.objects.all()
+        return self.get_serializer_class().setup_eager_loading(queryset)
 
 
 class EmployeeNoWorkflowViewSet(viewsets.ModelViewSet):
@@ -44,20 +50,35 @@ class EmployeeNoWorkflowViewSet(viewsets.ModelViewSet):
     )
     serializer_class = EmployeeSerializer
 
+    def get_queryset(self):
+        queryset = Employee.objects.exclude(
+            id__in=Workflow.objects.all().values_list('person')
+        )
+        return self.get_serializer_class().setup_eager_loading(queryset)
+
 
 class VendorViewSet(viewsets.ModelViewSet):
-    queryset = Vendor.objects.all()
     serializer_class = VendorSerializer
+
+    def get_queryset(self):
+        queryset = Vendor.objects.all()
+        return self.get_serializer_class().setup_eager_loading(queryset)
 
 
 class ContractorViewSet(viewsets.ModelViewSet):
-    queryset = Contractor.objects.all()
     serializer_class = ContractorSerializer
+
+    def get_queryset(self):
+        queryset = Contractor.objects.all()
+        return self.get_serializer_class().setup_eager_loading(queryset)
 
 
 class PositionViewSet(viewsets.ModelViewSet):
-    queryset = Position.objects.all()
     serializer_class = PositionSerializer
+
+    def get_queryset(self):
+        queryset = Position.objects.all()
+        return self.get_serializer_class().setup_eager_loading(queryset)
 
 
 class LocationViewSet(viewsets.ModelViewSet):
@@ -80,7 +101,8 @@ class PositionFromPersonViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         person_id = self.request.parser_context['kwargs']['person_id']
-        return Position.objects.filter(person__id=person_id)
+        queryset = Position.objects.filter(person__id=person_id)
+        return self.get_serializer_class().setup_eager_loading(queryset)
 
 
 class CommentViewSet(viewsets.ModelViewSet):

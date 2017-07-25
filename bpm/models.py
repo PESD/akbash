@@ -37,7 +37,6 @@ class Process(models.Model):
 
     def start_workflow(self, person):
         workflow = Workflow.objects.create(person=person, process=self)
-        workflow.save()
         person.generate_badge()
         activities = self.activities.all()
         for activity in activities:
@@ -85,7 +84,6 @@ class Workflow(models.Model):
 
     def create_workflow_activity(self, activity):
         workflow_activity = WorkflowActivity.objects.create(workflow=self, activity=activity, status="Inactive")
-        workflow_activity.save()
         workflow_activity.create_workflow_tasks()
         return workflow_activity
 
@@ -134,7 +132,6 @@ class WorkflowActivity(models.Model):
         tasks = self.activity.tasks.all()
         for task in tasks:
             workflow_task = WorkflowTask.objects.create(task=task, status="Not Started")
-            task.save()
             self.workflow_tasks.add(workflow_task)
         self.save()
 
@@ -170,9 +167,9 @@ class WorkflowActivity(models.Model):
         return True
 
     def email_users(self):
-        subject = "Action required: " + self.activity.name
+        subject = "Tandem - Action required: " + self.activity.name
         for user in self.activity.users.all():
-            body = "Hello, " + user.username + " you have a new task to complete."
+            body = "Hello, " + user.username + "This is an automated e-mail from Tandem. You have a new task to complete: " + self.activity.name
             send_mail(subject, body, settings.EMAIL_HOST_USER, [user.email], fail_silently=True)
 
 

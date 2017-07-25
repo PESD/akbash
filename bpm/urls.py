@@ -4,8 +4,8 @@ from rest_framework.routers import DefaultRouter
 
 
 router = DefaultRouter()
-router.register(r'process', views.ProcessViewSet)
-router.register(r'activity', views.ActivityViewSet)
+router.register(r'process', views.ProcessViewSet, 'process')
+router.register(r'activity', views.ActivityViewSet, 'activity')
 router.register(r'user', views.UserViewSet)
 router.register(r'user-from-username/(?P<username>[\w\-.]+)', views.UserFromUsernameViewSet, "user-from-username")
 router.register(r'workflow', views.WorkflowViewSet)
@@ -18,7 +18,7 @@ router.register(r'workflow-complete-active', views.WorkflowCompleteActiveViewSet
 router.register(r'workflow-from-workflowactivity/(?P<workflowactivity_id>[0-9]+)', views.WorkflowFromWorkflowActivityViewSet, "workflow-from-workflowactivity")
 router.register(r'workflow-from-person/(?P<person_id>[0-9]+)', views.WorkflowFromPersonViewSet, "workflow-from-person")
 router.register(r'task', views.TaskViewSet)
-router.register(r'workflowtask', views.WorkflowTaskViewSet)
+router.register(r'workflowtask', views.WorkflowTaskViewSet, 'workflowtask')
 router.register(r'epar', views.EparViewSet, base_name='epar')
 router.register(r'visions-employee', views.VisionsEmployeeViewSet, base_name='visions-employee')
 
