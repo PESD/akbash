@@ -74,6 +74,20 @@ class JobsToRunTestCase(TestCase):
             run_every=timedelta(minutes=45),
             active_time_begin=time(2, 0))
 
+        rcl1 = Job.objects.create(
+            name="Run count limit 1",
+            run_count_limit=10,
+            run_count=9)
+        rcl2 = Job.objects.create(
+            name="Run count limit 2",
+            run_count_limit=10,
+            run_count=11)
+
+        at1 = Job.objects.create(
+            name="Active time limit 1",
+            active_time_begin=time(12, 0),
+            active_time_end=time(14, 0))
+
 
     def test_find_jobs(self):
         pass

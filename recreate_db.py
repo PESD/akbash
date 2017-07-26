@@ -12,6 +12,7 @@ is still useful.
 
 import os
 import sys
+import textwrap
 from django.conf import settings
 from django.db import connection
 from subprocess import run
@@ -90,6 +91,7 @@ fixtures = [
     "akjob_months.json",
 ]
 
-print("\nFixtures: " + str(fixtures))
+print(textwrap.TextWrapper(subsequent_indent=" " * 11).fill(
+    "\nFixtures: " + str(fixtures)))
 if prompt("Load fixtures?"):
     execute_from_command_line(['', 'loaddata'] + fixtures)

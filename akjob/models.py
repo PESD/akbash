@@ -207,6 +207,7 @@ class Job(models.Model):
         blank=True,
         help_text="Limit job runs to a time of day window between " +
                   "active_time_begin and active_time_end.")
+
     # ##### Active Days Of Week #####
     # Limit job runs to the given days of week. Use integers or DayOfWeek
     # objects for each day starting at 1 for Sunday, 2 for Monday, and so on to
@@ -395,10 +396,31 @@ class Job(models.Model):
             objects. """
 
 
+    # TODO: I didn't test this section well since it's not essential and I have
+    #       other stuff I need to do.
     def print(self):
-        "Display the job's defined values on the console."
-        # from pprint import pprint
-        print("\n" + self.name)
+        "Display (pretty print) the job's defined values."
+        from textwrap import TextWrapper
+
+        def wprint(*args):
+            print(TextWrapper().fill(*args))
+
+        def iprint(*args):
+            print(TextWrapper(initial_indent="    ",
+                              subsequent_indent="    ").fill(*args))
+
+        print()
+        wprint(self.name)
+
+        if not self.job_enabled:
+            print("\n***** This job is currently disabled *****")
+
+        print("\nThis job was last ran: " + str(self.last_run))
+        print("This job's next schedule run time is: " + str(self.next_run))
+
+        print("\nRun count: " + str(self.run_count))
+        if self.run_count_limit:
+            print("Run count limit: " + str(self.run_count_limit))
 
         qs = self.dates.filter(
             job_datetime__gte=datetime.now(tz=timezone.utc))
@@ -406,15 +428,22 @@ class Job(models.Model):
             st = True
             print("\nThis job is scheduled to run at the following times:")
             for d in qs:
-                print("    " + str(d.job_datetime))
+                iprint(str(d.job_datetime))
         qs = self.dates.filter(
             job_datetime__lt=datetime.now(tz=timezone.utc))
         if qs:
             st = True
             print("\nThe following scheduled times have already passed:")
             for d in qs:
-                print("    " + str(d.job_datetime))
+                iprint(str(d.job_datetime))
 
+        # I think I could format this better but I don't have time right now.
+        if self.run_every:
+            re = True
+            print("\nThis job is a reoccuring job that runs every: ", end='')
+            print(self.run_every)
+
+        # I think I could format this better but I don't have time right now.
         if self.monthly_days.all():
             md = True
             print("\nThis job is scheduled to run on the following days of " +
@@ -432,10 +461,42 @@ class Job(models.Model):
                 print("    " + d.name)
             print("Weekly jobs are ran at: " + str(self.weekly_time))
 
-        if self.run_every:
-            re = True
-            print("\nThis job is a reoccuring job that runs every: ", end='')
-            print(self.run_every)
+        if self.active_date_begin:
+            print("\nThis job will not run outside the following date range:")
+            iprint(str(self.active_date_begin) + " to " +
+                   str(self.active_date_end))
+            if not self.active_date_end:
+                iprint("This limit is not in effect since active_date_end is" +
+                       " not set.")
+
+        if self.active_time_begin:
+            print("\nThis job will not run outside the following time " +
+                  "range, each day;")
+            iprint(str(self.active_time_begin) + " to " +
+                   str(self.active_time_end))
+            if not self.active_time_end:
+                iprint("This limit is not in effect since active_time_end is" +
+                       " not set.")
+
+        if self.active_monthly_days.all():
+            print("\nThis job will not run on the following doays of the" +
+                  " month:")
+            print("    ", end='')
+            for d in self.active_monthly_days.all():
+                print(str(d.day), end=' ')
+            print()
+
+        if self.active_weekly_days.all():
+            print("\nThis job will not run on the following days of the week:")
+            for d in self.active_weekly_days.all():
+                print("    " + d.name)
+
+        if self.active_months.all():
+            print("\nThis job will not run during the following months:")
+            for m in self.active_months.all():
+                iprint(m.name)
+
+        print()
 
 
 """ Populate the DayOfMonth and DayOfWeek models
