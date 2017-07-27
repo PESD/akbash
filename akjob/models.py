@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from django.db import models
 # import api.jobs
 # import bpm.jobs
@@ -84,6 +84,7 @@ class Job(models.Model):
         JobDates.objects.filter(job=self).delete()
         for d in jobdates:
             self.dates.create(job_datetime=d)
+        # wait. why am I returning something? can I delete this?
         return self.dates.all()
 
     @dates_list.deleter
@@ -185,6 +186,9 @@ class Job(models.Model):
         blank=True,
         help_text="Time of day to run the weekly / days of week jobs.")
 
+
+    """ A generic enabled / disabled toggle so jobs can be paused """
+    job_enabled = models.BooleanField(default=True)
 
     """ Limit number of runs. """
     run_count_limit = models.IntegerField(
@@ -333,18 +337,19 @@ class Job(models.Model):
 
     """ Job run status """
     # Datetime of the next run. Blank if no future runs scheduled.
-    next_run = models.DateTimeField(null=True, blank=True)
+    _next_run = models.DateTimeField(null=True, blank=True)
     # Datetime of last run. Also shows that the last run completed.
     # create logic that if current time >= next_run and last_run < next run,
     # then the job needs to be run now.
-    last_run = models.DateTimeField(null=True, blank=True)
+    _last_run = models.DateTimeField(null=True, blank=True)
     # Use job_running to make sure not to run the job if it's currently
     # running.  # Job currently running, true/false.
-    job_running = models.BooleanField(default=False)
+    _job_running = models.BooleanField(default=False)
     # how many times the job has been run
-    run_count = models.IntegerField(default=0)
-    # A generic enabled / disabled toggle so jobs can be paused
-    job_enabled = models.BooleanField(default=True)
+    _run_count = models.IntegerField(default=0)
+    # datetime of the last interval.
+    # For use with run_every to help figure the next interval
+    _last_interval = models.DateTimeField(null=True, blank=True)
 
 
     """ The code to run
@@ -369,6 +374,46 @@ class Job(models.Model):
     # or do it yourself and put the picked object into a generic binary field.
     # pickled_cmd = models.BinaryField()
     """
+
+
+    @staticmethod
+    def dtfloormin(dt):
+        "Returns datetime floored to minutes"
+        return dt.replace(seconds=0, microseconds=0)
+
+
+    def next_run(self):
+        "Find the next run time."
+        now = self.dtfloormin(datetime.now(tz=timezone.utc))
+        # a list to hold multiple times when jobs might run.
+        jtimes = []
+        # check self.dates
+        if self.dates.all():
+            jtimes += self.dates_list
+        # run_every intervals
+        if self.run_every:
+            if not self._last_interval:
+                # I'm not sure if this is the right point to set _last_interval
+                self._last_interval = now
+                self.save()
+                jtimes.append(self.dtfloormin(now + self.run_every))
+            elif self.dtfloormin(self._last_interval + self.run_every) < now:
+                jtimes.append(now)
+                # TODO: I need to set _last_interval to now somehow. I haven't
+                # figured out this part yet. For now setting it here but I
+                # don't like it because I'd rather set it when the job actually
+                # runs because of the intervals.
+                self._last_interval = now
+                self.save()
+            else:
+                jtimes.append(
+                    self.dtfloormin(self._last_interval + self.run_every))
+    # TODO: I'M HERE!!!
+
+
+    def isruntime(self):
+        "Determine if this job should be ran now. Return True or False."
+        pass
 
 
     def __str__(self):
@@ -415,10 +460,10 @@ class Job(models.Model):
         if not self.job_enabled:
             print("\n***** This job is currently disabled *****")
 
-        print("\nThis job was last ran: " + str(self.last_run))
-        print("This job's next schedule run time is: " + str(self.next_run))
+        print("\nThis job was last ran: " + str(self._last_run))
+        print("This job's next schedule run time is: " + str(self._next_run))
 
-        print("\nRun count: " + str(self.run_count))
+        print("\nRun count: " + str(self._run_count))
         if self.run_count_limit:
             print("Run count limit: " + str(self.run_count_limit))
 
