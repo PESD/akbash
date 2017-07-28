@@ -194,6 +194,10 @@ for po, v in config['default database'].items():
 # Talented API key
 TALENTED_API_KEY = config['secrets']['TALENTED_API_KEY']
 
+# EMAIL_FROM_ADDRESS is required in bpm.models. /
+# Set it to blank in case the private settings file does not define it.
+EMAIL_FROM_ADDRESS = ''
+
 # Email settings (use private settings file)
 if 'email' in config:
     email = config['email']
