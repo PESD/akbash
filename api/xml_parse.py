@@ -71,7 +71,11 @@ def parse_hires():
         if Person.person_exists(tid) is False:
             hire = Employee.objects.create(talented_id=tid)
         else:
-            hire = Employee.objects.get(talented_id=tid)
+            # For now, we don't want TalentEd overwriting and changes Tandem has made. /
+            # In the future we will want to write logic to overwrite only if the field hasn't been /
+            # touched recently.
+            # hire = Employee.objects.get(talented_id=tid)
+            continue
 
         # Type
         update_field(hire, "type", "Employee")

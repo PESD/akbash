@@ -194,13 +194,22 @@ for po, v in config['default database'].items():
 # Talented API key
 TALENTED_API_KEY = config['secrets']['TALENTED_API_KEY']
 
+# EMAIL_FROM_ADDRESS is required in bpm.models. /
+# Set it to blank in case the private settings file does not define it.
+EMAIL_FROM_ADDRESS = ''
+
 # Email settings (use private settings file)
 if 'email' in config:
-    EMAIL_HOST = config['email']['EMAIL_HOST']
-    EMAIL_PORT = config['email']['EMAIL_PORT']
-    EMAIL_HOST_USER = config['email']['EMAIL_HOST_USER']
-    EMAIL_HOST_PASSWORD = config['email']['EMAIL_HOST_PASSWORD']
-    EMAIL_USE_TLS = config['email']['EMAIL_USE_TLS']
+    email = config['email']
+    EMAIL_HOST = email['EMAIL_HOST']
+    EMAIL_PORT = email['EMAIL_PORT']
+    EMAIL_FROM_ADDRESS = email['EMAIL_FROM_ADDRESS']
+    if 'EMAIL_HOST_USER' in email:
+        EMAIL_HOST_USER = config['email']['EMAIL_HOST_USER']
+    if 'EMAIL_HOST_PASSWORD' in email:
+        EMAIL_HOST_PASSWORD = config['email']['EMAIL_HOST_PASSWORD']
+    if 'EMAIL_USE_TLS' in email:
+        EMAIL_USE_TLS = config['email']['EMAIL_USE_TLS']
 
 # REST Framework authentication settings. Defaulting to JWT Auth.
 # See: http://getblimp.github.io/django-rest-framework-jwt/
