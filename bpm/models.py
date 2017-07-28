@@ -169,7 +169,7 @@ class WorkflowActivity(models.Model):
     def email_users(self):
         subject = "Tandem - Action required: " + self.activity.name
         for user in self.activity.users.all():
-            body = "Hello, " + user.username + "This is an automated e-mail from Tandem. You have a new task to complete: " + self.activity.name
+            body = "Hello, " + user.username + ". This is an automated e-mail from Tandem. You have a new task to complete: " + self.activity.name + ". For: " + self.workflow.person.first_name + " " + self.workflow.person.last_name
             send_mail(subject, body, settings.EMAIL_HOST_USER, [user.email], fail_silently=True)
 
 
