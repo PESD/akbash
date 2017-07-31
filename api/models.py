@@ -132,10 +132,32 @@ class Person(models.Model):
             return True
         return False
 
+    def update_synergy_service(self, synergy_username, created_by):
+        self.is_synergy_account_created = True
+        self.synergy_account_created_by = created_by
+        if self.services.filter(type="synergy"):
+            synergy_service = self.services.get(type="synergy")
+            synergy_service.user_info = synergy_username
+            synergy_service.save()
+        else:
+            synergy_service = self.services.create(type="synergy", person=self, user_info=synergy_username)
+            synergy_service.save()
+        if synergy_service.user_info == synergy_username:
+            self.save()
+            return True
+        return False
+
     def get_ad_username_or_blank(self):
         try:
             ad_service = self.services.get(type="ad")
             return ad_service.user_info
+        except ObjectDoesNotExist:
+            return ""
+
+    def get_synergy_username_or_blank(self):
+        try:
+            synergy_service = self.services.get(type="synergy")
+            return synergy_service.user_info
         except ObjectDoesNotExist:
             return ""
 
