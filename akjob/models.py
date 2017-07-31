@@ -14,6 +14,7 @@ class DayOfMonth(models.Model):
 class DayOfWeek(models.Model):
     "Day of the week."
     day = models.IntegerField(primary_key=True)
+    weekday = models.IntegerField()
     name = models.CharField(max_length=9)
     def __str__(self):
         return self.name
@@ -84,8 +85,6 @@ class Job(models.Model):
         JobDates.objects.filter(job=self).delete()
         for d in jobdates:
             self.dates.create(job_datetime=d)
-        # wait. why am I returning something? can I delete this?
-        return self.dates.all()
 
     @dates_list.deleter
     def dates_list(self):
@@ -384,36 +383,69 @@ class Job(models.Model):
 
     def next_run(self):
         "Find the next run time."
+
         now = self.dtfloormin(datetime.now(tz=timezone.utc))
+        # A variable to show what is causing a return of now.
+        global run_now_set_by
         # a list to hold multiple times when jobs might run.
         jtimes = []
-        # check self.dates
-        if self.dates.all():
-            jtimes += self.dates_list
-        # run_every intervals
+
+        # run_every intervals - This should be checked 1st.
         if self.run_every:
             if not self._last_interval:
                 # I'm not sure if this is the right point to set _last_interval
                 self._last_interval = now
                 self.save()
-                jtimes.append(self.dtfloormin(now + self.run_every))
-            elif self.dtfloormin(self._last_interval + self.run_every) < now:
-                jtimes.append(now)
-                # TODO: I need to set _last_interval to now somehow. I haven't
-                # figured out this part yet. For now setting it here but I
-                # don't like it because I'd rather set it when the job actually
-                # runs because of the intervals.
-                self._last_interval = now
-                self.save()
+                jtimes.append(now + self.run_every)
+            elif self.dtfloormin(self._last_interval + self.run_every) <= now:
+                # This job should run now
+                run_now_set_by = "re"
+                return now
             else:
                 jtimes.append(
                     self.dtfloormin(self._last_interval + self.run_every))
-    # TODO: I'M HERE!!!
+        # check self.dates
+        if self.dates.all():
+            jtimes += self.dates_list
+        # Monthly jobs
+        if self.monthly_days.all():
+            for d in self.monthly_days_list:
+                # there is datetime.combine() but it doesn't help me that much
+                # in this case.
+                mdt = datetime(
+                    now.year, now.month, d,
+                    self.monthly_time.hour, self.monthly_time.minute,
+                    tzinfo=self.monthly_time.tzinfo)
+                jtime.append(mdt)
+        # Weekly jobs
+        if self.weekly_days.all():
+            for d in self.weekly_days_list:
+                pass
+        # TODO: I'M HERE!!!
+        jtimes.sort()
+        jtimes = [dtfloormin(t) for t in jtimes if self.dtfloormin(t) >= now]
+        # the list was sorted and datetimes in the past removed so this should
+        # return the lowest (earliest) datetime.
+        return jtimes[0]
 
 
+    # the way the pieces are falling together, I may not need this.
     def isruntime(self):
         "Determine if this job should be ran now. Return True or False."
         pass
+
+
+    def run(self):
+        "Perform the job."
+        now = self.dtfloormin(datetime.now(tz=timezone.utc))
+        global run_now_set_by
+        # do stuff and run the job then...
+        self._job_running = False
+        self._runcount += 1
+        self._last_run = now
+        if run_now_set_by == "re":
+            self._last_interval = now
+        self.save()
 
 
     def __str__(self):
@@ -552,29 +584,31 @@ class Job(models.Model):
 """
 def load_DayOfMonth():
     for d in range(1, 32):
-        DayOfMonth.objects.update_or_create(day=d)
+        DayOfMonth.objects.create(day=d)
 
-# Using days 1-7 starting on Sunday because that's what the queryset field lookup
-# week_day uses.
+# Using days 1-7 starting on Sunday because that's what the queryset field
+# lookup week_day uses and it makes sense to most Americans.
+# https://docs.djangoproject.com/en/1.11/ref/models/querysets/#week-day
+# The weekday field matches with datetime.weekday().
 def load_DayOfWeek():
-    DayOfWeek.objects.update_or_create(day=1, name="Sunday")
-    DayOfWeek.objects.update_or_create(day=2, name="Monday")
-    DayOfWeek.objects.update_or_create(day=3, name="Tuesday")
-    DayOfWeek.objects.update_or_create(day=4, name="Wednesday")
-    DayOfWeek.objects.update_or_create(day=5, name="Thursday")
-    DayOfWeek.objects.update_or_create(day=6, name="Friday")
-    DayOfWeek.objects.update_or_create(day=7, name="Saturday")
+    DayOfWeek.objects.create(day=1, weekday=6, name="Sunday")
+    DayOfWeek.objects.create(day=2, weekday=0, name="Monday")
+    DayOfWeek.objects.create(day=3, weekday=1, name="Tuesday")
+    DayOfWeek.objects.create(day=4, weekday=2, name="Wednesday")
+    DayOfWeek.objects.create(day=5, weekday=3, name="Thursday")
+    DayOfWeek.objects.create(day=6, weekday=4, name="Friday")
+    DayOfWeek.objects.create(day=7, weekday=5, name="Saturday")
 
 def load_Months():
-    Months.objects.update_or_create(month=1, name="January")
-    Months.objects.update_or_create(month=2, name="February")
-    Months.objects.update_or_create(month=3, name="March")
-    Months.objects.update_or_create(month=4, name="April")
-    Months.objects.update_or_create(month=5, name="May")
-    Months.objects.update_or_create(month=6, name="June")
-    Months.objects.update_or_create(month=7, name="July")
-    Months.objects.update_or_create(month=8, name="August")
-    Months.objects.update_or_create(month=9, name="September")
-    Months.objects.update_or_create(month=10, name="October")
-    Months.objects.update_or_create(month=11, name="November")
-    Months.objects.update_or_create(month=12, name="December")
+    Months.objects.create(month=1, name="January")
+    Months.objects.create(month=2, name="February")
+    Months.objects.create(month=3, name="March")
+    Months.objects.create(month=4, name="April")
+    Months.objects.create(month=5, name="May")
+    Months.objects.create(month=6, name="June")
+    Months.objects.create(month=7, name="July")
+    Months.objects.create(month=8, name="August")
+    Months.objects.create(month=9, name="September")
+    Months.objects.create(month=10, name="October")
+    Months.objects.create(month=11, name="November")
+    Months.objects.create(month=12, name="December")
