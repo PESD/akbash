@@ -3,7 +3,7 @@ from django.db import models
 from django.core.mail import send_mail
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
-from api.models import Person, Employee, Position
+from api.models import Person, Employee, Position, update_field
 from api import ldap
 from api import visions
 from django.contrib.auth.models import User
@@ -167,11 +167,11 @@ class WorkflowActivity(models.Model):
         return True
 
     def email_users(self):
-        subject = "Tandem - Action required: " + self.activity.name
-        for user in self.activity.users.all():
-            body = "Hello, " + user.username + ". This is an automated e-mail from Tandem. You have a new task to complete: " + self.activity.name + ". For: " + self.workflow.person.first_name + " " + self.workflow.person.last_name
-            # send_mail(subject, body, settings.EMAIL_HOST_USER, [user.email], fail_silently=False)
-            send_mail(subject, body, settings.EMAIL_FROM_ADDRESS, [user.email], fail_silently=True)
+        if settings.EMAIL_ACTIVE:
+            subject = "Tandem - Action required: " + self.activity.name
+            for user in self.activity.users.all():
+                body = "Hello, " + user.username + ". This is an automated e-mail from Tandem. You have a new task to complete: " + self.activity.name + ". For: " + self.workflow.person.first_name + " " + self.workflow.person.last_name
+                send_mail(subject, body, settings.EMAIL_FROM_ADDRESS, [user.email], fail_silently=True)
 
 
 class TaskWorker:
@@ -230,6 +230,7 @@ class TaskWorker:
             employee = TaskWorker.get_employee_from_workflow_task(workflow_task)
             employee.epar_id = epar_id
             employee.save()
+            employee.update_employee_from_epar()
             return (True, "Success")
 
         def task_set_visions_id(**kwargs):
@@ -241,8 +242,8 @@ class TaskWorker:
                 return (False, "Visions Employee already linked to an Employee")
             employee = TaskWorker.get_employee_from_workflow_task(workflow_task)
             employee.visions_id = visions_id
-            employee.employee_id = visions.Viwpremployees().EmployeeID(visions_id)
             employee.save()
+            employee.update_employee_from_visions()
             return (True, "Success")
 
         def task_check_ad(**kwargs):

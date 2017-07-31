@@ -2,6 +2,7 @@ import xml.etree.ElementTree as ET
 from .models import Person, Employee, Position, Location, update_field
 from datetime import date
 import os
+from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 
 
@@ -57,7 +58,7 @@ def gender_from_talented(gender):
 
 def parse_hires():
     # Simply reads test.xml from the root akbash directory. Obviously this needs to change.
-    xml_file = "test.xml"
+    xml_file = settings.BASE_DIR + "/test.xml"
     tree = ET.parse(xml_file)
     root = tree.getroot()
 
