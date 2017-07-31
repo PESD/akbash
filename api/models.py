@@ -2,10 +2,21 @@ from django.db import models
 from django.db.models import Max
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
+from api import visions
+
+
+# Function for updating data. Use this instead of updating objects directly
+# in order to potentially capture in a future changelog/audit model.
+def update_field(data_object, column, new_value):
+    old_value = getattr(data_object, column)
+    if new_value != old_value:
+        # Save the new value. In the future could also call an
+        # audit/changelog log function
+        setattr(data_object, column, new_value)
+        data_object.save()
 
 
 # Vendor Classes
-
 class VendorType(models.Model):
     name = models.CharField(max_length=255)
 
@@ -136,6 +147,15 @@ class Employee(Person):
     marked_as_hired = models.DateField(null=True, blank=True)
     epar_id = models.IntegerField(null=True, blank=True)
 
+    def update_employee_from_visions(self):
+        update_field(self, "employee_id", visions.Viwpremployees().EmployeeID(self.visions_id))
+        update_field(self, "first_name", visions.Viwpremployees().FirstName(self.visions_id))
+        update_field(self, "last_name", visions.Viwpremployees().LastName(self.visions_id))
+        update_field(self, "middle_name", visions.Viwpremployees().MiddleName(self.visions_id))
+
+    def update_employee_from_epar(self):
+        pass
+
 
 class Contractor(Person):
     vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE)
@@ -221,14 +241,3 @@ class Comment(models.Model):
     text = models.TextField(blank=True)
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     created_date = models.DateTimeField(auto_now_add=True)
-
-
-# Function for updating data. Use this instead of updating objects directly
-# in order to potentially capture in a future changelog/audit model.
-def update_field(data_object, column, new_value):
-    old_value = getattr(data_object, column)
-    if new_value != old_value:
-        # Save the new value. In the future could also call an
-        # audit/changelog log function
-        setattr(data_object, column, new_value)
-        data_object.save()

@@ -23,7 +23,7 @@ def get_talented_xml():
     r = requests.post("https://phxschools.tedk12.com/hire/nfIntegration/srApplicantExport.asmx/RetrieveHiresXML", data=post_vars)
 
     # Right now we simply save the xml file in akbash root as test.xml. Need to think of a better solution.
-    file_path = "test.xml"
+    file_path = settings.BASE_DIR + "/test.xml"
     xml_file = open(file_path, "w")
     xml_file.truncate()
     xml_file.write(r.text)

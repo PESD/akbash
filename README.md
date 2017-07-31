@@ -136,8 +136,10 @@ ALLOWED_HOSTS: 127.0.0.1, localhost
 ENABLE_JWT: False
 
 [email]
+EMAIL_ACTIVE: True
 EMAIL_HOST: outlook.office365.com
 EMAIL_PORT: 587
+EMAIL_FROM_ADDRESS: youremail@yourdomain.com
 EMAIL_HOST_USER: youremail@yourdomain.com
 EMAIL_HOST_PASSWORD: yourpassword
 EMAIL_USE_TLS: True
