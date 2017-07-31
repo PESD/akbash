@@ -8,6 +8,7 @@ from api import ldap
 from api import visions
 from django.contrib.auth.models import User
 from bpm.visions_helper import VisionsHelper
+from bpm.synergy_helper import SynergyHelper
 
 
 # A Process is something like "New Hire Process"
@@ -256,6 +257,21 @@ class TaskWorker:
             if not ad_username:
                 return (False, "Active Directory user not found")
             did_update = employee.update_ad_service(ad_username, user)
+            if did_update:
+                return (True, "Success")
+            else:
+                return (False, "Unknown Error")
+
+        def task_check_synergy(**kwargs):
+            workflow_task = kwargs["workflow_task"]
+            employee = TaskWorker.get_employee_from_workflow_task(workflow_task)
+            synergy_username = SynergyHelper.get_synergy_login(employee.visions_id)
+            user = TaskWorker.get_user_or_false(kwargs["username"])
+            if not user:
+                return (False, "Invalid User")
+            if not synergy_username:
+                return (False, "Synergy user not found")
+            did_update = employee.update_synergy_service(synergy_username, user)
             if did_update:
                 return (True, "Success")
             else:

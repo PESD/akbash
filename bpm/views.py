@@ -22,6 +22,7 @@ from bpm.serializers import (UserSerializer,
                              TaskEparSerializer,
                              TaskVisionsIDSerializer,
                              TaskEmployeeADSerializer,
+                             TaskEmployeeSynergySerializer,
                              TaskUpdateEmployeePosition,
                              TaskGenericCheck,
                              TaskGenericTodo,
@@ -241,6 +242,17 @@ def task_check_employee_ad_view(request):
     if request.method == 'POST':
         data = JSONParser().parse(request)
         serializer = TaskEmployeeADSerializer(data=data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return JsonResponse(serializer.data, status=201)
+        return JsonResponse(serializer.errors, status=400)
+
+
+@csrf_exempt
+def task_check_employee_synergy_view(request):
+    if request.method == 'POST':
+        data = JSONParser().parse(request)
+        serializer = TaskEmployeeSynergySerializer(data=data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return JsonResponse(serializer.data, status=201)

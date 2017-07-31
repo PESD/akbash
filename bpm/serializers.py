@@ -244,6 +244,31 @@ class TaskEmployeeADSerializer(serializers.Serializer):
         return {"workflow_task_id": workflow_task.id, "ad_username": ad_username, "username": username, "status": status, "message": message}
 
 
+class TaskEmployeeSynergySerializer(serializers.Serializer):
+    workflow_task_id = serializers.IntegerField()
+    synergy_username = serializers.CharField(max_length=50, allow_blank=True)
+    username = serializers.CharField(max_length=50, allow_blank=True)
+    status = serializers.BooleanField()
+    message = serializers.CharField(max_length=200, allow_blank=True)
+
+    def create(self, validated_data):
+        workflow_task = WorkflowTask.objects.get(pk=validated_data["workflow_task_id"])
+        username = validated_data["username"]
+        args = {
+            "workflow_task": workflow_task,
+            "username": username
+        }
+        status, message = workflow_task.run_task(args)
+        synergy_username = ""
+        if workflow_task.status == "Complete":
+            employee = TaskWorker.get_employee_from_workflow_task(workflow_task)
+            synergy_username = employee.get_synergy_username_or_blank()
+            workflow_activities = workflow_task.workflowactivity_set.all()
+            for workflow_activity in workflow_activities:
+                workflow_activity.advance_workflow_activity()
+        return {"workflow_task_id": workflow_task.id, "synergy_username": synergy_username, "username": username, "status": status, "message": message}
+
+
 class TaskUpdateEmployeePosition(serializers.Serializer):
     workflow_task_id = serializers.IntegerField()
     status = serializers.BooleanField()
