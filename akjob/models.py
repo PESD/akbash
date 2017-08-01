@@ -143,6 +143,13 @@ class Job(models.Model):
         blank=True,
         help_text="Time of day to run the monthly / days of month jobs.")
 
+    monthly_tz_offset = models.DurationField(
+        null=True,
+        blank=True,
+        default=timedelta(0),
+        help_text="Timezone offset to use with monthly_time. If blank, UTC " +
+                  "is assumed. Submit a datetime.timedelta object.")
+
 
     # ##### Weekly #####
     # Using a set of days of the week, the job will run on each of those days.
@@ -185,6 +192,13 @@ class Job(models.Model):
         blank=True,
         help_text="Time of day to run the weekly / days of week jobs.")
 
+    weekly_tz_offset = models.DurationField(
+        null=True,
+        blank=True,
+        default=timedelta(0),
+        help_text="Timezone offset to use with weekly_time. If blank, UTC " +
+                  "is assumed. Submit a datetime.timedelta object.")
+
 
     """ A generic enabled / disabled toggle so jobs can be paused """
     job_enabled = models.BooleanField(default=True)
@@ -210,6 +224,20 @@ class Job(models.Model):
         blank=True,
         help_text="Limit job runs to a time of day window between " +
                   "active_time_begin and active_time_end.")
+
+    active_time_begin_tz_offset = models.DurationField(
+        null=True,
+        blank=True,
+        default=timedelta(0),
+        help_text="Timezone offset. If blank, UTC " +
+                  "is assumed. Submit a datetime.timedelta object.")
+
+    active_time_end_tz_offset = models.DurationField(
+        null=True,
+        blank=True,
+        default=timedelta(0),
+        help_text="Timezone offset. If blank, UTC " +
+                  "is assumed. Submit a datetime.timedelta object.")
 
     # ##### Active Days Of Week #####
     # Limit job runs to the given days of week. Use integers or DayOfWeek
@@ -378,7 +406,7 @@ class Job(models.Model):
     @staticmethod
     def dtfloormin(dt):
         "Returns datetime floored to minutes"
-        return dt.replace(seconds=0, microseconds=0)
+        return dt.replace(second=0, microsecond=0)
 
 
     def next_run(self):
@@ -387,6 +415,7 @@ class Job(models.Model):
         now = self.dtfloormin(datetime.now(tz=timezone.utc))
         # A variable to show what is causing a return of now.
         global run_now_set_by
+        global run_datetimes
         # a list to hold multiple times when jobs might run.
         jtimes = []
 
@@ -416,14 +445,26 @@ class Job(models.Model):
                     now.year, now.month, d,
                     self.monthly_time.hour, self.monthly_time.minute,
                     tzinfo=self.monthly_time.tzinfo)
-                jtime.append(mdt)
+                jtimes.append(mdt)
         # Weekly jobs
-        if self.weekly_days.all():
-            for d in self.weekly_days_list:
-                pass
-        # TODO: I'M HERE!!!
+        qs = self.weekly_days.all()
+        if qs:
+            weekdaylist = []
+            for d in qs:
+                weekdaylist.append(d.weekday)
+            for i in range(7):
+                if (now + timedelta(hours=24 * i)).weekday() in weekdaylist:
+                    dt = now + timedelta(hours=24 * i)
+                    dt.replace(hour=self.weekly_time.hour,
+                               minute=self.weekly_time.minute)
+                    jtimes.append(dt)
+        # TODO: I"M HERE!!! impliment timezone for TimeFields.
+        # This method isn't working yet.
+        # for debug
         jtimes.sort()
-        jtimes = [dtfloormin(t) for t in jtimes if self.dtfloormin(t) >= now]
+        run_datetimes = jtimes
+        #
+        jtimes = [self.dtfloormin(t) for t in jtimes if self.dtfloormin(t) >= now]
         # the list was sorted and datetimes in the past removed so this should
         # return the lowest (earliest) datetime.
         return jtimes[0]
@@ -464,13 +505,6 @@ class Job(models.Model):
     def save(self, *args, **kwargs):
         self.full_clean()
         super(Job, self).save(*args, **kwargs)
-        # self.refresh_from_db()
-        """ The only reason I reload from the DB, using self.refresh_from_db(),
-            is I've been using pendulum a lot but when pendulum objects are
-            saved they get turned into datetime objects. Reloading right away
-            helps avoid errors by reminding me not to do special pendulum
-            things unless you first turn the datetime objects to pendulum
-            objects. """
 
 
     # TODO: I didn't test this section well since it's not essential and I have
@@ -572,6 +606,11 @@ class Job(models.Model):
             print("\nThis job will not run during the following months:")
             for m in self.active_months.all():
                 iprint(m.name)
+
+        # for debug
+        global run_datetimes
+        print("\nList of run times:")
+        iprint(run_datetimes)
 
         print()
 
