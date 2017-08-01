@@ -143,10 +143,10 @@ class Job(models.Model):
         blank=True,
         help_text="Time of day to run the monthly / days of month jobs.")
 
-    monthly_tz_offset = models.DurationField(
+    _monthly_tz_offset = models.IntegerField(
         null=True,
         blank=True,
-        default=timedelta(0),
+        default=0,
         help_text="Timezone offset to use with monthly_time. If blank, UTC " +
                   "is assumed. Submit a datetime.timedelta object.")
 
@@ -192,7 +192,7 @@ class Job(models.Model):
         blank=True,
         help_text="Time of day to run the weekly / days of week jobs.")
 
-    weekly_tz_offset = models.DurationField(
+    _weekly_tz_offset = models.DurationField(
         null=True,
         blank=True,
         default=timedelta(0),
@@ -224,15 +224,13 @@ class Job(models.Model):
         blank=True,
         help_text="Limit job runs to a time of day window between " +
                   "active_time_begin and active_time_end.")
-
-    active_time_begin_tz_offset = models.DurationField(
+    _active_time_begin_tz_offset = models.DurationField(
         null=True,
         blank=True,
         default=timedelta(0),
         help_text="Timezone offset. If blank, UTC " +
                   "is assumed. Submit a datetime.timedelta object.")
-
-    active_time_end_tz_offset = models.DurationField(
+    _active_time_end_tz_offset = models.DurationField(
         null=True,
         blank=True,
         default=timedelta(0),
@@ -444,7 +442,7 @@ class Job(models.Model):
                 mdt = datetime(
                     now.year, now.month, d,
                     self.monthly_time.hour, self.monthly_time.minute,
-                    tzinfo=self.monthly_time.tzinfo)
+                    tzinfo=timezone(self.monthly_tz_offset))
                 jtimes.append(mdt)
         # Weekly jobs
         qs = self.weekly_days.all()
@@ -456,13 +454,16 @@ class Job(models.Model):
                 if (now + timedelta(hours=24 * i)).weekday() in weekdaylist:
                     dt = now + timedelta(hours=24 * i)
                     dt.replace(hour=self.weekly_time.hour,
-                               minute=self.weekly_time.minute)
+                               minute=self.weekly_time.minute,
+                               tzinfo=timezone(self.weekly_tz_offset))
                     jtimes.append(dt)
         # TODO: I"M HERE!!! impliment timezone for TimeFields.
         # This method isn't working yet.
         # for debug
         jtimes.sort()
         run_datetimes = jtimes
+        from pprint import pprint
+        pprint(jtimes)
         #
         jtimes = [self.dtfloormin(t) for t in jtimes if self.dtfloormin(t) >= now]
         # the list was sorted and datetimes in the past removed so this should
@@ -608,11 +609,34 @@ class Job(models.Model):
                 iprint(m.name)
 
         # for debug
-        global run_datetimes
-        print("\nList of run times:")
-        iprint(run_datetimes)
+        # global run_datetimes
+        # print("\nList of run times:")
+        # iprint(run_datetimes)
 
         print()
+
+
+    # I've been having terrible trouble trying to keep track of timezones. Many
+    # problems stem from MS SQL not being well supported by django. Between
+    # django-pyodbc-azure and pyodbc I'm guessing the bugs reside.
+    # models.TimeFields are not storing tzinfo though maybe thats because date
+    # is required to calculate timezone and dst stuff. So then I decided to use
+    # models.DurationField to store datetime.timedelta objects to be used as
+    # timezone offsets to create datetimes with. Turns out that negative
+    # timedeltas are not being stored correctly. So now I'm making properties
+    # which you give a timedelta to and it converts it to seconds which are
+    # stored in a models.IntegerField.
+    def create_tz_offset_properties(self):
+        tz_offset_field_list = [self._monthly_tz_offset,
+                                self._weekly_tz_offset,
+                                self._active_time_begin_tz_offset,
+                                self._active_time_end_tz_offset,
+                                ]
+        for f in tz_offset_field_list:
+            def tz_offset_property(self):
+                return timedelta(f)
+            def tz_offset_property_setter(self, delta):
+                f = delta.total_seconds()
 
 
 """ Populate the DayOfMonth and DayOfWeek models
