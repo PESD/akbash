@@ -89,6 +89,15 @@ class WorkflowCompleteViewSet(viewsets.ModelViewSet):
         return queryset
 
 
+class WorkflowCompleteCompletedViewSet(viewsets.ModelViewSet):
+    serializer_class = WorkflowCompleteSerializer
+
+    def get_queryset(self):
+        queryset = Workflow.objects.filter(status="Complete").exclude(process__name="Ignore Employee Process")
+        queryset = self.get_serializer_class().setup_eager_loading(queryset)
+        return queryset
+
+
 class WorkflowActivityViewSet(viewsets.ModelViewSet):
     serializer_class = WorkflowActivitySerializer
 
@@ -141,7 +150,7 @@ class WorkflowCompleteFromActiveUserViewSet(viewsets.ModelViewSet):
         for wfa in wf_activities:
             workflow_list.append(wfa.workflow.id)
         workflow_dedupped = list(set(workflow_list))
-        queryset = Workflow.objects.filter(id__in=workflow_dedupped)
+        queryset = Workflow.objects.filter(id__in=workflow_dedupped).filter(status="Active")
         queryset = self.get_serializer_class().setup_eager_loading(queryset)
         return queryset
 
@@ -150,13 +159,9 @@ class WorkflowCompleteActiveViewSet(viewsets.ModelViewSet):
     serializer_class = WorkflowCompleteSerializer
 
     def get_queryset(self):
-        wf_activities = WorkflowActivity.objects.filter(status="Active")
-        workflow_list = []
-        for wfa in wf_activities:
-            workflow_list.append(wfa.workflow.id)
-        workflow_dedupped = list(set(workflow_list))
-        queryset = Workflow.objects.filter(id__in=workflow_dedupped)
-        return self.get_serializer_class().setup_eager_loading(queryset)
+        queryset = Workflow.objects.filter(status="Active")
+        queryset = self.get_serializer_class().setup_eager_loading(queryset)
+        return queryset
 
 
 class TaskViewSet(viewsets.ModelViewSet):
