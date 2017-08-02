@@ -40,6 +40,13 @@ class Person(models.Model):
         ("Contractor", "Contractor"),
         ("Employee", "Employee"),
     )
+    STATUSES = (
+        ("newhire", "TalentEd New Hire"),
+        ("inprocess", "In Process"),
+        ("active", "Active"),
+        ("inactive", "Inactive"),
+    )
+    status = models.CharField(max_length=20, choices=STATUSES, default="newhire")
     type = models.CharField(max_length=16, choices=TYPES)
     first_name = models.CharField(max_length=50, blank=True)
     middle_name = models.CharField(max_length=50, blank=True)
@@ -174,6 +181,59 @@ class Employee(Person):
         update_field(self, "first_name", visions.Viwpremployees().FirstName(self.visions_id))
         update_field(self, "last_name", visions.Viwpremployees().LastName(self.visions_id))
         update_field(self, "middle_name", visions.Viwpremployees().MiddleName(self.visions_id))
+        update_field(self, "birth_date", visions.Viwpremployees().BirthDate(self.visions_id))
+        update_field(self, "start_date", visions.Viwpremployees().HireDate(self.visions_id))
+        update_field(self, "ssn", visions.Viwpremployees().EmployeeSSN(self.visions_id))
+        ethnicity = visions.Viwpremployees().PREthnicOrigin(self.visions_id)
+        clean_ethnicity = False
+        if ethnicity == "Not Hispanic or Latino":
+            clean_ethnicity = "Non-Hispanic"
+        if ethnicity == "Hispanic or Latino":
+            clean_ethnicity = "Hispanic"
+        if clean_ethnicity:
+            update_field(self, "ethnicity", clean_ethnicity)
+        race = visions.Viwpremployees().tblHRMasterEthnicityID(self.visions_id)
+        if race == 1:
+            update_field(self, "race_white", True)
+            update_field(self, "race_black", False)
+            update_field(self, "race_american_indian", False)
+            update_field(self, "race_asian", False)
+            update_field(self, "race_islander", False)
+        if race == 2:
+            update_field(self, "race_white", False)
+            update_field(self, "race_black", True)
+            update_field(self, "race_american_indian", False)
+            update_field(self, "race_asian", False)
+            update_field(self, "race_islander", False)
+        if race == 3:
+            update_field(self, "race_white", True)
+            update_field(self, "race_black", False)
+            update_field(self, "race_american_indian", False)
+            update_field(self, "race_asian", False)
+            update_field(self, "race_islander", False)
+        if race == 4:
+            update_field(self, "race_white", False)
+            update_field(self, "race_black", False)
+            update_field(self, "race_american_indian", True)
+            update_field(self, "race_asian", False)
+            update_field(self, "race_islander", False)
+        if race == 5:
+            update_field(self, "race_white", False)
+            update_field(self, "race_black", False)
+            update_field(self, "race_american_indian", False)
+            update_field(self, "race_asian", True)
+            update_field(self, "race_islander", False)
+        if race == 6:
+            update_field(self, "race_white", False)
+            update_field(self, "race_black", False)
+            update_field(self, "race_american_indian", False)
+            update_field(self, "race_asian", False)
+            update_field(self, "race_islander", True)
+        gender = visions.Viwpremployees().Gender(self.visions_id)
+        if gender == 1:
+            update_field(self, "gender", "M")
+        if gender == 2:
+            update_field(self, "gender", "F")
 
     def update_employee_from_epar(self):
         pass
@@ -240,7 +300,7 @@ class PositionType(models.Model):
 class Position(models.Model):
     location = models.ForeignKey(Location, on_delete=models.SET_NULL, null=True)
     department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True)
-    person = models.ForeignKey(Person, on_delete=models.CASCADE)
+    person = models.ForeignKey(Person, on_delete=models.CASCADE, related_name="positions")
     position_type = models.ForeignKey(PositionType, on_delete=models.SET_NULL, null=True)
     title = models.CharField(max_length=255, blank=True)
     is_primary = models.BooleanField(default=False)

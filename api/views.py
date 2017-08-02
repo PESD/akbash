@@ -9,6 +9,7 @@ from api.serializers import (EmployeeSerializer,
                              VendorSerializer,
                              CommentSerializer,
                              UserSerializer,
+                             PersonSkinnySerializer,
                              )
 from bpm.models import Workflow
 from django.contrib.auth.models import User
@@ -41,6 +42,22 @@ class PersonViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = Person.objects.all()
+        return self.get_serializer_class().setup_eager_loading(queryset)
+
+
+class PersonAllContractorsViewSet(viewsets.ModelViewSet):
+    serializer_class = PersonSerializer
+
+    def get_queryset(self):
+        queryset = Person.objects.filter(type="Contractor")
+        return self.get_serializer_class().setup_eager_loading(queryset)
+
+
+class PersonAllEmployeesViewSet(viewsets.ModelViewSet):
+    serializer_class = PersonSkinnySerializer
+
+    def get_queryset(self):
+        queryset = Person.objects.filter(type="Employee")
         return self.get_serializer_class().setup_eager_loading(queryset)
 
 

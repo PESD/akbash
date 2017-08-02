@@ -150,7 +150,7 @@ class WorkflowCompleteSerializer(serializers.ModelSerializer):
         """ Perform necessary eager loading of data. """
         queryset = queryset.select_related('person')
         queryset = queryset.select_related('process')
-        queryset = queryset.prefetch_related('workflow_activites')
+        queryset = queryset.prefetch_related('workflow_activites', 'workflow_activites__workflow_tasks', 'person__services')
         return queryset
 
 
@@ -256,7 +256,8 @@ class TaskEmployeeSynergySerializer(serializers.Serializer):
         username = validated_data["username"]
         args = {
             "workflow_task": workflow_task,
-            "username": username
+            "username": username,
+            "status": validated_data["status"],
         }
         status, message = workflow_task.run_task(args)
         synergy_username = ""

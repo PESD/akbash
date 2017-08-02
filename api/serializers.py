@@ -401,6 +401,42 @@ class PositionSerializer(serializers.ModelSerializer):
         return queryset
 
 
+class PositionSkinnySerializer(serializers.ModelSerializer):
+    location = serializers.SlugRelatedField(many=False, read_only=True, slug_field='short_name')
+
+    class Meta:
+        model = Position
+        fields = (
+            "id",
+            "title",
+            "location",
+        )
+
+
+class PersonSkinnySerializer(serializers.ModelSerializer):
+    positions = PositionSkinnySerializer(many=True, read_only=True)
+    status = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Person
+        fields = (
+            "id",
+            "type",
+            "status",
+            "first_name",
+            "last_name",
+            "start_date",
+            "positions",
+        )
+
+    def get_status(self, obj):
+        return obj.get_status_display()
+
+    def setup_eager_loading(queryset):
+        queryset = queryset.prefetch_related('positions', 'positions__location')
+        return queryset
+
+
 class CommentSerializer(serializers.ModelSerializer):
 
     class Meta:
