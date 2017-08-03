@@ -288,7 +288,7 @@ class TaskWorker:
             if not visions_positions:
                 return (False, "No positions found")
             secondary_positions = []
-            primary_position = employee.position_set.get(is_primary=True)
+            primary_position = employee.positions.get(is_primary=True)
             did_update = False
             for position in visions_positions:
                 if position.position_ranking == "Primary":
