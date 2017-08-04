@@ -1,7 +1,76 @@
 from datetime import datetime, timezone, timedelta
 from django.db import models
+from django.core import exceptions
+from django.utils.translation import ugettext_lazy as _
 # import api.jobs
 # import bpm.jobs
+
+
+# I've been having terrible trouble trying to keep track of timezones. Many
+# problems stem from MS SQL not being well supported by django. Between
+# django-pyodbc-azure and pyodbc I'm guessing the bugs reside.
+# models.TimeFields are not storing tzinfo though maybe thats because date
+# is required to calculate timezone and dst stuff. So then I decided to use
+# models.DurationField to store datetime.timedelta objects to be used as
+# timezone offsets to create datetimes with. Turns out that negative
+# timedeltas are not being stored correctly. So now I'm making a model field
+# which you give a timedelta to and it converts it to seconds which are
+# stored as an integer in the database.
+
+# I've changed so much from models.DurationField, maybe I should subclass
+# models.Field instead.
+class TimeZoneOffsetField(models.DurationField):
+    "This field takes a timedelta and stores it in the DB as seconds."
+    description = "Timezone offset expressed as a datetime.timedelta object."
+
+    default_error_messages = {
+        'invalid': _("'%(value)s' value is invalid. It should be a "
+                     "datetime.timedelta object.")
+    }
+
+    # Store the data as an integer field in the DB.
+    def get_internal_type(self):
+        return "IntegerField"
+
+    def from_db_value(self, value, expression, connection, context):
+        if value is None:
+            return value
+        return timedelta(seconds=value)
+
+    def to_python(self, value):
+        if value is None:
+            return value
+        if isinstance(value, timedelta):
+            return value
+        try:
+            td = timedelta(seconds=int(value))
+        except ValueError:
+            pass
+        else:
+            if td is not None:
+                return td
+
+        raise exceptions.ValidationError(
+            self.error_messages['invalid'],
+            code='invalid',
+            params={'value': value},
+        )
+
+    def get_prep_value(self, value):
+        if value is None:
+            return None
+        return int(value.total_seconds())
+
+    def get_db_prep_value(self, value, connection, prepared=False):
+        # I want to use get_db_prep_value from DurationField's parent (Field).
+        super(DurationField, self).get_db_prep_value(value, connection,
+                                                     prepared)
+
+    # Inheriting formfield method from DurationField.
+
+    def get_db_converters(self, connection):
+        # I want to use get_db_converters from DurationField's parent (Field).
+        super(DurationField, self).get_db_converters(connection)
 
 
 class DayOfMonth(models.Model):
@@ -144,10 +213,10 @@ class Job(models.Model):
         help_text="Time of day to run the monthly / days of month jobs.")
 
     _monthly_tz_offset = models.IntegerField(
-        null=True,
         blank=True,
         default=0,
-        help_text="Timezone offset to use with monthly_time. If blank, UTC " +
+        help_text="Set this field using monthly_tz_offset with a timezone " +
+                  "offset to use with monthly_time. If blank, UTC " +
                   "is assumed. Submit a datetime.timedelta object.")
 
 
@@ -192,10 +261,9 @@ class Job(models.Model):
         blank=True,
         help_text="Time of day to run the weekly / days of week jobs.")
 
-    _weekly_tz_offset = models.DurationField(
-        null=True,
+    _weekly_tz_offset = models.IntegerField(
         blank=True,
-        default=timedelta(0),
+        default=0,
         help_text="Timezone offset to use with weekly_time. If blank, UTC " +
                   "is assumed. Submit a datetime.timedelta object.")
 
@@ -224,16 +292,14 @@ class Job(models.Model):
         blank=True,
         help_text="Limit job runs to a time of day window between " +
                   "active_time_begin and active_time_end.")
-    _active_time_begin_tz_offset = models.DurationField(
-        null=True,
+    _active_time_begin_tz_offset = models.IntegerField(
         blank=True,
-        default=timedelta(0),
+        default=0,
         help_text="Timezone offset. If blank, UTC " +
                   "is assumed. Submit a datetime.timedelta object.")
-    _active_time_end_tz_offset = models.DurationField(
-        null=True,
+    _active_time_end_tz_offset = models.IntegerField(
         blank=True,
-        default=timedelta(0),
+        default=0,
         help_text="Timezone offset. If blank, UTC " +
                   "is assumed. Submit a datetime.timedelta object.")
 
@@ -615,28 +681,6 @@ class Job(models.Model):
 
         print()
 
-
-    # I've been having terrible trouble trying to keep track of timezones. Many
-    # problems stem from MS SQL not being well supported by django. Between
-    # django-pyodbc-azure and pyodbc I'm guessing the bugs reside.
-    # models.TimeFields are not storing tzinfo though maybe thats because date
-    # is required to calculate timezone and dst stuff. So then I decided to use
-    # models.DurationField to store datetime.timedelta objects to be used as
-    # timezone offsets to create datetimes with. Turns out that negative
-    # timedeltas are not being stored correctly. So now I'm making properties
-    # which you give a timedelta to and it converts it to seconds which are
-    # stored in a models.IntegerField.
-    def create_tz_offset_properties(self):
-        tz_offset_field_list = [self._monthly_tz_offset,
-                                self._weekly_tz_offset,
-                                self._active_time_begin_tz_offset,
-                                self._active_time_end_tz_offset,
-                                ]
-        for f in tz_offset_field_list:
-            def tz_offset_property(self):
-                return timedelta(f)
-            def tz_offset_property_setter(self, delta):
-                f = delta.total_seconds()
 
 
 """ Populate the DayOfMonth and DayOfWeek models

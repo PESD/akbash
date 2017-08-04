@@ -10,6 +10,7 @@ Things to test:
 from datetime import datetime, timedelta, timezone, time, date
 from akjob.models import Job, load_DayOfMonth, load_DayOfWeek, load_Months
 from django.test import TestCase
+from django.db import IntegrityError
 
 utc = timezone.utc
 # mst = timezone(timedelta(hours=-7))
@@ -28,9 +29,13 @@ class JobsToRunTestCase(TestCase):
     "Test that akjob can figure out which jobs to run"
 
     def setUp(self):
-        load_DayOfMonth()
-        load_DayOfWeek()
-        load_Months()
+        try:
+            load_DayOfMonth()
+            load_DayOfWeek()
+            load_Months()
+        except IntegrityError:
+            pass
+
         self.now = datetime.now(tz=utc)
         self.future = datetime.now(tz=utc) + timedelta(minutes=5)
         self.past = datetime.now(tz=utc) - timedelta(minutes=5)
