@@ -82,11 +82,11 @@ class JobsToRunTestCase(TestCase):
         rcl1 = Job.objects.create(
             name="Run count limit 1",
             run_count_limit=10,
-            run_count=9)
+            _run_count=9)
         rcl2 = Job.objects.create(
             name="Run count limit 2",
             run_count_limit=10,
-            run_count=11)
+            _run_count=11)
 
         at1 = Job.objects.create(
             name="Active time limit 1",
