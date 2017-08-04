@@ -17,12 +17,12 @@ from django.utils.translation import ugettext_lazy as _
 # which you give a timedelta to and it converts it to seconds which are
 # stored as an integer in the database.
 
-# I've changed so much from models.DurationField, maybe I should subclass
-# models.Field instead.
-class TimeZoneOffsetField(models.DurationField):
-    "This field takes a timedelta and stores it in the DB as seconds."
+class TimeZoneOffsetField(models.Field):
+    """ This field takes a timedelta and stores it in the DB as seconds in an
+        integer number field. """
     description = "Timezone offset expressed as a datetime.timedelta object."
 
+    empty_strings_allowed = False
     default_error_messages = {
         'invalid': _("'%(value)s' value is invalid. It should be a "
                      "datetime.timedelta object.")
@@ -61,16 +61,9 @@ class TimeZoneOffsetField(models.DurationField):
             return None
         return int(value.total_seconds())
 
-    def get_db_prep_value(self, value, connection, prepared=False):
-        # I want to use get_db_prep_value from DurationField's parent (Field).
-        super(DurationField, self).get_db_prep_value(value, connection,
-                                                     prepared)
-
-    # Inheriting formfield method from DurationField.
-
-    def get_db_converters(self, connection):
-        # I want to use get_db_converters from DurationField's parent (Field).
-        super(DurationField, self).get_db_converters(connection)
+    # Use formfield from sibling class models.DurationField.
+    def formfield(self, **kwargs):
+        super(models.DurationField, self).formfield(**wkargs)
 
 
 class DayOfMonth(models.Model):
@@ -212,10 +205,10 @@ class Job(models.Model):
         blank=True,
         help_text="Time of day to run the monthly / days of month jobs.")
 
-    _monthly_tz_offset = models.IntegerField(
+    monthly_tz_offset = TimeZoneOffsetField(
         blank=True,
-        default=0,
-        help_text="Set this field using monthly_tz_offset with a timezone " +
+        default=timedelta(0),
+        help_text="Set this field with a timezone " +
                   "offset to use with monthly_time. If blank, UTC " +
                   "is assumed. Submit a datetime.timedelta object.")
 
@@ -261,9 +254,9 @@ class Job(models.Model):
         blank=True,
         help_text="Time of day to run the weekly / days of week jobs.")
 
-    _weekly_tz_offset = models.IntegerField(
+    weekly_tz_offset = TimeZoneOffsetField(
         blank=True,
-        default=0,
+        default=timedelta(0),
         help_text="Timezone offset to use with weekly_time. If blank, UTC " +
                   "is assumed. Submit a datetime.timedelta object.")
 
@@ -292,14 +285,14 @@ class Job(models.Model):
         blank=True,
         help_text="Limit job runs to a time of day window between " +
                   "active_time_begin and active_time_end.")
-    _active_time_begin_tz_offset = models.IntegerField(
+    active_time_begin_tz_offset = TimeZoneOffsetField(
         blank=True,
-        default=0,
+        default=timedelta(0),
         help_text="Timezone offset. If blank, UTC " +
                   "is assumed. Submit a datetime.timedelta object.")
-    _active_time_end_tz_offset = models.IntegerField(
+    active_time_end_tz_offset = TimeZoneOffsetField(
         blank=True,
-        default=0,
+        default=timedelta(0),
         help_text="Timezone offset. If blank, UTC " +
                   "is assumed. Submit a datetime.timedelta object.")
 
