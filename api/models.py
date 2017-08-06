@@ -3,17 +3,22 @@ from django.db.models import Max
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from api import visions
+from auditlog.models import ModelLog
 
 
 # Function for updating data. Use this instead of updating objects directly
 # in order to potentially capture in a future changelog/audit model.
-def update_field(data_object, column, new_value):
+def update_field(data_object, column, new_value, user=False):
     old_value = getattr(data_object, column)
     if new_value != old_value:
         # Save the new value. In the future could also call an
         # audit/changelog log function
         setattr(data_object, column, new_value)
         data_object.save()
+        log = ModelLog.create_from_object(data_object, column, old_value, new_value)
+        if user:
+            log.user = user
+            log.save()
 
 
 # Vendor Classes
@@ -98,6 +103,8 @@ class Person(models.Model):
     desk_phone_created_date = models.DateTimeField(null=True, blank=True)
     desk_phone_created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="desk_phone_created_user")
     start_date = models.DateField(null=True, blank=True)
+    last_updated_by = models.CharField(max_length=255, blank=True)
+    last_updated_date = models.DateTimeField(null=True, blank=True, auto_now=True)
 
     # Convieniece function to verify if an Employee exists by talented_id
     @staticmethod
@@ -129,8 +136,7 @@ class Person(models.Model):
         self.ad_account_created_by = created_by
         if self.services.filter(type="ad"):
             ad_service = self.services.get(type="ad")
-            ad_service.user_info = ad_username
-            ad_service.save()
+            update_field(ad_service, "user_info", ad_username, created_by)
         else:
             ad_service = self.services.create(type="ad", person=self, user_info=ad_username)
             ad_service.save()
@@ -144,8 +150,7 @@ class Person(models.Model):
         self.synergy_account_created_by = created_by
         if self.services.filter(type="synergy"):
             synergy_service = self.services.get(type="synergy")
-            synergy_service.user_info = synergy_username
-            synergy_service.save()
+            update_field(synergy_service, "user_info", synergy_username, created_by)
         else:
             synergy_service = self.services.create(type="synergy", person=self, user_info=synergy_username)
             synergy_service.save()
@@ -177,13 +182,14 @@ class Employee(Person):
     epar_id = models.IntegerField(null=True, blank=True)
 
     def update_employee_from_visions(self):
-        update_field(self, "employee_id", visions.Viwpremployees().EmployeeID(self.visions_id))
-        update_field(self, "first_name", visions.Viwpremployees().FirstName(self.visions_id))
-        update_field(self, "last_name", visions.Viwpremployees().LastName(self.visions_id))
-        update_field(self, "middle_name", visions.Viwpremployees().MiddleName(self.visions_id))
-        update_field(self, "birth_date", visions.Viwpremployees().BirthDate(self.visions_id))
-        update_field(self, "start_date", visions.Viwpremployees().HireDate(self.visions_id))
-        update_field(self, "ssn", visions.Viwpremployees().EmployeeSSN(self.visions_id))
+        visions_user = User.objects.get(username="visions")
+        update_field(self, "employee_id", visions.Viwpremployees().EmployeeID(self.visions_id), visions_user)
+        update_field(self, "first_name", visions.Viwpremployees().FirstName(self.visions_id), visions_user)
+        update_field(self, "last_name", visions.Viwpremployees().LastName(self.visions_id), visions_user)
+        update_field(self, "middle_name", visions.Viwpremployees().MiddleName(self.visions_id), visions_user)
+        update_field(self, "birth_date", visions.Viwpremployees().BirthDate(self.visions_id), visions_user)
+        update_field(self, "start_date", visions.Viwpremployees().HireDate(self.visions_id), visions_user)
+        update_field(self, "ssn", visions.Viwpremployees().EmployeeSSN(self.visions_id), visions_user)
         ethnicity = visions.Viwpremployees().PREthnicOrigin(self.visions_id)
         clean_ethnicity = False
         if ethnicity == "Not Hispanic or Latino":
@@ -191,49 +197,49 @@ class Employee(Person):
         if ethnicity == "Hispanic or Latino":
             clean_ethnicity = "Hispanic"
         if clean_ethnicity:
-            update_field(self, "ethnicity", clean_ethnicity)
+            update_field(self, "ethnicity", clean_ethnicity, visions_user)
         race = visions.Viwpremployees().tblHRMasterEthnicityID(self.visions_id)
         if race == 1:
-            update_field(self, "race_white", True)
-            update_field(self, "race_black", False)
-            update_field(self, "race_american_indian", False)
-            update_field(self, "race_asian", False)
-            update_field(self, "race_islander", False)
+            update_field(self, "race_white", True, visions_user)
+            update_field(self, "race_black", False, visions_user)
+            update_field(self, "race_american_indian", False, visions_user)
+            update_field(self, "race_asian", False, visions_user)
+            update_field(self, "race_islander", False, visions_user)
         if race == 2:
-            update_field(self, "race_white", False)
-            update_field(self, "race_black", True)
-            update_field(self, "race_american_indian", False)
-            update_field(self, "race_asian", False)
-            update_field(self, "race_islander", False)
+            update_field(self, "race_white", False, visions_user)
+            update_field(self, "race_black", True, visions_user)
+            update_field(self, "race_american_indian", False, visions_user)
+            update_field(self, "race_asian", False, visions_user)
+            update_field(self, "race_islander", False, visions_user)
         if race == 3:
-            update_field(self, "race_white", True)
-            update_field(self, "race_black", False)
-            update_field(self, "race_american_indian", False)
-            update_field(self, "race_asian", False)
-            update_field(self, "race_islander", False)
+            update_field(self, "race_white", True, visions_user)
+            update_field(self, "race_black", False, visions_user)
+            update_field(self, "race_american_indian", False, visions_user)
+            update_field(self, "race_asian", False, visions_user)
+            update_field(self, "race_islander", False, visions_user)
         if race == 4:
-            update_field(self, "race_white", False)
-            update_field(self, "race_black", False)
-            update_field(self, "race_american_indian", True)
-            update_field(self, "race_asian", False)
-            update_field(self, "race_islander", False)
+            update_field(self, "race_white", False, visions_user)
+            update_field(self, "race_black", False, visions_user)
+            update_field(self, "race_american_indian", True, visions_user)
+            update_field(self, "race_asian", False, visions_user)
+            update_field(self, "race_islander", False, visions_user)
         if race == 5:
-            update_field(self, "race_white", False)
-            update_field(self, "race_black", False)
-            update_field(self, "race_american_indian", False)
-            update_field(self, "race_asian", True)
-            update_field(self, "race_islander", False)
+            update_field(self, "race_white", False, visions_user)
+            update_field(self, "race_black", False, visions_user)
+            update_field(self, "race_american_indian", False, visions_user)
+            update_field(self, "race_asian", True, visions_user)
+            update_field(self, "race_islander", False, visions_user)
         if race == 6:
-            update_field(self, "race_white", False)
-            update_field(self, "race_black", False)
-            update_field(self, "race_american_indian", False)
-            update_field(self, "race_asian", False)
-            update_field(self, "race_islander", True)
+            update_field(self, "race_white", False, visions_user)
+            update_field(self, "race_black", False, visions_user)
+            update_field(self, "race_american_indian", False, visions_user)
+            update_field(self, "race_asian", False, visions_user)
+            update_field(self, "race_islander", True, visions_user)
         gender = visions.Viwpremployees().Gender(self.visions_id)
         if gender == 1:
-            update_field(self, "gender", "M")
+            update_field(self, "gender", "M", visions_user)
         if gender == 2:
-            update_field(self, "gender", "F")
+            update_field(self, "gender", "F", visions_user)
 
     def update_employee_from_epar(self):
         pass
