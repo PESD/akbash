@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from api.models import Employee, Service, Contractor, Vendor, Position, Location, Department, PositionType, Person, Comment
+from api.models import Employee, Service, Contractor, Vendor, Position, Location, Department, PositionType, Person, Comment, update_field
 from django.contrib.auth.models import User
 
 
@@ -122,7 +122,33 @@ class PersonSerializer(serializers.ModelSerializer):
             "desk_phone_created_by",
             "services",
             "start_date",
+            "last_updated_by",
+            "last_updated_date",
         )
+
+    def update(self, instance, validated_data):
+        user = False
+        if validated_data.get("last_updated_by", False):
+            user = User.objects.get(username=validated_data["last_updated_by"])
+        update_field(instance, 'first_name', validated_data.get('first_name', instance.first_name), user)
+        update_field(instance, 'last_name', validated_data.get('last_name', instance.last_name), user)
+        update_field(instance, 'middle_name', validated_data.get('middle_name', instance.middle_name), user)
+        update_field(instance, 'badge_number', validated_data.get('badge_number', instance.badge_number), user)
+        update_field(instance, 'birth_date', validated_data.get('birth_date', instance.birth_date), user)
+        update_field(instance, 'gender', validated_data.get('gender', instance.gender), user)
+        update_field(instance, 'race_white', validated_data.get('race_white', instance.race_white), user)
+        update_field(instance, 'race_asian', validated_data.get('race_asian', instance.race_asian), user)
+        update_field(instance, 'race_black', validated_data.get('race_black', instance.race_black), user)
+        update_field(instance, 'race_islander', validated_data.get('race_islander', instance.race_islander), user)
+        update_field(instance, 'race_american_indian', validated_data.get('race_american_indian', instance.race_american_indian), user)
+        update_field(instance, 'ethnicity', validated_data.get('ethnicity', instance.ethnicity), user)
+        update_field(instance, 'hqt', validated_data.get('hqt', instance.hqt), user)
+        update_field(instance, 'ssn', validated_data.get('ssn', instance.ssn), user)
+        update_field(instance, 'tcp_id', validated_data.get('tcp_id', instance.tcp_id), user)
+        update_field(instance, 'talented_id', validated_data.get('talented_id', instance.talented_id), user)
+        update_field(instance, 'start_date', validated_data.get('start_date', instance.start_date), user)
+        instance.refresh_from_db()
+        return instance
 
     @staticmethod
     def setup_eager_loading(queryset):
@@ -398,6 +424,42 @@ class PositionSerializer(serializers.ModelSerializer):
         queryset = queryset.select_related('location')
         queryset = queryset.select_related('department')
         queryset = queryset.select_related('position_type')
+        return queryset
+
+
+class PositionSkinnySerializer(serializers.ModelSerializer):
+    location = serializers.SlugRelatedField(many=False, read_only=True, slug_field='short_name')
+
+    class Meta:
+        model = Position
+        fields = (
+            "id",
+            "title",
+            "location",
+        )
+
+
+class PersonSkinnySerializer(serializers.ModelSerializer):
+    positions = PositionSkinnySerializer(many=True, read_only=True)
+    status = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Person
+        fields = (
+            "id",
+            "type",
+            "status",
+            "first_name",
+            "last_name",
+            "start_date",
+            "positions",
+        )
+
+    def get_status(self, obj):
+        return obj.get_status_display()
+
+    def setup_eager_loading(queryset):
+        queryset = queryset.prefetch_related('positions', 'positions__location')
         return queryset
 
 

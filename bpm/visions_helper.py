@@ -90,7 +90,7 @@ class VisionsHelper:
             "TCIJob",
             "tblPREmployeesID={}".format(visions_id)
         )
-        tcp_id = db_result.fetch_value()
-        if tcp_id:
-            return tcp_id
+        for row in db_result.fetch_all_dict():
+            if row["TCIJob"] and row["TCIJob"] > 0:
+                return row["TCIJob"]
         return False

@@ -264,7 +264,11 @@ class TaskWorker:
 
         def task_check_synergy(**kwargs):
             workflow_task = kwargs["workflow_task"]
+            status = kwargs["status"]
             employee = TaskWorker.get_employee_from_workflow_task(workflow_task)
+            if not status:
+                update_field(employee, "is_synergy_account_needed", False)
+                return ("True", "Success")
             synergy_username = SynergyHelper.get_synergy_login(employee.visions_id)
             user = TaskWorker.get_user_or_false(kwargs["username"])
             if not user:
@@ -284,7 +288,7 @@ class TaskWorker:
             if not visions_positions:
                 return (False, "No positions found")
             secondary_positions = []
-            primary_position = employee.position_set.get(is_primary=True)
+            primary_position = employee.positions.get(is_primary=True)
             did_update = False
             for position in visions_positions:
                 if position.position_ranking == "Primary":

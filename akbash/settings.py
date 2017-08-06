@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     'django_extensions',
     'api.apps.ApiConfig',
     'bpm.apps.BpmConfig',
+    'auditlog.apps.AuditlogConfig',
 ]
 
 MIDDLEWARE = [
