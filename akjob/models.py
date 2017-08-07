@@ -1,9 +1,14 @@
 from datetime import datetime, timezone, timedelta
 from django.db import models
-from django.core import exceptions
+from django.core import exceptions, validators
 from django.utils.translation import ugettext_lazy as _
 # import api.jobs
 # import bpm.jobs
+
+
+# It might be wrong for my list properties to have a deleter since
+# deleting an attribute from a django model instance is a way of reloading that
+# attribute from the database.
 
 
 # I've been having terrible trouble trying to keep track of timezones. Many
@@ -68,14 +73,22 @@ class TimeZoneOffsetField(models.Field):
 
 class DayOfMonth(models.Model):
     "Day of the month."
-    day = models.IntegerField(primary_key=True)
+    day = models.IntegerField(
+        primary_key=True,
+        validators=[
+            validators.MinValueValidator(1),
+            validators.MaxValueValidator(31)])
     def __str__(self):
         return str(self.day)
 
 
 class DayOfWeek(models.Model):
     "Day of the week."
-    day = models.IntegerField(primary_key=True)
+    day = models.IntegerField(
+        primary_key=True,
+        validators=[
+            validators.MinValueValidator(1),
+            validators.MaxValueValidator(7)])
     weekday = models.IntegerField()
     name = models.CharField(max_length=9)
     def __str__(self):
@@ -83,7 +96,11 @@ class DayOfWeek(models.Model):
 
 
 class Months(models.Model):
-    month = models.IntegerField(primary_key=True)
+    month = models.IntegerField(
+        primary_key=True,
+        validators=[
+            validators.MinValueValidator(1),
+            validators.MaxValueValidator(12)])
     name = models.CharField(max_length=9)
     def __str__(self):
         return self.name
@@ -124,7 +141,7 @@ class Job(models.Model):
     def dates_list(self):
         qs = self.dates.all()
         # I could probably use list comprehension for this. but I forgot how.
-        # something like [d.job_datetime for d in qs]
+        # jobdates = [d.job_datetime for d in qs]
         jobdates = []
         for d in qs:
             jobdates.append(d.job_datetime)
@@ -153,10 +170,12 @@ class Job(models.Model):
 
 
     """ Schedule reoccuring jobs """
-    # TODO: make a validation to only allow positive duration.
     run_every = models.DurationField(
         null=True,
         blank=True,
+        validators=[validators.MinValueValidator(
+            timedelta(minutes=1),
+            "Value must be 1 minute or greater.")],
         help_text="Schedule a reoccuring job that runs every time " +
                   "interval. Ex., Run every 5 minutes. Submit a " +
                   "timedelta object. ex., datetime.timedelta(minutes=5)")
@@ -170,8 +189,9 @@ class Job(models.Model):
     # properties anyway since it fits my original vision of using a list.
     @property
     def monthly_days_list(self):
-        days = []
         qs = self.monthly_days.all()
+        # days = [i.day for i in qs]
+        days = []
         for i in qs:
             days.append(i.day)
         if days:
@@ -196,9 +216,6 @@ class Job(models.Model):
     def monthly_days_list(self):
         self.monthly_days.clear()
 
-    # TODO: make validation to check for date if monthly_days is set or fill in
-    #       default time if no time is given and run_monthly is set.
-    #       Also check for timezone. Assume utc if no timezone
     monthly_time = models.TimeField(
         null=True,
         blank=True,
@@ -247,7 +264,6 @@ class Job(models.Model):
     def weekly_days_list(self):
         self.weekly_days.clear()
 
-    # TODO: same as monthly - Validation stuff. timezone stuff
     weekly_time = models.TimeField(
         null=True,
         blank=True,
@@ -465,6 +481,8 @@ class Job(models.Model):
         return dt.replace(second=0, microsecond=0)
 
 
+    # TODO: This needs to be finished and also updated for the new timezone
+    # offset fields.
     def next_run(self):
         "Find the next run time."
 
@@ -566,13 +584,30 @@ class Job(models.Model):
         super(Job, self).save(*args, **kwargs)
 
 
-    """ Field validation """
+    """ More Field validations """
     def clean(self):
-        pass
+
+        # If there are monthly_days, make sure monthly_time and tz is set.
+        # IDEA: Instead of raising an error, I could instead set a default time
+        # such as datetime.now().
+        if self.monthly_days.all():
+            # if any return False then...
+            if not any((self.monthly_time,
+                        self.monthly_time_tz_offset_timedelta)):
+                raise exceptions.ValidationError(
+                    'If monthly_days is set, monthly_time and ' +
+                    'monthly_time_tz_offset_timedelta must also be set.')
+
+        if self.weekly_days.all():
+            if not any((self.weekly_time,
+                        self.weekly_time_tz_offset_timedelta)):
+                raise exceptions.ValidationError(
+                    'If weekly_days is set, weekly_time and ' +
+                    'weekly_time_tz_offset_timedelta must also be set.')
 
 
-    # TODO: I didn't test this section well since it's not essential and I have
-    #       other stuff I need to do.
+    # I didn't test this section well since it's not essential and time is
+    # limited.
     def print(self):
         "Display (pretty print) the job's defined values."
         from textwrap import TextWrapper
@@ -626,7 +661,9 @@ class Job(models.Model):
             print("    ", end='')
             for d in self.monthly_days.all():
                 print(str(d.day), end=' ')
-            print("\nMontly jobs are ran at: " + str(self.monthly_time))
+            mdt = str(self.monthly_time.replace(
+                tzinfo=timezone(self.monthly_time_tz_offset_timedelta)))
+            print("\nMonthly jobs are ran at: " + mdt)
 
         if self.weekly_days.all():
             wd = True
@@ -634,7 +671,9 @@ class Job(models.Model):
                   "the week:")
             for d in self.weekly_days.all():
                 print("    " + d.name)
-            print("Weekly jobs are ran at: " + str(self.weekly_time))
+            wdt = str(self.weekly_time.replace(
+                tzinfo=timezone(self.weekly_time_tz_offset_timedelta)))
+            print("Weekly jobs are ran at: " + wdt)
 
         if self.active_date_begin:
             print("\nThis job will not run outside the following date range:")
