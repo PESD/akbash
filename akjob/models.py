@@ -122,9 +122,10 @@ class Job(models.Model):
     # are properties as an alternate method for setting dates.
     @property
     def dates_list(self):
-        jobdates = []
         qs = self.dates.all()
         # I could probably use list comprehension for this. but I forgot how.
+        # something like [d.job_datetime for d in qs]
+        jobdates = []
         for d in qs:
             jobdates.append(d.job_datetime)
         if jobdates:
@@ -135,7 +136,7 @@ class Job(models.Model):
         if isinstance(jobdates, datetime):
             JobDates.objects.filter(job=self).delete()
             self.dates.create(job_datetime=jobdates)
-            return self.dates.all()
+            jobdates = [jobdates]
         elif isinstance(jobdates, (list, tuple)):
             for d in jobdates:
                 if not isinstance(d, datetime):
@@ -205,7 +206,7 @@ class Job(models.Model):
         blank=True,
         help_text="Time of day to run the monthly / days of month jobs.")
 
-    monthly_tz_offset = TimeZoneOffsetField(
+    monthly_time_tz_offset_timedelta = TimeZoneOffsetField(
         blank=True,
         default=timedelta(0),
         help_text="Set this field with a timezone " +
@@ -254,7 +255,7 @@ class Job(models.Model):
         blank=True,
         help_text="Time of day to run the weekly / days of week jobs.")
 
-    weekly_tz_offset = TimeZoneOffsetField(
+    weekly_time_tz_offset_timedelta = TimeZoneOffsetField(
         blank=True,
         default=timedelta(0),
         help_text="Timezone offset to use with weekly_time. If blank, UTC " +
@@ -280,17 +281,17 @@ class Job(models.Model):
         blank=True,
         help_text="Limit job runs to a time of day window between " +
                   "active_time_begin and active_time_end.")
+    active_time_begin_tz_offset_timedelta = TimeZoneOffsetField(
+        blank=True,
+        default=timedelta(0),
+        help_text="Timezone offset. If blank, UTC " +
+                  "is assumed. Submit a datetime.timedelta object.")
     active_time_end = models.TimeField(
         null=True,
         blank=True,
         help_text="Limit job runs to a time of day window between " +
                   "active_time_begin and active_time_end.")
-    active_time_begin_tz_offset = TimeZoneOffsetField(
-        blank=True,
-        default=timedelta(0),
-        help_text="Timezone offset. If blank, UTC " +
-                  "is assumed. Submit a datetime.timedelta object.")
-    active_time_end_tz_offset = TimeZoneOffsetField(
+    active_time_end_tz_offset_timedelta = TimeZoneOffsetField(
         blank=True,
         default=timedelta(0),
         help_text="Timezone offset. If blank, UTC " +
@@ -565,6 +566,11 @@ class Job(models.Model):
     def save(self, *args, **kwargs):
         self.full_clean()
         super(Job, self).save(*args, **kwargs)
+
+
+    """ Field validation """
+    def clean(self):
+        pass
 
 
     # TODO: I didn't test this section well since it's not essential and I have

@@ -37,19 +37,22 @@ class JobsToRunTestCase(TestCase):
             pass
 
         self.now = datetime.now(tz=utc)
-        self.future = datetime.now(tz=utc) + timedelta(minutes=5)
-        self.past = datetime.now(tz=utc) - timedelta(minutes=5)
+        self.future = datetime.now(tz=utc) + timedelta(minutes=30)
+        self.past = datetime.now(tz=utc) - timedelta(minutes=30)
         self.pastday = datetime.now(tz=utc) - timedelta(days=1)
+        self.tomorrow = datetime.now(tz=utc) + timedelta(days=1)
 
-        ra1 = Job.objects.create(name="Run once job - now")
-        ra1.dates_list = self.now
-        ra2 = Job.objects.create(name="Run once job - future")
+        ra1 = Job.objects.create(name="Job dates")
+        ra1.dates_list = [self.past, self.now, self.future, self.pastday,
+                          self.tomorrow]
+        ra2 = Job.objects.create(name="Job dates - future")
         ra2.dates.create(job_datetime=self.future)
-        ra3 = Job.objects.create(name="Run once job - past")
+        ra2.dates.create(job_datetime=self.tomorrow)
+        ra3 = Job.objects.create(name="Job dates - past")
         ra3.dates_list = [self.past, self.pastday]
 
-        Job.objects.create(
-            name="Run every job", run_every=timedelta(minutes=5))
+        Job.objects.create(name="Reoccuring / Run every job",
+                           run_every=timedelta(minutes=5))
 
         rmj1 = Job.objects.create(name="Run Monthly job 1",
                                   monthly_time=time(00, 30))
