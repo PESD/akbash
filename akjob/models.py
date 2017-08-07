@@ -134,10 +134,8 @@ class Job(models.Model):
     @dates_list.setter
     def dates_list(self, jobdates):
         if isinstance(jobdates, datetime):
-            JobDates.objects.filter(job=self).delete()
-            self.dates.create(job_datetime=jobdates)
             jobdates = [jobdates]
-        elif isinstance(jobdates, (list, tuple)):
+        if isinstance(jobdates, (list, tuple)):
             for d in jobdates:
                 if not isinstance(d, datetime):
                     raise TypeError("List may only contain datetimes")
