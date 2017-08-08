@@ -50,6 +50,7 @@ class Person(models.Model):
         ("inprocess", "In Process"),
         ("active", "Active"),
         ("inactive", "Inactive"),
+        ("visions", "Imported from Visions")
     )
     status = models.CharField(max_length=20, choices=STATUSES, default="newhire")
     type = models.CharField(max_length=16, choices=TYPES)
@@ -243,6 +244,25 @@ class Employee(Person):
 
     def update_employee_from_epar(self):
         pass
+
+    @staticmethod
+    def should_import_employee(employee):
+        try:
+            if Employee.objects.get(ssn=employee.ssn):
+                return False
+        except ObjectDoesNotExist:
+            pass
+        try:
+            if Employee.objects.get(first_name=employee.first_name, last_name=employee.last_name):
+                return False
+        except ObjectDoesNotExist:
+            pass
+        try:
+            if Employee.objects.get(visions_id=employee.id):
+                return False
+        except ObjectDoesNotExist:
+            pass
+        return True
 
 
 class Contractor(Person):
