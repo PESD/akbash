@@ -290,23 +290,17 @@ class Job(models.Model):
                   "longer scheduled to run.")
 
     """ Limit job run to a window of time. """
-    # It doesn't make sense to have a different TZ for begin and end times.
     active_time_begin = models.TimeField(
         null=True,
         blank=True,
         help_text="Limit job runs to a time of day window between " +
                   "active_time_begin and active_time_end.")
-    active_time_begin_tz_offset_timedelta = TimeZoneOffsetField(
-        blank=True,
-        default=timedelta(0),
-        help_text="Timezone offset. If blank, UTC " +
-                  "is assumed. Submit a datetime.timedelta object.")
     active_time_end = models.TimeField(
         null=True,
         blank=True,
         help_text="Limit job runs to a time of day window between " +
                   "active_time_begin and active_time_end.")
-    active_time_end_tz_offset_timedelta = TimeZoneOffsetField(
+    active_time_tz_offset_timedelta = TimeZoneOffsetField(
         blank=True,
         default=timedelta(0),
         help_text="Timezone offset. If blank, UTC " +
@@ -613,20 +607,10 @@ class Job(models.Model):
                 raise exceptions.ValidationError(
                     'If either active_time_begin or active_time_end are ' +
                     'set, both must be set.')
-            if not all((
-                    self.active_time_begin,
-                    self.active_time_begin_tz_offset_timedelta is not None)):
+            if self.active_time_tz_offset_timedelta is None:
                 raise exceptions.ValidationError(
-                    'If active_time_begin is set, ' +
-                    'active_time_begin_tz_offset_timedelta must also be ' +
-                    'set.')
-            if not all((
-                    self.active_time_end,
-                    self.active_time_end_tz_offset_timedelta is not None)):
-                raise exceptions.ValidationError(
-                    'If active_time_end is set, ' +
-                    'active_time_end_tz_offset_timedelta must also be ' +
-                    'set.')
+                    'If active_time_[begin|end] is set, ' +
+                    'active_time_tz_offset_timedelta must also be set.')
 
 
     # I didn't test this section well since it's not essential and time is
@@ -710,9 +694,9 @@ class Job(models.Model):
             print("\nThis job will not run outside the following time " +
                   "range, each day;")
             atb = str(self.active_time_begin.replace(
-                tzinfo=timezone(self.active_time_begin_tz_offset_timedelta)))
+                tzinfo=timezone(self.active_time_tz_offset_timedelta)))
             ate = str(self.active_time_end.replace(
-                tzinfo=timezone(self.active_time_end_tz_offset_timedelta)))
+                tzinfo=timezone(self.active_time_tz_offset_timedelta)))
             iprint(atb + " to " + ate)
             if not self.active_time_end:
                 iprint("This limit is not in effect since active_time_end is" +
