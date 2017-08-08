@@ -283,13 +283,14 @@ class Job(models.Model):
     run_count_limit = models.IntegerField(
         null=True,
         blank=True,
+        validators=[validators.MinValueValidator(1)],
         help_text="Each time the job is run, the run count is incremented by " +
                   "1. You may set a limit to how many times the job runs. " +
                   "When the run count exceeds this value, the job is no " +
                   "longer scheduled to run.")
 
     """ Limit job run to a window of time. """
-    # TODO: need validator to check for both dates.
+    # It doesn't make sense to have a different TZ for begin and end times.
     active_time_begin = models.TimeField(
         null=True,
         blank=True,
@@ -605,6 +606,28 @@ class Job(models.Model):
                     'If weekly_days is set, weekly_time and ' +
                     'weekly_time_tz_offset_timedelta must also be set.')
 
+        # make sure both active_time_begin and active_time_end are set if any
+        # one of them are set.
+        if any((self.active_time_begin, self.active_time_end)):
+            if not all((self.active_time_begin, self.active_time_end)):
+                raise exceptions.ValidationError(
+                    'If either active_time_begin or active_time_end are ' +
+                    'set, both must be set.')
+            if not all((
+                    self.active_time_begin,
+                    self.active_time_begin_tz_offset_timedelta is not None)):
+                raise exceptions.ValidationError(
+                    'If active_time_begin is set, ' +
+                    'active_time_begin_tz_offset_timedelta must also be ' +
+                    'set.')
+            if not all((
+                    self.active_time_end,
+                    self.active_time_end_tz_offset_timedelta is not None)):
+                raise exceptions.ValidationError(
+                    'If active_time_end is set, ' +
+                    'active_time_end_tz_offset_timedelta must also be ' +
+                    'set.')
+
 
     # I didn't test this section well since it's not essential and time is
     # limited.
@@ -686,8 +709,11 @@ class Job(models.Model):
         if self.active_time_begin:
             print("\nThis job will not run outside the following time " +
                   "range, each day;")
-            iprint(str(self.active_time_begin) + " to " +
-                   str(self.active_time_end))
+            atb = str(self.active_time_begin.replace(
+                tzinfo=timezone(self.active_time_begin_tz_offset_timedelta)))
+            ate = str(self.active_time_end.replace(
+                tzinfo=timezone(self.active_time_end_tz_offset_timedelta)))
+            iprint(atb + " to " + ate)
             if not self.active_time_end:
                 iprint("This limit is not in effect since active_time_end is" +
                        " not set.")
