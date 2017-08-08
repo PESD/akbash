@@ -317,8 +317,9 @@ class Job(models.Model):
     # alternate interface with the weekly days related set using a list
     @property
     def active_weekly_days_list(self):
-        days = []
+        # days = [i.day for i in self.active_weekly_days.all()]
         qs = self.active_weekly_days.all()
+        days = []
         for i in qs:
             days.append(i.day)
         if days:
@@ -354,6 +355,7 @@ class Job(models.Model):
 
     @property
     def active_monthly_days_list(self):
+        # days = [i.day for i in self.active_monthly_days.all()]
         days = []
         qs = self.active_monthly_days.all()
         for i in qs:
@@ -389,6 +391,7 @@ class Job(models.Model):
 
     @property
     def active_months_list(self):
+        # months = [i.month for i in self.active_months.all()]
         months = []
         qs = self.active_months.all()
         for i in qs:
@@ -416,7 +419,6 @@ class Job(models.Model):
         self.active_months.clear()
 
 
-    # TODO: need validator to check for both dates
     active_date_begin = models.DateField(
         null=True,
         blank=True,
@@ -611,6 +613,14 @@ class Job(models.Model):
                 raise exceptions.ValidationError(
                     'If active_time_[begin|end] is set, ' +
                     'active_time_tz_offset_timedelta must also be set.')
+
+        # make sure both active_date_begin and active_date_end are set if any
+        # one of them are set.
+        if any((self.active_date_begin, self.active_date_end)):
+            if not all((self.active_date_begin, self.active_date_end)):
+                raise exceptions.ValidationError(
+                    'If either active_date_begin or active_date_end are ' +
+                    'set, both must be set.')
 
 
     # I didn't test this section well since it's not essential and time is
