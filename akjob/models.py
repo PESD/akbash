@@ -238,6 +238,7 @@ class Job(models.Model):
     # alternate interface with the weekly days related set using a list
     @property
     def weekly_days_list(self):
+        # days = [i.day for i in self.weekly_days.all()]
         days = []
         qs = self.weekly_days.all()
         for i in qs:
@@ -419,6 +420,8 @@ class Job(models.Model):
         self.active_months.clear()
 
 
+    # ##### Active Dates #####
+    # Limit job runs to a date range
     active_date_begin = models.DateField(
         null=True,
         blank=True,
@@ -448,121 +451,6 @@ class Job(models.Model):
     _last_interval = models.DateTimeField(null=True, blank=True)
 
 
-    """ The code to run
-        I'm thinking of using two ways.
-            1. Specify a callable to be ran. Limit to callables in a jobs
-               module in each akjob app. Or maybe make a jobs package and
-               modules in that package contain the code for the jobs.
-            2. Submit a class instance object that will be serialized then
-               stored then retreived and executed when the job is ran. Maybe
-               standardize on a run() method that will be ran by akjob.
-    """
-    """
-    # Maybe I should add command_argv or something like that.
-    command = models.CharField(
-        max_length=255,
-        null=True,
-        blank=True,
-        help_text="The callable object to be ran.")
-
-    # Possibly install/use django-picklefield
-    # pickled_cmd = PickledObjectField()
-    # or do it yourself and put the picked object into a generic binary field.
-    # pickled_cmd = models.BinaryField()
-    """
-
-
-    @staticmethod
-    def dtfloormin(dt):
-        "Returns datetime floored to minutes"
-        return dt.replace(second=0, microsecond=0)
-
-
-    # TODO: This needs to be finished and also updated for the new timezone
-    # offset fields.
-    def next_run(self):
-        "Find the next run time."
-
-        now = self.dtfloormin(datetime.now(tz=timezone.utc))
-        # A variable to show what is causing a return of now.
-        global run_now_set_by
-        global run_datetimes
-        # a list to hold multiple times when jobs might run.
-        jtimes = []
-
-        # run_every intervals - This should be checked 1st.
-        if self.run_every:
-            if not self._last_interval:
-                # I'm not sure if this is the right point to set _last_interval
-                self._last_interval = now
-                self.save()
-                jtimes.append(now + self.run_every)
-            elif self.dtfloormin(self._last_interval + self.run_every) <= now:
-                # This job should run now
-                run_now_set_by = "re"
-                return now
-            else:
-                jtimes.append(
-                    self.dtfloormin(self._last_interval + self.run_every))
-        # check self.dates
-        if self.dates.all():
-            jtimes += self.dates_list
-        # Monthly jobs
-        if self.monthly_days.all():
-            for d in self.monthly_days_list:
-                # there is datetime.combine() but it doesn't help me that much
-                # in this case.
-                mdt = datetime(
-                    now.year, now.month, d,
-                    self.monthly_time.hour, self.monthly_time.minute,
-                    tzinfo=timezone(self.monthly_tz_offset))
-                jtimes.append(mdt)
-        # Weekly jobs
-        qs = self.weekly_days.all()
-        if qs:
-            weekdaylist = []
-            for d in qs:
-                weekdaylist.append(d.weekday)
-            for i in range(7):
-                if (now + timedelta(hours=24 * i)).weekday() in weekdaylist:
-                    dt = now + timedelta(hours=24 * i)
-                    dt.replace(hour=self.weekly_time.hour,
-                               minute=self.weekly_time.minute,
-                               tzinfo=timezone(self.weekly_tz_offset))
-                    jtimes.append(dt)
-        # TODO: I"M HERE!!! impliment timezone for TimeFields.
-        # This method isn't working yet.
-        # for debug
-        jtimes.sort()
-        run_datetimes = jtimes
-        from pprint import pprint
-        pprint(jtimes)
-        #
-        jtimes = [self.dtfloormin(t) for t in jtimes if self.dtfloormin(t) >= now]
-        # the list was sorted and datetimes in the past removed so this should
-        # return the lowest (earliest) datetime.
-        return jtimes[0]
-
-
-    # the way the pieces are falling together, I may not need this.
-    def isruntime(self):
-        "Determine if this job should be ran now. Return True or False."
-        pass
-
-
-    def run(self):
-        "Perform the job."
-        now = self.dtfloormin(datetime.now(tz=timezone.utc))
-        global run_now_set_by
-        # do stuff and run the job then...
-        self._job_running = False
-        self._runcount += 1
-        self._last_run = now
-        if run_now_set_by == "re":
-            self._last_interval = now
-        self.save()
-
-
     def __str__(self):
         if self.id and self.name:
             return str(self.id) + " - " + self.name
@@ -575,13 +463,16 @@ class Job(models.Model):
 
 
     """ Validate before saving.
-        This does not apply to creating or updating objects in bulk. """
+        This does not apply to creating or updating objects in bulk
+        or model.objects.create().
+    """
     def save(self, *args, **kwargs):
         self.full_clean()
         super(Job, self).save(*args, **kwargs)
 
 
-    """ More Field validations """
+    """ More Field validations
+    """
     def clean(self):
 
         # If there are monthly_days, make sure monthly_time and tz is set.
@@ -621,6 +512,153 @@ class Job(models.Model):
                 raise exceptions.ValidationError(
                     'If either active_date_begin or active_date_end are ' +
                     'set, both must be set.')
+
+
+    """ The code to run
+        I'm thinking of using two ways.
+            1. Specify a callable to be ran. Limit to callables in a jobs
+               module in each akjob app. Or maybe make a jobs package and
+               modules in that package contain the code for the jobs.
+            2. Submit a class instance object that will be serialized then
+               stored then retreived and executed when the job is ran. Maybe
+               standardize on a run() method that will be ran by akjob.
+    """
+    """
+    # Maybe I should add command_argv or something like that.
+    command = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text="The callable object to be ran.")
+
+    # Possibly install/use django-picklefield
+    # pickled_cmd = PickledObjectField()
+    # or do it yourself and put the picked object into a generic binary field.
+    # pickled_cmd = models.BinaryField()
+    """
+
+
+    @staticmethod
+    def dtfloormin(dt):
+        "Returns datetime floored to minutes"
+        return dt.replace(second=0, microsecond=0)
+
+
+    def next_run(self):
+        "Find the next run time."
+
+        now = self.dtfloormin(datetime.now(tz=timezone.utc))
+        # A variable to show what is causing a return of now.
+        global run_now_set_by
+        global run_datetimes
+        # ### Build a dt list of run times. ###
+        # a list to hold multiple times when jobs might run.
+        jtimes = []
+
+        # run_every intervals - This should be checked 1st.
+        if self.run_every:
+            if not self._last_interval:
+                # I'm not sure if this is the right point to set _last_interval
+                self._last_interval = now
+                self.save()
+                jtimes.append(now + self.run_every)
+            elif self.dtfloormin(self._last_interval + self.run_every) <= now:
+                # This job should run now
+                run_now_set_by = "re"
+                return now
+            else:
+                jtimes.append(self._last_interval + self.run_every)
+        # check self.dates
+        if self.dates.all():
+            jtimes += self.dates_list
+        # Monthly jobs
+        if self.monthly_days.all():
+            for d in self.monthly_days_list:
+                # there is datetime.combine() but it doesn't help me that much
+                # in this case.
+                mdt = datetime(
+                    now.year, now.month, d,
+                    self.monthly_time.hour, self.monthly_time.minute,
+                    tzinfo=timezone(self.monthly_time_tz_offset_timedelta))
+                jtimes.append(mdt)
+        # Weekly jobs
+        qs = self.weekly_days.all()
+        if qs:
+            weekdaylist = [d.weekday for d in qs]
+            for i in range(7):
+                dt = now + timedelta(hours=24 * i)
+                if dt.weekday() in weekdaylist:
+                    dt.replace(hour=self.weekly_time.hour,
+                               minute=self.weekly_time.minute,
+                               tzinfo=timezone(
+                                   self.weekly_time_tz_offset_timedelta))
+                    jtimes.append(dt)
+        # ### remove dt from jtimes if it falls outside of limits. ###
+        if all((self.active_time_begin, self.active_time_end,
+                self.active_time_tz_offset_timedelta is not None)):
+            atb = self.active_time_begin.replace(
+                second=0, microsecond=0,
+                tzinfo=timezone(self.active_time_tz_offset_timedelta))
+            ate = self.active_time_end.replace(
+                second=0, microsecond=0,
+                tzinfo=timezone(self.active_time_tz_offset_timedelta))
+        awd = [d.weekday for d in self.active_weekly_days.all()]
+        for i, v in enumerate(jtimes):
+            if atb:
+                t = v.time().replace(second=0, microsecond=0, tzinfo=v.tzinfo)
+                if not atb <= t <= ate:
+                    jtimes.pop(i)
+                    continue
+            if awd:
+                if v.weekday() not in awd:
+                    jtimes.pop(i)
+                    continue
+            if self.active_monthly_days.all():
+                if v.day not in self.active_monthly_days_list:
+                    jtimes.pop(i)
+                    continue
+            if self.active_months.all():
+                if v.month not in self.active_months_list:
+                    jtimes.pop(i)
+                    continue
+            if all((self.active_date_begin, self.active_date_end)):
+                if not (self.active_date_begin <=
+                        v.date() <=
+                        self.active_date_end):
+                    jtimes.pop(i)
+                    continue
+        # TODO: I"M HERE!!!
+        # This method isn't working yet.
+        jtimes.sort()
+
+        # for debug
+        from pprint import pprint
+        pprint(jtimes)
+
+        jtimes = [self.dtfloormin(t) for t in jtimes if self.dtfloormin(t) >= now]
+        run_datetimes = jtimes.copy()
+        # the list was sorted and datetimes in the past removed so this should
+        # return the lowest (earliest) datetime.
+        return jtimes[0]
+
+
+    # the way the pieces are falling together, I may not need this.
+    def isruntime(self):
+        "Determine if this job should be ran now. Return True or False."
+        pass
+
+
+    def run(self):
+        "Perform the job."
+        now = self.dtfloormin(datetime.now(tz=timezone.utc))
+        global run_now_set_by
+        # do stuff and run the job then...
+        self._job_running = False
+        self._runcount += 1
+        self._last_run = now
+        if run_now_set_by == "re":
+            self._last_interval = now
+        self.save()
 
 
     # I didn't test this section well since it's not essential and time is
@@ -713,20 +751,21 @@ class Job(models.Model):
                        " not set.")
 
         if self.active_monthly_days.all():
-            print("\nThis job will not run on the following doays of the" +
-                  " month:")
+            print("\nThis job will not run outside of the following days of ",
+                  "the month:")
             print("    ", end='')
             for d in self.active_monthly_days.all():
                 print(str(d.day), end=' ')
             print()
 
         if self.active_weekly_days.all():
-            print("\nThis job will not run on the following days of the week:")
+            print("\nThis job will not run outside of the following days of ",
+                  "the week:")
             for d in self.active_weekly_days.all():
                 print("    " + d.name)
 
         if self.active_months.all():
-            print("\nThis job will not run during the following months:")
+            print("\nThis job will not run outside of the following months:")
             for m in self.active_months.all():
                 iprint(m.name)
 
