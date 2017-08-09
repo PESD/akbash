@@ -467,7 +467,13 @@ class Job(models.Model):
         or model.objects.create().
     """
     def save(self, *args, **kwargs):
-        self.full_clean()
+        # TODO: This is a bad work around. I don't understand why this keeps
+        # new instances created with objects.create() from saving because of
+        # missing self.id. this wasn't a problem until I added validators so
+        # apprently full_clean is being ran on objecgts.create(). I still don't
+        # understand why an id is not being created.
+        if self.id is not None:
+            self.full_clean()
         super(Job, self).save(*args, **kwargs)
 
 
