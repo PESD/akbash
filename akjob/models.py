@@ -463,41 +463,19 @@ class Job(models.Model):
 
 
     """ Validate before saving.
-        This does not apply to creating or updating objects in bulk
-        or model.objects.create().
+        This does not apply to creating or updating objects in bulk or
+        model.objects.create(), according to the docs. Turns out in my testing
+        that some validations are ran during model.objects.create() with this
+        setup.
     """
     def save(self, *args, **kwargs):
-        # TODO: This is a bad work around. I don't understand why this keeps
-        # new instances created with objects.create() from saving because of
-        # missing self.id. this wasn't a problem until I added validators so
-        # apprently full_clean is being ran on objecgts.create(). I still don't
-        # understand why an id is not being created.
-        if self.id is not None:
-            self.full_clean()
+        self.full_clean()
         super(Job, self).save(*args, **kwargs)
 
 
     """ More Field validations
     """
     def clean(self):
-
-        # If there are monthly_days, make sure monthly_time and tz is set.
-        # IDEA: Instead of raising an error, I could instead set a default time
-        # such as datetime.now().
-        if self.monthly_days.all():
-            # if any return False then...
-            if not any((self.monthly_time,
-                        self.monthly_time_tz_offset_timedelta)):
-                raise exceptions.ValidationError(
-                    'If monthly_days is set, monthly_time and ' +
-                    'monthly_time_tz_offset_timedelta must also be set.')
-
-        if self.weekly_days.all():
-            if not any((self.weekly_time,
-                        self.weekly_time_tz_offset_timedelta)):
-                raise exceptions.ValidationError(
-                    'If weekly_days is set, weekly_time and ' +
-                    'weekly_time_tz_offset_timedelta must also be set.')
 
         # make sure both active_time_begin and active_time_end are set if any
         # one of them are set.
@@ -518,6 +496,31 @@ class Job(models.Model):
                 raise exceptions.ValidationError(
                     'If either active_date_begin or active_date_end are ' +
                     'set, both must be set.')
+
+        # Relationships can't touched until self.id is created so some
+        # validations will have to be skipped.
+        if self.id is None:
+            return
+
+        # If there are monthly_days, make sure monthly_time and tz is set.
+        # IDEA: Instead of raising an error, I could instead set a default time
+        # such as datetime.now(). This might be a bad idea since this might not
+        # run until way after the instance is created so unexpected times may
+        # be used.
+        if self.monthly_days.all():
+            # if any return False then...
+            if not any((self.monthly_time,
+                        self.monthly_time_tz_offset_timedelta)):
+                raise exceptions.ValidationError(
+                    'If monthly_days is set, monthly_time and ' +
+                    'monthly_time_tz_offset_timedelta must also be set.')
+
+        if self.weekly_days.all():
+            if not any((self.weekly_time,
+                        self.weekly_time_tz_offset_timedelta)):
+                raise exceptions.ValidationError(
+                    'If weekly_days is set, weekly_time and ' +
+                    'weekly_time_tz_offset_timedelta must also be set.')
 
 
     """ The code to run
