@@ -5,7 +5,7 @@ from django.utils.translation import ugettext_lazy as _
 # import api.jobs
 # import bpm.jobs
 
-
+# Notes:
 # It might be wrong for my list properties to have a deleter since
 # deleting an attribute from a django model instance is a way of reloading that
 # attribute from the database.
@@ -123,6 +123,13 @@ class JobDates(models.Model):
 
 class Job(models.Model):
     "Job definition"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Some misc tracking variables. A variable to show what is causing a
+        # return of now job run time. A list of future job run times.
+        self._run_now_set_by = None
+        self._run_datetimes = None
 
 
     name = models.CharField(
@@ -470,6 +477,7 @@ class Job(models.Model):
     """
     def save(self, *args, **kwargs):
         self.full_clean()
+        # self.next_run()
         super(Job, self).save(*args, **kwargs)
 
 
@@ -553,13 +561,12 @@ class Job(models.Model):
         return dt.replace(second=0, microsecond=0)
 
 
+    # TODO: More testing need to be done on this method.
     def next_run(self):
         "Find the next run time."
 
         now = self.dtfloormin(datetime.now(tz=timezone.utc))
-        # A variable to show what is causing a return of now.
-        global run_now_set_by
-        global run_datetimes
+
         # ### Build a dt list of run times. ###
         # a list to hold multiple times when jobs might run.
         jtimes = []
@@ -573,7 +580,7 @@ class Job(models.Model):
                 jtimes.append(now + self.run_every)
             elif self.dtfloormin(self._last_interval + self.run_every) <= now:
                 # This job should run now
-                run_now_set_by = "re"
+                self._run_now_set_by = "re"
                 return now
             else:
                 jtimes.append(self._last_interval + self.run_every)
@@ -583,8 +590,6 @@ class Job(models.Model):
         # Monthly jobs
         if self.monthly_days.all():
             for d in self.monthly_days_list:
-                # there is datetime.combine() but it doesn't help me that much
-                # in this case.
                 mdt = datetime(
                     now.year, now.month, d,
                     self.monthly_time.hour, self.monthly_time.minute,
@@ -603,6 +608,7 @@ class Job(models.Model):
                                    self.weekly_time_tz_offset_timedelta))
                     jtimes.append(dt)
         # ### remove dt from jtimes if it falls outside of limits. ###
+        atb, ate, awd = None, None, None
         if all((self.active_time_begin, self.active_time_end,
                 self.active_time_tz_offset_timedelta is not None)):
             atb = self.active_time_begin.replace(
@@ -612,6 +618,9 @@ class Job(models.Model):
                 second=0, microsecond=0,
                 tzinfo=timezone(self.active_time_tz_offset_timedelta))
         awd = [d.weekday for d in self.active_weekly_days.all()]
+        # TODO: Make sure popping values out of jtimes doesn't mess up the
+        # index being iterated over. You could delete datetimes not meant to be
+        # deleted.
         for i, v in enumerate(jtimes):
             if atb:
                 t = v.time().replace(second=0, microsecond=0, tzinfo=v.tzinfo)
@@ -636,16 +645,9 @@ class Job(models.Model):
                         self.active_date_end):
                     jtimes.pop(i)
                     continue
-        # TODO: I"M HERE!!!
-        # This method isn't working yet.
         jtimes.sort()
-
-        # for debug
-        from pprint import pprint
-        pprint(jtimes)
-
         jtimes = [self.dtfloormin(t) for t in jtimes if self.dtfloormin(t) >= now]
-        run_datetimes = jtimes.copy()
+        self._run_datetimes = jtimes.copy()
         # the list was sorted and datetimes in the past removed so this should
         # return the lowest (earliest) datetime.
         return jtimes[0]
@@ -660,12 +662,11 @@ class Job(models.Model):
     def run(self):
         "Perform the job."
         now = self.dtfloormin(datetime.now(tz=timezone.utc))
-        global run_now_set_by
         # do stuff and run the job then...
         self._job_running = False
         self._runcount += 1
         self._last_run = now
-        if run_now_set_by == "re":
+        if self._run_now_set_by == "re":
             self._last_interval = now
         self.save()
 
@@ -675,6 +676,7 @@ class Job(models.Model):
     def print(self):
         "Display (pretty print) the job's defined values."
         from textwrap import TextWrapper
+        from pprint import pprint
 
         def wprint(*args):
             print(TextWrapper().fill(*args))
@@ -778,10 +780,9 @@ class Job(models.Model):
             for m in self.active_months.all():
                 iprint(m.name)
 
-        # for debug
-        # global run_datetimes
-        # print("\nList of run times:")
-        # iprint(run_datetimes)
+        if self._run_datetimes:
+            print("\nList of run times:")
+            pprint(self._run_datetimes)
 
         print()
 
