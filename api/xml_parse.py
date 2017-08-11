@@ -58,8 +58,11 @@ def gender_from_talented(gender):
 # Also, all of this code should probably be moved to a future 'etl' app.
 
 def parse_hires():
-    # Get TalentEd User for change log
-    talented_user = User.objects.get(username="talented")
+    # Get TalentEd User for change log if it exists
+    try:
+        talented_user = User.objects.get(username="talented")
+    except ObjectDoesNotExist:
+        talented_user = False
     # Simply reads test.xml from the root akbash directory. Obviously this needs to change.
     xml_file = settings.BASE_DIR + "/test.xml"
     tree = ET.parse(xml_file)
