@@ -77,10 +77,11 @@ class JobsToRunTestCase(TestCase):
             run_every=timedelta(minutes=45),
             active_time_begin=time(2, 0),
             active_time_end=time(4, 0))
-        lat2 = Job.objects.create(
-            name="Limit active time",
-            run_every=timedelta(minutes=45),
-            active_time_begin=time(2, 0))
+        # this will be in it's own test to test for the exception.
+        # lat2 = Job.objects.create(
+        #     name="Limit active time",
+        #     run_every=timedelta(minutes=45),
+        #     active_time_begin=time(2, 0))
 
         rcl1 = Job.objects.create(
             name="Run count limit 1",
