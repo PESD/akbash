@@ -149,6 +149,7 @@ class Person(models.Model):
     def update_synergy_service(self, synergy_username, created_by):
         self.is_synergy_account_created = True
         self.synergy_account_created_by = created_by
+        self.is_synergy_account_needed = True
         if self.services.filter(type="synergy"):
             synergy_service = self.services.get(type="synergy")
             update_field(synergy_service, "user_info", synergy_username, created_by)
