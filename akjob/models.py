@@ -477,7 +477,6 @@ class Job(models.Model):
     """
     def save(self, *args, **kwargs):
         self.full_clean()
-        # self.next_run()
         super(Job, self).save(*args, **kwargs)
 
 
@@ -565,6 +564,13 @@ class Job(models.Model):
     def next_run(self):
         "Find the next run time."
 
+        # Don't do anything if job is disabled, except set _next_run to None.
+        if self.job_enabled is False:
+            if self._next_run is not None:
+                self._next_run = None
+                self.save()
+            return
+
         now = self.dtfloormin(datetime.now(tz=timezone.utc))
 
         # ### Build a dt list of run times. ###
@@ -574,10 +580,11 @@ class Job(models.Model):
         # run_every intervals - This should be checked 1st.
         if self.run_every:
             if not self._last_interval:
-                # I'm not sure if this is the right point to set _last_interval
                 self._last_interval = now
                 self.save()
                 jtimes.append(now + self.run_every)
+                # print("append from run_every/no interval: ",  # debug
+                #       str(now + self.run_every))  # debug
             elif self.dtfloormin(self._last_interval + self.run_every) <= now:
                 # This job should run now
                 self._run_now_set_by = "re"
@@ -602,10 +609,11 @@ class Job(models.Model):
             for i in range(7):
                 dt = now + timedelta(hours=24 * i)
                 if dt.weekday() in weekdaylist:
-                    dt.replace(hour=self.weekly_time.hour,
-                               minute=self.weekly_time.minute,
-                               tzinfo=timezone(
-                                   self.weekly_time_tz_offset_timedelta))
+                    dt = dt.replace(hour=self.weekly_time.hour,
+                                    minute=self.weekly_time.minute,
+                                    tzinfo=timezone(
+                                        self.weekly_time_tz_offset_timedelta))
+                    # print("append from weekly: ", str(dt))  # debug
                     jtimes.append(dt)
         # ### remove dt from jtimes if it falls outside of limits. ###
         atb, ate, awd = None, None, None
@@ -618,56 +626,122 @@ class Job(models.Model):
                 second=0, microsecond=0,
                 tzinfo=timezone(self.active_time_tz_offset_timedelta))
         awd = [d.weekday for d in self.active_weekly_days.all()]
-        # TODO: Make sure popping values out of jtimes doesn't mess up the
-        # index being iterated over. You could delete datetimes not meant to be
-        # deleted.
-        for i, v in enumerate(jtimes):
+        # TODO: This is still not working right.
+        # print(jtimes)  # for debug
+        jtimes_copy = jtimes.copy()
+        for v in jtimes_copy:
             if atb:
                 t = v.time().replace(second=0, microsecond=0, tzinfo=v.tzinfo)
+                # print("t =", t)  # debug
                 if not atb <= t <= ate:
-                    jtimes.pop(i)
+                    # print("active time:", str(jtimes.count(v)), str(v))  # debug
+                    for i in range(jtimes.count(v)):
+                        jtimes.remove(v)
                     continue
             if awd:
                 if v.weekday() not in awd:
-                    jtimes.pop(i)
+                    # print("weekly:", str(jtimes.count(v)), str(v))  # debug
+                    for i in range(jtimes.count(v)):
+                        jtimes.remove(v)
                     continue
             if self.active_monthly_days.all():
                 if v.day not in self.active_monthly_days_list:
-                    jtimes.pop(i)
+                    # print("monthly:", str(jtimes.count(v)), str(v))  # debug
+                    for i in range(jtimes.count(v)):
+                        jtimes.remove(v)
                     continue
             if self.active_months.all():
                 if v.month not in self.active_months_list:
-                    jtimes.pop(i)
+                    # print("months:", str(jtimes.count(v)), str(v))  # debug
+                    for i in range(jtimes.count(v)):
+                        jtimes.remove(v)
                     continue
             if all((self.active_date_begin, self.active_date_end)):
                 if not (self.active_date_begin <=
                         v.date() <=
                         self.active_date_end):
-                    jtimes.pop(i)
+                    # print("active dates:", str(jtimes.count(v)), str(v))  # debug
+                    for i in range(jtimes.count(v)):
+                        jtimes.remove(v)
                     continue
+        # print(jtimes)  # for debug
+        # print()  # for debug
+        if not jtimes:
+            if self._next_run is not None:
+                self._next_run = None
+                self.save()
+            return None
         jtimes.sort()
         jtimes = [self.dtfloormin(t) for t in jtimes if self.dtfloormin(t) >= now]
         self._run_datetimes = jtimes.copy()
+        if not jtimes:
+            if self._next_run is not None:
+                self._next_run = None
+                self.save()
+            return None
         # the list was sorted and datetimes in the past removed so this should
         # return the lowest (earliest) datetime.
+        self._next_run = jtimes[0]
+        self.save()
         return jtimes[0]
 
 
-    # the way the pieces are falling together, I may not need this.
+    # TODO: This needs testing.
     def isruntime(self):
         "Determine if this job should be ran now. Return True or False."
-        pass
+
+        # Return False if job is disabled.
+        if self.job_enabled is False:
+            if self._next_run is not None:
+                self._next_run = None
+                self.save()
+            return False
+
+        # Run next_run() and return false if it doesn't return a value.
+        next_run = self.next_run()
+        if next_run is None:
+            return False
+
+        now = self.dtfloormin(datetime.now(tz=timezone.utc))
+
+        # check if the job should run now.
+        if now >= next_run:
+            if self._last_run is None:
+                return True
+            if self._last_run < next_run:
+                return True
+        else:
+            return False
 
 
+    # TODO: I'M HERE!!!
     def run(self):
         "Perform the job."
-        now = self.dtfloormin(datetime.now(tz=timezone.utc))
-        # do stuff and run the job then...
+
+        # Return if the job shouldn't be ran now.
+        if self.isruntime() is False:
+            return
+
+        # Return if _job_running flag. I have a worry of jobs crashing before
+        # completion and the _job_running flag never being set back to False.
+        if self._job_running is True:
+            return
+
+        # Pre run
+        if self._run_now_set_by == "re":
+            run_now_set_by = "re"
+            self._run_now_set_by = None
+        self._job_running = True
+        self.save()
+
+        # Execute Job
+
+        # Post run
         self._job_running = False
         self._runcount += 1
-        self._last_run = now
-        if self._run_now_set_by == "re":
-            self._last_interval = now
+        self._last_run = datetime.now(timezone.utc)
+        if run_now_set_by == "re":
+            self._last_interval = datetime.now(timezone.utc)
         self.save()
 
 
