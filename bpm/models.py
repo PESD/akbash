@@ -39,6 +39,8 @@ class Process(models.Model):
     def start_workflow(self, person):
         workflow = Workflow.objects.create(person=person, process=self)
         person.generate_badge()
+        person.status = "inprocess"
+        person.save()
         activities = self.activities.all()
         for activity in activities:
             workflow_activity = workflow.create_workflow_activity(activity)
@@ -95,6 +97,8 @@ class Workflow(models.Model):
                 return False
         self.status = "Complete"
         self.save()
+        self.person.status = "active"
+        self.person.save()
         return True
 
 

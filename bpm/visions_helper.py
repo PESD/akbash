@@ -1,4 +1,5 @@
 from api import visions
+from api.models import Employee
 
 
 class Epar:
@@ -19,6 +20,19 @@ class VisionsEmployee:
     def __init__(self, id, name):
         self.id = id
         self.name = name
+
+
+class VisionsImportEmployee:
+    id = None
+    first_name = None
+    last_name = None
+    ssn = None
+
+    def __init__(self, id, first_name, last_name, ssn):
+        self.id = id
+        self.first_name = first_name
+        self.last_name = last_name
+        self.ssn = ssn
 
 
 class VisionsPosition:
@@ -72,6 +86,15 @@ class VisionsHelper:
         for row in db_employees:
             employee = VisionsEmployee(row["ID"], row["Name"])
             employees.append(employee)
+        return employees
+
+    def get_employees_for_import():
+        db_employees = visions.Viwpremployees("ID, FirstName, LastName, EmployeeSSN", status="Active").fetch_all_dict()
+        employees = []
+        for row in db_employees:
+            employee = VisionsImportEmployee(row["ID"], row["FirstName"], row["LastName"], row["EmployeeSSN"])
+            if Employee.should_import_employee(employee):
+                employees.append(employee)
         return employees
 
     def get_positions_for_employee(visions_id):

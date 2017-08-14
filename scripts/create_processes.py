@@ -124,29 +124,7 @@ def run():
     tcp_fingerprint_employee_task = Task.objects.create(name="TCP Fingerprint Employee", task_function="task_is_fingerprinted", task_type="User")
     tcp_fingerprint_employee_task.save()
 
-    # Step 7
-    badge_created_task = Task.objects.create(name="Employee Badge Printed", task_function="task_is_badge_created", task_type="User")
-    badge_created_task.save()
-
     # Create Activities
-    # Step 7 - Badge Created
-    badge_created_activity = Activity.objects.create(name="Employee Badge Printed", process=new_hire_process)
-    badge_created_activity.tasks.add(badge_created_task)
-    badge_created_activity.users.add(tharris)
-    badge_created_activity.users.add(mario)
-    badge_created_activity.users.add(lauren)
-    badge_created_activity.users.add(pat)
-    badge_created_activity.users.add(claudia)
-    badge_created_activity.save()
-
-    contractor_badge_created_activity = Activity.objects.create(name="Contractor Badge Printed", process=contractor_process)
-    contractor_badge_created_activity.tasks.add(badge_created_task)
-    contractor_badge_created_activity.users.add(tharris)
-    contractor_badge_created_activity.users.add(mario)
-    contractor_badge_created_activity.users.add(lauren)
-    contractor_badge_created_activity.users.add(pat)
-    contractor_badge_created_activity.users.add(claudia)
-    contractor_badge_created_activity.save()
 
     # Step 6 - TCP Fingerprinted
     tcp_fingerprint_employee_activity = Activity.objects.create(name="TCP Fingerprint Employee", process=new_hire_process)
@@ -156,7 +134,6 @@ def run():
     tcp_fingerprint_employee_activity.users.add(lauren)
     tcp_fingerprint_employee_activity.users.add(pat)
     tcp_fingerprint_employee_activity.users.add(claudia)
-    tcp_fingerprint_employee_activity.children.add(badge_created_activity)
     tcp_fingerprint_employee_activity.save()
 
     tcp_fingerprint_contractor_activity = Activity.objects.create(name="TCP Fingerprint Contractor", process=contractor_process)
@@ -166,7 +143,6 @@ def run():
     tcp_fingerprint_contractor_activity.users.add(lauren)
     tcp_fingerprint_contractor_activity.users.add(pat)
     tcp_fingerprint_contractor_activity.users.add(claudia)
-    tcp_fingerprint_contractor_activity.children.add(contractor_badge_created_activity)
     tcp_fingerprint_contractor_activity.save()
 
     # Step 5 - Onboarded
