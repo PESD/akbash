@@ -1,5 +1,6 @@
 from api import visions
-from api.models import Employee
+from api.models import Employee, Location
+from django.core.exceptions import ObjectDoesNotExist
 
 
 class Epar:
@@ -97,14 +98,20 @@ class VisionsHelper:
                 employees.append(employee)
         return employees
 
+    def get_position_location(visions_dac_id):
+        try:
+            return Location.objects.get(visions_dac_id=visions_dac_id)
+        except ObjectDoesNotExist:
+            return False
+
     def get_positions_for_employee(visions_id):
         db_positions = visions.Viwprpositions(
-            "ID, Description, DAC, PositionRankingType",
+            "ID, Description, tblAPReqLocationsID, PositionRankingType",
             "tblPREmployeesID={} AND RecordType='Position' AND PositionType='Open'".format(visions_id)
         )
         positions = []
         for row in db_positions.fetch_all_dict():
-            position = VisionsPosition(row["ID"], row["Description"], row["DAC"], row["PositionRankingType"])
+            position = VisionsPosition(row["ID"], row["Description"], row["tblAPReqLocationsID"], row["PositionRankingType"])
             positions.append(position)
         return positions
 

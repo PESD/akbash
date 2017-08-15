@@ -197,6 +197,12 @@ class TaskWorker:
                 return True
             return False
 
+        def is_term_epar_dup(epar_id):
+            a = Employee.objects.filter(termination_epar_id=epar_id)
+            if a:
+                return True
+            return False
+
         def is_visions_id_dup(visions_id):
             a = Employee.objects.filter(visions_id=visions_id)
             if a:
@@ -233,8 +239,19 @@ class TaskWorker:
             if TaskWorker.is_epar_dup(epar_id):
                 return (False, "ePAR already linked to an Employee")
             employee = TaskWorker.get_employee_from_workflow_task(workflow_task)
-            employee.epar_id = epar_id
-            employee.save()
+            update_field(employee, "epar_id", epar_id)
+            employee.update_employee_from_epar()
+            return (True, "Success")
+
+        def task_set_term_epar_id(**kwargs):
+            workflow_task = kwargs["workflow_task"]
+            epar_id = kwargs["epar_id"]
+            if not VisionsHelper.verify_epar(epar_id):
+                return (False, "ePAR not found")
+            if TaskWorker.is_term_epar_dup(epar_id):
+                return (False, "ePAR already linked to an Employee")
+            employee = TaskWorker.get_employee_from_workflow_task(workflow_task)
+            update_field(employee, "termination_epar_id", epar_id)
             employee.update_employee_from_epar()
             return (True, "Success")
 
@@ -266,6 +283,21 @@ class TaskWorker:
             else:
                 return (False, "Unknown Error")
 
+        def task_disable_ad(**kwargs):
+            workflow_task = kwargs["workflow_task"]
+            employee = TaskWorker.get_employee_from_workflow_task(workflow_task)
+            ad_username = ldap.get_ad_username_from_visions_id(employee.visions_id)
+            user = TaskWorker.get_user_or_false(kwargs["username"])
+            if not user:
+                return (False, "Invalid User")
+            if ad_username:
+                return (False, "Active Directory account still active")
+            did_update = employee.disable_ad_service(user)
+            if did_update:
+                return (True, "Success")
+            else:
+                return (False, "Could not find Active Directory record to update")
+
         def task_check_synergy(**kwargs):
             workflow_task = kwargs["workflow_task"]
             status = kwargs["status"]
@@ -285,6 +317,21 @@ class TaskWorker:
             else:
                 return (False, "Unknown Error")
 
+        def task_disable_synergy(**kwargs):
+            workflow_task = kwargs["workflow_task"]
+            employee = TaskWorker.get_employee_from_workflow_task(workflow_task)
+            synergy_username = SynergyHelper.get_synergy_login(employee.visions_id)
+            user = TaskWorker.get_user_or_false(kwargs["username"])
+            if not user:
+                return (False, "Invalid User")
+            if synergy_username:
+                return (False, "Synergy user still active")
+            did_update = employee.disable_synergy_service(user)
+            if did_update:
+                return (True, "Success")
+            else:
+                return (False, "Could not find Synergy record to update")
+
         def task_update_position(**kwargs):
             workflow_task = kwargs["workflow_task"]
             employee = TaskWorker.get_employee_from_workflow_task(workflow_task)
@@ -296,10 +343,13 @@ class TaskWorker:
             did_update = False
             for position in visions_positions:
                 if position.position_ranking == "Primary":
+                    location = VisionsHelper.get_position_location(position.dac)
                     primary_position.title = position.description
                     primary_position.visions_position_id = position.id
                     primary_position.last_updated_by = "Visions"
                     primary_position.last_updated_date = date.today()
+                    if location:
+                        primary_position.location = location
                     primary_position.save()
                     did_update = True
                 else:
@@ -313,7 +363,10 @@ class TaskWorker:
                         last_updated_by="Visions",
                         last_updated_date=date.today()
                     )
-                    new_position.save()
+                    location = VisionsHelper.get_position_location(secondary_position.dac)
+                    if location:
+                        secondary_position.location = location
+                        new_position.save()
                     did_update = True
             if did_update:
                 return (True, "Success")

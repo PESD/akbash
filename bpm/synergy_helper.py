@@ -6,7 +6,7 @@ class SynergyHelper:
         squery = synergy.Select(
             "u.LOGIN_NAME",
             "rev.REV_USER u INNER JOIN rev.EPC_STAFF s ON u.USER_GU = s.STAFF_GU",
-            "s.BADGE_NUM=" + str(visions_id)
+            "s.BADGE_NUM=" + str(visions_id) + "AND u.DISABLED = 'N'"
         )
         sresult = squery.fetch_value()
         if sresult:
