@@ -30,7 +30,7 @@ for k in config['ldap']:
     ):
         continue
     else:
-        raise KeyError("Unrecognized visions database option: {}".format(k))
+        raise KeyError("Unrecognized ldap database option: {}".format(k))
 
 # LDAP constants
 LDAP_SERVER = config['ldap']['LDAP_SERVER']
@@ -47,7 +47,7 @@ def get_ad_username_from_visions_id(visions_id):
     conn.bind()
     conn.search(
         LDAP_SEARCH_BASE,
-        '(&(objectclass=person)(wwwhomepage={}))'.format(visions_id),
+        '(&(objectclass=person)(wwwhomepage={})(|(userAccountControl=512)(userAccountControl=66048)))'.format(visions_id),
         attributes=[
             'samaccountname',
         ]

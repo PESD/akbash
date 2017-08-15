@@ -24,6 +24,7 @@ class ServiceSerializer(serializers.ModelSerializer):
             "id",
             "type",
             "user_info",
+            "status",
         )
 
 
@@ -400,6 +401,7 @@ class PositionSerializer(serializers.ModelSerializer):
             "api_url",
             "id",
             "title",
+            "is_primary",
             "person",
             "last_updated_date",
             "last_updated_by",
