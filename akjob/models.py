@@ -1,3 +1,4 @@
+""" akjob models """
 import logging
 import importlib
 from datetime import datetime, timezone, timedelta
@@ -5,13 +6,27 @@ from django.db import models
 from django.core import exceptions, validators
 from django.utils.translation import ugettext_lazy as _
 from picklefield.fields import PickledObjectField
-# import api.jobs
-# import bpm.jobs
 
-# Notes:
-# It might be wrong for my list properties to have a deleter since
-# deleting an attribute from a django model instance is a way of reloading that
-# attribute from the database.
+""" Notes:
+
+*** List Properties ***
+It might be wrong for my list properties to have a deleter since deleting an
+attribute from a django model instance is a way of reloading that attribute
+from the database. The deleter is so much easier to use then deleting the
+related rows that I want to keep the deleter.
+
+
+*** TimeZoneOffsetField ***
+I've been having terrible trouble trying to keep track of timezones. Many
+problems stem from MS SQL not being well supported by django. Between
+django-pyodbc-azure and pyodbc I'm guessing the bugs reside.  models.TimeFields
+are not storing tzinfo though maybe thats because date is required to calculate
+timezone and dst stuff. So then I decided to use models.DurationField to store
+datetime.timedelta objects to be used as timezone offsets to create datetimes
+with. Turns out that negative timedeltas are not being stored correctly. So now
+I'm making a model field which you give a timedelta to and it converts it to
+seconds which are stored as an integer in the database.
+"""
 
 
 # Set up logging
@@ -20,22 +35,6 @@ logger = logging.getLogger("akjob.model")
 logger.setLevel(logging.DEBUG)
 
 
-# A class for Testing storage of objects in Job.job_code_object.
-class TestClass():
-    def Run(self):
-        print("Hello from TestClass")
-
-
-# I've been having terrible trouble trying to keep track of timezones. Many
-# problems stem from MS SQL not being well supported by django. Between
-# django-pyodbc-azure and pyodbc I'm guessing the bugs reside.
-# models.TimeFields are not storing tzinfo though maybe thats because date
-# is required to calculate timezone and dst stuff. So then I decided to use
-# models.DurationField to store datetime.timedelta objects to be used as
-# timezone offsets to create datetimes with. Turns out that negative
-# timedeltas are not being stored correctly. So now I'm making a model field
-# which you give a timedelta to and it converts it to seconds which are
-# stored as an integer in the database.
 
 class TimeZoneOffsetField(models.Field):
     """ This field takes a timedelta and stores it in the DB as seconds in an
@@ -86,6 +85,8 @@ class TimeZoneOffsetField(models.Field):
         super(models.DurationField, self).formfield(**wkargs)
 
 
+# This model is populated by a fixture and is basically used as a LOV. There's
+# probably a better way to handle this that doesn't touch a database.
 class DayOfMonth(models.Model):
     "Day of the month."
     day = models.IntegerField(
@@ -97,6 +98,7 @@ class DayOfMonth(models.Model):
         return str(self.day)
 
 
+# This model is populated by a fixture
 class DayOfWeek(models.Model):
     "Day of the week."
     day = models.IntegerField(
@@ -110,6 +112,7 @@ class DayOfWeek(models.Model):
         return self.name
 
 
+# This model is populated by a fixture
 class Months(models.Model):
     month = models.IntegerField(
         primary_key=True,
@@ -157,7 +160,7 @@ class Job(models.Model):
 
 
     """ Fields to store the job code to be ran. """
-    # Field holding job code to run. Store an object with a Run method.
+    # Field holding job code to run. Store an object with a Run() method.
     job_code_object = PickledObjectField(null=True, blank=True, default=None)
     # Sometimes the type of job_code_object (type(job_code_object)) needs to be
     # in the namespace to store and retreive the object. To import the module
