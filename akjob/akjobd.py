@@ -17,7 +17,7 @@ from time import sleep
 def setup_logging():
     global logger
     logging.basicConfig()
-    logger = logging.getLogger("akjobd")
+    logger = logging.getLogger("akjob.akjobd")
     logger.setLevel(logging.DEBUG)
 
 # setup piddir and pidname from command line arguments.

@@ -1,7 +1,10 @@
+import logging
+import importlib
 from datetime import datetime, timezone, timedelta
 from django.db import models
 from django.core import exceptions, validators
 from django.utils.translation import ugettext_lazy as _
+from picklefield.fields import PickledObjectField
 # import api.jobs
 # import bpm.jobs
 
@@ -9,6 +12,18 @@ from django.utils.translation import ugettext_lazy as _
 # It might be wrong for my list properties to have a deleter since
 # deleting an attribute from a django model instance is a way of reloading that
 # attribute from the database.
+
+
+# Set up logging
+logging.basicConfig()
+logger = logging.getLogger("akjob.model")
+logger.setLevel(logging.DEBUG)
+
+
+# A class for Testing storage of objects in Job.job_code_object.
+class TestClass():
+    def Run(self):
+        print("Hello from TestClass")
 
 
 # I've been having terrible trouble trying to keep track of timezones. Many
@@ -139,6 +154,20 @@ class Job(models.Model):
         default=None,  # Used to cause error if name isn't provided.
         unique=False,
         help_text="Name the job. Repeat names are allowed. Required Field.")
+
+
+    """ Fields to store the job code to be ran. """
+    # Field holding job code to run. Store an object with a Run method.
+    job_code_object = PickledObjectField(null=True, blank=True, default=None)
+    # Sometimes the type of job_code_object (type(job_code_object)) needs to be
+    # in the namespace to store and retreive the object. To import the module
+    # containing the the object's class specify the module using absolute
+    # terms.  See importlib.import_module which will be used to load the
+    # module.
+    job_code_object_module = models.CharField(
+        max_length=96,
+        null=True,
+        blank=True)
 
 
     """ Schedule job to run at specific datetimes. """
@@ -530,30 +559,6 @@ class Job(models.Model):
                     'weekly_time_tz_offset_timedelta must also be set.')
 
 
-    """ The code to run
-        I'm thinking of using two ways.
-            1. Specify a callable to be ran. Limit to callables in a jobs
-               module in each akjob app. Or maybe make a jobs package and
-               modules in that package contain the code for the jobs.
-            2. Submit a class instance object that will be serialized then
-               stored then retreived and executed when the job is ran. Maybe
-               standardize on a run() method that will be ran by akjob.
-    """
-    """
-    # Maybe I should add command_argv or something like that.
-    command = models.CharField(
-        max_length=255,
-        null=True,
-        blank=True,
-        help_text="The callable object to be ran.")
-
-    # Possibly install/use django-picklefield
-    # pickled_cmd = PickledObjectField()
-    # or do it yourself and put the picked object into a generic binary field.
-    # pickled_cmd = models.BinaryField()
-    """
-
-
     @staticmethod
     def dtfloormin(dt):
         "Returns datetime floored to minutes"
@@ -561,6 +566,7 @@ class Job(models.Model):
 
 
     # TODO: More testing need to be done on this method.
+    # TODO: FIXME: run_count_limit isn't working.
     def next_run(self):
         "Find the next run time."
 
@@ -714,20 +720,59 @@ class Job(models.Model):
             return False
 
 
+    def execute(self):
+        "Execute the job code or the specified callable."
+        pass
+
+
+    """ The code to run
+        I'm thinking of using two ways.
+            1. Specify a callable to be ran. Limit to callables in a jobs
+               module in each akjob app. Or maybe make a jobs package and
+               modules in that package contain the code for the jobs.
+            2. Submit a class instance object that will be serialized then
+               stored then retreived and executed when the job is ran. Maybe
+               standardize on a run() method that will be ran by akjob.
+    """
+    """
+    # Maybe I should add command_argv or something like that.
+    command = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text="The callable object to be ran.")
+
+    # Possibly install/use django-picklefield
+    # pickled_cmd = PickledObjectField()
+    # or do it yourself and put the picked object into a generic binary field.
+    # pickled_cmd = models.BinaryField()
+    """
+
+
     # TODO: I'M HERE!!!
     def run(self):
         "Perform the job."
 
         # Return if the job shouldn't be ran now.
         if self.isruntime() is False:
+            logger.debug("Job <" + str(self) + "> not running at this time.")
             return
 
         # Return if _job_running flag. I have a worry of jobs crashing before
         # completion and the _job_running flag never being set back to False.
         if self._job_running is True:
+            logger.info("Job <" + str(self) + "> didn't run because job " +
+                        "running flag is True.")
+            return
+
+        # Return if there is no job code to run.
+        if self.job_code_object is None:
+            logger.warning("Job <" + str(self) + ">: No job code ran. " +
+                           "job_code_object is None.")
             return
 
         # Pre run
+        run_now_set_by = None
         if self._run_now_set_by == "re":
             run_now_set_by = "re"
             self._run_now_set_by = None
@@ -735,10 +780,15 @@ class Job(models.Model):
         self.save()
 
         # Execute Job
+        logger.debug("Attempting to run job <" + str(self) + ">")
+        code = self.job_code_object
+        code.Run()
+        logger.debug("Finished running job <" + str(self) + ">")
+
 
         # Post run
         self._job_running = False
-        self._runcount += 1
+        self._run_count += 1
         self._last_run = datetime.now(timezone.utc)
         if run_now_set_by == "re":
             self._last_interval = datetime.now(timezone.utc)

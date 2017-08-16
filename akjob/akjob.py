@@ -1,3 +1,21 @@
+from time import time
+
+""" Test class """
+def sayhi():
+    print("hi")
+
+class Exp():
+
+    def Run(self):
+        sayhi()
+        print("Hello from Exp.")
+        print(time())
+
+    @staticmethod
+    def hi():
+        return sayhi()
+
+
 """
 
 Notes / Brainstorming:
@@ -8,8 +26,14 @@ Notes / Brainstorming:
 Do something to protect from running jobs that are already running.
 """
 
+
+""" commenting everying out since none of this is used. I coded it into the Job
+class instead.
+
+
 # I think I want to run jobs in their own process. I don't know what i'm doing.
 # import subprocess
+
 
 from datetime import datetime, timezone
 from django.db.models import Q
@@ -49,3 +73,4 @@ def run():
 
 if __name__ == '__main__':
     run()
+"""
