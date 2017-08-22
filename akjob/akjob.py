@@ -6,7 +6,7 @@ def sayhi():
 
 class Exp():
 
-    def Run(self):
+    def run(self):
         sayhi()
         print("Hello from Exp.")
         print(time())

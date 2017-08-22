@@ -29,13 +29,18 @@ seconds which are stored as an integer in the database.
 """
 
 
-# Set up logging
+
+""" Set up logging
+"""
+# I should probably put this into a function?
 logging.basicConfig()
 logger = logging.getLogger("akjob.model")
 logger.setLevel(logging.DEBUG)
 
 
 
+""" Custom fields
+"""
 class TimeZoneOffsetField(models.Field):
     """ This field takes a timedelta and stores it in the DB as seconds in an
         integer number field. """
@@ -85,6 +90,8 @@ class TimeZoneOffsetField(models.Field):
         super(models.DurationField, self).formfield(**wkargs)
 
 
+""" Relational models used by the main Job model.
+"""
 # This model is populated by a fixture and is basically used as a LOV. There's
 # probably a better way to handle this that doesn't touch a database.
 class DayOfMonth(models.Model):
@@ -139,6 +146,8 @@ class JobDates(models.Model):
         return "Job " + str(self.job.id) + " -> " + str(self.job_datetime)
 
 
+""" The main model that does most akjob stuff.
+"""
 class Job(models.Model):
     "Job definition"
 
@@ -160,13 +169,15 @@ class Job(models.Model):
 
 
     """ Fields to store the job code to be ran. """
-    # Field holding job code to run. Store an object with a Run() method.
+    # Field holding job code to run. Store an object with a run() method. The
+    # object will be pckeled. See this documentation for details about
+    # pickeling and unpickeling the objects.
+    # docs.python.org/3/library/pickle.html#what-can-be-pickled-and-unpickled
     job_code_object = PickledObjectField(null=True, blank=True, default=None)
     # Sometimes the type of job_code_object (type(job_code_object)) needs to be
     # in the namespace to store and retreive the object. To import the module
-    # containing the the object's class specify the module using absolute
-    # terms.  See importlib.import_module which will be used to load the
-    # module.
+    # containing the the object's class, specify the module in this field. See
+    # importlib.import_module which will be used to load the module.
     job_code_object_module = models.CharField(
         max_length=96,
         null=True,
@@ -734,37 +745,39 @@ class Job(models.Model):
 
 
     def execute(self):
-        "Execute the job code or the specified callable."
-        pass
+        "Execute the job code."
+
+        # Pre run
+        run_now_set_by = None
+        if self._run_now_set_by == "re":
+            run_now_set_by = "re"
+            self._run_now_set_by = None
+        self._job_running = True
+        self.save()
+
+        # import module
+        if self.job_code_object_module:
+            logger.debug("Attempting to load module " +
+                         self.job_code_object_module)
+            importlib.import_module(self.job_code_object_module)
+
+        # run
+        logger.debug("Attempting to run job <" + str(self) + ">")
+        code = self.job_code_object
+        code.run()
+        logger.debug("Finished running job <" + str(self) + ">")
+
+        # Post run
+        self._job_running = False
+        self._run_count += 1
+        self._last_run = datetime.now(timezone.utc)
+        if run_now_set_by == "re":
+            self._last_interval = datetime.now(timezone.utc)
+        self.save()
 
 
-    """ The code to run
-        I'm thinking of using two ways.
-            1. Specify a callable to be ran. Limit to callables in a jobs
-               module in each akjob app. Or maybe make a jobs package and
-               modules in that package contain the code for the jobs.
-            2. Submit a class instance object that will be serialized then
-               stored then retreived and executed when the job is ran. Maybe
-               standardize on a run() method that will be ran by akjob.
-    """
-    """
-    # Maybe I should add command_argv or something like that.
-    command = models.CharField(
-        max_length=255,
-        null=True,
-        blank=True,
-        help_text="The callable object to be ran.")
-
-    # Possibly install/use django-picklefield
-    # pickled_cmd = PickledObjectField()
-    # or do it yourself and put the picked object into a generic binary field.
-    # pickled_cmd = models.BinaryField()
-    """
-
-
-    # TODO: I'M HERE!!!
     def run(self):
-        "Perform the job."
+        "Check if job should be ran now. If so, perform the job."
 
         # Return if the job shouldn't be ran now.
         if self.isruntime() is False:
@@ -784,28 +797,9 @@ class Job(models.Model):
                            "job_code_object is None.")
             return
 
-        # Pre run
-        run_now_set_by = None
-        if self._run_now_set_by == "re":
-            run_now_set_by = "re"
-            self._run_now_set_by = None
-        self._job_running = True
-        self.save()
 
         # Execute Job
-        logger.debug("Attempting to run job <" + str(self) + ">")
-        code = self.job_code_object
-        code.Run()
-        logger.debug("Finished running job <" + str(self) + ">")
-
-
-        # Post run
-        self._job_running = False
-        self._run_count += 1
-        self._last_run = datetime.now(timezone.utc)
-        if run_now_set_by == "re":
-            self._last_interval = datetime.now(timezone.utc)
-        self.save()
+        self.execute()
 
 
     # I didn't test this section well since it's not essential and time is
@@ -929,7 +923,8 @@ class Job(models.Model):
     https://docs.djangoproject.com/en/1.11/howto/initial-data/
     The data may be loaded using the functions below or be loaded from the
     fixtures:
-        python manage.py loaddata akjob_dayofweek.json akjob_dayofmonth.json
+        python manage.py loaddata akjob_dayofweek.json akjob_dayofmonth.json \
+        akjob_months.json
 """
 def load_DayOfMonth():
     for d in range(1, 32):
