@@ -718,13 +718,14 @@ class Job(models.Model):
             return False
 
         # If run limit is reached, return false
-        if self._run_count >= self.run_count_limit:
-            if self._next_run is not None:
-                self._next_run = None
-                self.save()
-            logger.debug("Job <" + str(self) + ">: Job count " +
-                         "limit reached.")
-            return False
+        if self.run_count_limit:
+            if self._run_count >= self.run_count_limit:
+                if self._next_run is not None:
+                    self._next_run = None
+                    self.save()
+                logger.debug("Job <" + str(self) + ">: Job count " +
+                             "limit reached.")
+                return False
 
         # Run next_run() and return false if it doesn't return a value.
         next_run = self.next_run()
