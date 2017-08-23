@@ -174,14 +174,13 @@ class Job(models.Model):
     # pickeling and unpickeling the objects.
     # docs.python.org/3/library/pickle.html#what-can-be-pickled-and-unpickled
     job_code_object = PickledObjectField(null=True, blank=True, default=None)
-    # Sometimes the type of job_code_object (type(job_code_object)) needs to be
-    # in the namespace to store and retreive the object. To import the module
-    # containing the the object's class, specify the module in this field. See
-    # importlib.import_module which will be used to load the module.
-    job_code_object_module = models.CharField(
-        max_length=96,
-        null=True,
-        blank=True)
+
+    # This isn't needed. I previouly thought the module containing the pickeled
+    # object's type class needed to be imported.
+    # job_code_object_module = models.CharField(
+    #     max_length=96,
+    #     null=True,
+    #     blank=True)
 
 
     """ Schedule job to run at specific datetimes. """
@@ -755,11 +754,11 @@ class Job(models.Model):
         self._job_running = True
         self.save()
 
-        # import module
-        if self.job_code_object_module:
-            logger.debug("Attempting to load module " +
-                         self.job_code_object_module)
-            importlib.import_module(self.job_code_object_module)
+        # This is not needed. Import module
+        # if self.job_code_object_module:
+        #     logger.debug("Attempting to load module " +
+        #                  self.job_code_object_module)
+        #     importlib.import_module(self.job_code_object_module)
 
         # run
         logger.debug("Attempting to run job <" + str(self) + ">")
@@ -796,7 +795,6 @@ class Job(models.Model):
             logger.warning("Job <" + str(self) + ">: No job code ran. " +
                            "job_code_object is None.")
             return
-
 
         # Execute Job
         self.execute()
@@ -917,6 +915,21 @@ class Job(models.Model):
 
         print()
 
+
+class JobCallable():
+    "Used to create job objects given a callable and argv."
+
+    def __init__(self, callable_object, *args, **kwargs):
+        self.callable_object = callable_object
+        self.args = args
+        self.kwargs = kwargs
+
+    def run(self):
+        self.callable_object(*self.args, **self.kwargs)
+
+    # Might as well make this callable since "callable" is in the name.
+    def __call__(self):
+        self.run()
 
 
 """ Populate the DayOfMonth and DayOfWeek models
