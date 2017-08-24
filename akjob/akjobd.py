@@ -9,8 +9,11 @@ import sys
 import argparse
 import pid
 import daemon
+# import threading
 import logging
 from time import sleep
+# from akjob.models import Job
+import akjob
 
 
 # Set up logging
@@ -25,6 +28,7 @@ def parse_args():
     global args
     global piddir
     global pidfile
+    global basedir
     parser = argparse.ArgumentParser()
     parser.add_argument("action",
                         choices=["start", "stop", "restart"],
@@ -39,16 +43,29 @@ def parse_args():
                         help="The directory used to store the log file.")
     parser.add_argument("-ln", "--logname",
                         help="The name of the log file.")
+    parser.add_argument("-bd", "--basedir",
+                        help="The django site's base directory.")
     args = parser.parse_args()
 
     piddir = args.piddir
     pidfile = args.pidname
+    basedir = args.basedir
+
+
+# def worker(idnum):
+    # job = Job.objects.get(id=idnum)
+    # job.run()
+    # pass
 
 
 def daemonize():
     with daemon.DaemonContext(pidfile=pid.PidFile(pidname=pidfile, piddir=piddir)):
         while True:
-            # run akjob.py stuff
+            # for j in Job.objects.all():
+                # t = threading.Thread(target=worker, args=(j.id,))
+                # t.start()
+                # sleep(1)
+            akjob.main(basedir)
             sleep(60)
 
 
@@ -117,4 +134,5 @@ def main():
 
 
 if __name__ == '__main__':
+    # os.environ.setdefault("DJANGO_SETTINGS_MODULE", "akbash.settings")
     main()

@@ -16,12 +16,14 @@ from django.conf import settings
 from django.apps import AppConfig
 
 
+basedir = settings.BASE_DIR
+
 AKJOB_START_DAEMON = os.environ.get(
     "AKJOB_START_DAEMON", True)
 
 AKJOB_PID_DIR = os.environ.get(
     "AKJOB_PID_DIR",
-    os.path.join(settings.BASE_DIR, "akjob"))
+    os.path.join(basedir, "akjob"))
 
 AKJOB_PID_FILE = os.environ.get(
     "AKJOB_PID_FILE",
@@ -33,9 +35,10 @@ class AkjobConfig(AppConfig):
 
     def ready(self):
         "Start the akjob daemon when akbash starts up."
-        if AKJOB_START_DAEMON in ['True', 'true', '1', 't', 'T', 'y', 'Yes',
-                                  'YES', 1, True]:
+        if AKJOB_START_DAEMON in [True, 'True', 'true', 'TRUE', 't', 'T', 'y',
+                                  'Y', 'Yes', 'yes', 'YES', '1', 1]:
             run(["python", "akjob/akjobd.py",
                 "start",
                  "-pd", AKJOB_PID_DIR,
-                 "-pn", AKJOB_PID_FILE])
+                 "-pn", AKJOB_PID_FILE,
+                 "-bd", basedir])

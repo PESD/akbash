@@ -1,76 +1,33 @@
-from time import time
+""" This is what akjob.akjobd runs. """
 
-""" Test class """
-def sayhi():
-    print("hi")
-
-class Exp():
-
-    def run(self):
-        sayhi()
-        print("Hello from Exp.")
-        print(time())
-
-    @staticmethod
-    def hi():
-        return sayhi()
+import os
+import threading
+from time import sleep
 
 
-"""
 
-Notes / Brainstorming:
-* Read all the job objects
-* find which jobs needs executing
-* execute the selected jobs
-
-Do something to protect from running jobs that are already running.
-"""
-
-
-""" commenting everying out since none of this is used. I coded it into the Job
-class instead.
-
-
-# I think I want to run jobs in their own process. I don't know what i'm doing.
-# import subprocess
+# I'm having difficulties because akjobd.py is ran without knowing anything
+# about django and is not ran from the django site's base dir. So I'm having
+# trouble importing from akjob.models.
+def setup_django(basedir):
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "akbash.settings")
+    if basedir is None:
+        raise("Django base dir is required.")
+    os.chdir(basedir)
+    from akjob.models import Job as x
+    global Job
+    Job = x
 
 
-from datetime import datetime, timezone
-from django.db.models import Q
-from akjob.models import Job
-
-
-def dtfloor(dt):
-    "Floor datetime to minute. i.e., zero out seconds and microseconds."
-    return dt.replace(second=0, microsecond=0)
-
-
-def schedule(job):
-    "Populate Job.next_run with the datetime that job should next be ran."
+def worker(idnum):
+    job = Job.objects.get(id=idnum)
+    job.run()
     pass
 
 
-def find_jobs():
-    "Find jobs that should be ran now."
-
-    utc = timezone.utc
-    now = dtfloor(datetime.now(tz=utc))
-
-    jobs = Job.objects.filter(
-        Q(run_count_limit=None) | Q(run_count__lt=run_count_limit),
-        job_enabled=True,
-        job_running=False
-    )
-
-
-def pstatus():
-    "Print a pretty version of the Job attributes and status."
-    pass
-
-def run():
-    pass
-
-
-if __name__ == '__main__':
-    run()
-"""
+def main(basedir):
+    setup_django(basedir)
+    for j in Job.objects.all():
+        t = threading.Thread(target=worker, args=(j.id,))
+        t.start()
+        sleep(1)
