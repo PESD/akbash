@@ -1,20 +1,34 @@
-""" A script to start the akjob daemon.
-
-python-daemon asks for pylockfile but that package is depreciated. Instead I'm
-using pid which is python-daemon compatible.
-"""
+""" The akjob daemon. """
 
 import os
 import sys
 import argparse
 import pid
 import daemon
-# import threading
+import threading
 import logging
 from time import sleep
-# from akjob.models import Job
-import akjob
 
+""" Notes:
+python-daemon asks for pylockfile but that package is depreciated. Instead I'm
+using pid which is python-daemon compatible.
+"""
+
+# I'm having difficulties because akjobd.py is ran without knowing anything
+# about django and is not ran from the django site's base dir. So I'm having
+# trouble importing from akjob.models. this is critical because unpickeling
+# objects need to be able to find their type class correctly.
+def setup(basedir):
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "akbash.settings")
+    if basedir is None:
+        raise("Django base dir is required.")
+    # make sure basedir is at the start of sys.path
+    if basedir in sys.path:
+        sys.path.remove(basedir)
+    sys.path.insert(0, basedir)
+    os.chdir(basedir)
+    global Job
+    from akjob.models import Job
 
 # Set up logging
 def setup_logging():
@@ -44,6 +58,7 @@ def parse_args():
     parser.add_argument("-ln", "--logname",
                         help="The name of the log file.")
     parser.add_argument("-bd", "--basedir",
+                        required=True,
                         help="The django site's base directory.")
     args = parser.parse_args()
 
@@ -52,20 +67,19 @@ def parse_args():
     basedir = args.basedir
 
 
-# def worker(idnum):
-    # job = Job.objects.get(id=idnum)
-    # job.run()
-    # pass
+def worker(idnum):
+    job = Job.objects.get(id=idnum)
+    job.run()
 
 
 def daemonize():
     with daemon.DaemonContext(pidfile=pid.PidFile(pidname=pidfile, piddir=piddir)):
         while True:
-            # for j in Job.objects.all():
-                # t = threading.Thread(target=worker, args=(j.id,))
-                # t.start()
-                # sleep(1)
-            akjob.main(basedir)
+            for j in Job.objects.all():
+                t = threading.Thread(target=worker, args=(j.id,))
+                t.start()
+                sleep(1)
+            # akjob.main(basedir)
             sleep(60)
 
 
@@ -109,6 +123,7 @@ def pid_precheck():
 def main():
     setup_logging()
     parse_args()
+    setup(basedir)
     status = pid_precheck()
     if status == "AlreadyRunning":
         if args.action == "stop":
@@ -134,5 +149,4 @@ def main():
 
 
 if __name__ == '__main__':
-    # os.environ.setdefault("DJANGO_SETTINGS_MODULE", "akbash.settings")
     main()
