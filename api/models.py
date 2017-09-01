@@ -21,6 +21,14 @@ def update_field(data_object, column, new_value, user=False):
             log.save()
 
 
+class Location(models.Model):
+    name = models.CharField(max_length=255)
+    short_name = models.CharField(max_length=50)
+    location_number = models.CharField(max_length=3)
+    visions_dac_id = models.IntegerField(null=True)
+    visions_dac_name = models.CharField(max_length=255, blank=True, null=True)
+
+
 # Vendor Classes
 class VendorType(models.Model):
     name = models.CharField(max_length=255)
@@ -50,6 +58,7 @@ class Person(models.Model):
         ("inprocess", "In Process"),
         ("active", "Active"),
         ("inactive", "Inactive"),
+        ("visions", "Imported from Visions")
     )
     status = models.CharField(max_length=20, choices=STATUSES, default="newhire")
     type = models.CharField(max_length=16, choices=TYPES)
@@ -103,6 +112,7 @@ class Person(models.Model):
     desk_phone_created_date = models.DateTimeField(null=True, blank=True)
     desk_phone_created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="desk_phone_created_user")
     start_date = models.DateField(null=True, blank=True)
+    locations = models.ManyToManyField(Location)
     last_updated_by = models.CharField(max_length=255, blank=True)
     last_updated_date = models.DateTimeField(null=True, blank=True, auto_now=True)
 
@@ -133,10 +143,12 @@ class Person(models.Model):
 
     def update_ad_service(self, ad_username, created_by):
         self.is_ad_account_created = True
-        self.ad_account_created_by = created_by
+        if not self.ad_account_created_by or self.ad_account_created_by == "":
+            self.ad_account_created_by = created_by
         if self.services.filter(type="ad"):
             ad_service = self.services.get(type="ad")
             update_field(ad_service, "user_info", ad_username, created_by)
+            update_field(ad_service, "status", "active", created_by)
         else:
             ad_service = self.services.create(type="ad", person=self, user_info=ad_username)
             ad_service.save()
@@ -145,17 +157,35 @@ class Person(models.Model):
             return True
         return False
 
+    def disable_ad_service(self, created_by):
+        if self.services.filter(type="ad"):
+            ad_service = self.services.get(type="ad")
+            update_field(ad_service, "status", "inactive", created_by)
+            return True
+        return False
+
     def update_synergy_service(self, synergy_username, created_by):
         self.is_synergy_account_created = True
+        if not self.synergy_account_created_by or self.synergy_account_created_by == "":
+            self.synergy_account_created_by = created_by
         self.synergy_account_created_by = created_by
+        self.is_synergy_account_needed = True
         if self.services.filter(type="synergy"):
             synergy_service = self.services.get(type="synergy")
             update_field(synergy_service, "user_info", synergy_username, created_by)
+            update_field(synergy_service, "status", "active", created_by)
         else:
             synergy_service = self.services.create(type="synergy", person=self, user_info=synergy_username)
             synergy_service.save()
         if synergy_service.user_info == synergy_username:
             self.save()
+            return True
+        return False
+
+    def disable_synergy_service(self, created_by):
+        if self.services.filter(type="synergy"):
+            synergy_service = self.services.get(type="synergy")
+            update_field(synergy_service, "status", "inactive", created_by)
             return True
         return False
 
@@ -180,6 +210,8 @@ class Employee(Person):
     sub_type = models.CharField(max_length=1, blank=True)
     marked_as_hired = models.DateField(null=True, blank=True)
     epar_id = models.IntegerField(null=True, blank=True)
+    termination_epar_id = models.IntegerField(null=True, blank=True)
+    transfer_epar_id = models.IntegerField(null=True, blank=True)
 
     def update_employee_from_visions(self):
         visions_user = User.objects.get(username="visions")
@@ -241,8 +273,24 @@ class Employee(Person):
         if gender == 2:
             update_field(self, "gender", "F", visions_user)
 
-    def update_employee_from_epar(self):
-        pass
+    @staticmethod
+    def should_import_employee(employee):
+        try:
+            if Employee.objects.get(ssn=employee.ssn):
+                return False
+        except ObjectDoesNotExist:
+            pass
+        try:
+            if Employee.objects.get(first_name=employee.first_name, last_name=employee.last_name):
+                return False
+        except ObjectDoesNotExist:
+            pass
+        try:
+            if Employee.objects.get(visions_id=employee.id):
+                return False
+        except ObjectDoesNotExist:
+            pass
+        return True
 
 
 class Contractor(Person):
@@ -265,6 +313,10 @@ class Service(models.Model):
         ("cell", "Cell Phone"),
         ("phone", "Desk Phone")
     )
+    STATUSES = (
+        ("active", "Active"),
+        ("disabled", "Disabled"),
+    )
     type = models.CharField(max_length=16, choices=TYPES)
     person = models.ForeignKey(
         Person,
@@ -272,6 +324,7 @@ class Service(models.Model):
         related_name="services",
     )
     user_info = models.CharField(max_length=50)
+    status = models.CharField(max_length=16, choices=STATUSES, default="active")
 
     # There can be only one service of each type per Person
     class Meta:
@@ -282,12 +335,6 @@ class Service(models.Model):
 
 
 # Organizational Classes
-
-class Location(models.Model):
-    name = models.CharField(max_length=255)
-    short_name = models.CharField(max_length=50)
-    location_number = models.CharField(max_length=3)
-
 
 class Department(models.Model):
     name = models.CharField(max_length=255)
@@ -320,6 +367,11 @@ class Position(models.Model):
             return True
         else:
             return False
+
+
+class VisionsPositions(models.Model):
+    description = models.CharField(max_length=255)
+    type = models.CharField(max_length=255)
 
 
 # Comments
