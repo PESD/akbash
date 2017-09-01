@@ -5,28 +5,24 @@ import sys
 import argparse
 import pid
 import daemon
-import threading
 import logging
+# import akjob.job_loop
 from time import sleep
+
 
 """ Notes:
 python-daemon asks for pylockfile but that package is depreciated. Instead I'm
 using pid which is python-daemon compatible.
 """
 
-# I'm having difficulties because akjobd.py is ran without knowing anything
-# about django and is not ran from the django site's base dir. So I'm having
-# trouble importing from akjob.models. this is critical because unpickeling
-# objects need to be able to find their type class correctly.
-def setup(basedir):
+
+# Django has to be setup separately to disable the running of akjobd on django
+# startup thereby causing an infinite loop.
+def setup_django():
+    os.environ['AKJOB_START_DAEMON'] = 'False'
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "akbash.settings")
-    if basedir is None:
-        raise("Django base dir is required.")
-    # make sure basedir is at the start of sys.path
-    if basedir in sys.path:
-        sys.path.remove(basedir)
-    sys.path.insert(0, basedir)
-    os.chdir(basedir)
+    import django
+    django.setup()
     global Job
     from akjob.models import Job
 
@@ -42,7 +38,7 @@ def parse_args():
     global args
     global piddir
     global pidfile
-    global basedir
+    # global basedir
     parser = argparse.ArgumentParser()
     parser.add_argument("action",
                         choices=["start", "stop", "restart"],
@@ -57,29 +53,30 @@ def parse_args():
                         help="The directory used to store the log file.")
     parser.add_argument("-ln", "--logname",
                         help="The name of the log file.")
-    parser.add_argument("-bd", "--basedir",
-                        required=True,
-                        help="The django site's base directory.")
+    # parser.add_argument("-bd", "--basedir",
+    #                     help="The django site's base directory.")
     args = parser.parse_args()
 
     piddir = args.piddir
     pidfile = args.pidname
-    basedir = args.basedir
+    # basedir = args.basedir
 
 
 def worker(idnum):
     job = Job.objects.get(id=idnum)
     job.run()
 
+def loop_through_jobs():
+    for j in Job.objects.all():
+        worker(j.id)
+        sleep(1)
 
 def daemonize():
-    with daemon.DaemonContext(pidfile=pid.PidFile(pidname=pidfile, piddir=piddir)):
+    with daemon.DaemonContext(
+            pidfile=pid.PidFile(pidname=pidfile, piddir=piddir)):
         while True:
-            for j in Job.objects.all():
-                t = threading.Thread(target=worker, args=(j.id,))
-                t.start()
-                sleep(1)
-            # akjob.main(basedir)
+            # akjob.job_loop.main()
+            loop_through_jobs()
             sleep(60)
 
 
@@ -123,7 +120,6 @@ def pid_precheck():
 def main():
     setup_logging()
     parse_args()
-    setup(basedir)
     status = pid_precheck()
     if status == "AlreadyRunning":
         if args.action == "stop":
@@ -149,4 +145,5 @@ def main():
 
 
 if __name__ == '__main__':
+    setup_django()
     main()

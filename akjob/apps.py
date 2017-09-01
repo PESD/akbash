@@ -16,14 +16,17 @@ from django.conf import settings
 from django.apps import AppConfig
 
 
-basedir = settings.BASE_DIR
+BASE_DIR = settings.BASE_DIR
+
+# PYTHONPATH = os.environ.get(
+#     "PYTHONPATH", None)
 
 AKJOB_START_DAEMON = os.environ.get(
     "AKJOB_START_DAEMON", True)
 
 AKJOB_PID_DIR = os.environ.get(
     "AKJOB_PID_DIR",
-    os.path.join(basedir, "akjob"))
+    os.path.join(BASE_DIR, "akjob"))
 
 AKJOB_PID_FILE = os.environ.get(
     "AKJOB_PID_FILE",
@@ -37,8 +40,17 @@ class AkjobConfig(AppConfig):
         "Start the akjob daemon when akbash starts up."
         if AKJOB_START_DAEMON in [True, 'True', 'true', 'TRUE', 't', 'T', 'y',
                                   'Y', 'Yes', 'yes', 'YES', '1', 1]:
+            # Run akjobd.py from the BASE_DIR instead of from the akjob dir.
+            os.chdir(BASE_DIR)
+            os.putenv('PYTHONPATH', BASE_DIR)
+
+            # start akjobd using it's own process and instance of python so
+            # that it will detach when it daemonizes and this process may
+            # continue on as normal and uneffected.
             run(["python", "akjob/akjobd.py",
                 "start",
                  "-pd", AKJOB_PID_DIR,
                  "-pn", AKJOB_PID_FILE,
-                 "-bd", basedir])
+                 # "-bd", BASE_DIR,
+                 ])
+            os.environ['AKJOB_START_DAEMON'] = 'False'

@@ -793,8 +793,8 @@ class Job(models.Model):
 
         # Return if there is no job code to run.
         if self.job_code_object is None:
-            logger.warning("Job <" + str(self) + ">: No job code ran. " +
-                           "job_code_object is None.")
+            logger.warn("Job <" + str(self) + ">: No job code ran. " +
+                        "job_code_object is None.")
             return
 
         # Execute Job
