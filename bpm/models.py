@@ -3,7 +3,7 @@ from django.db import models
 from django.core.mail import send_mail
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
-from api.models import Person, Employee, Position, update_field
+from api.models import Person, Employee, Position, Location, update_field
 from api import ldap
 from api import visions
 from django.contrib.auth.models import User
@@ -26,8 +26,14 @@ from bpm.synergy_helper import SynergyHelper
 # It is up to whatever is calling that function to know what args it needs to pass
 
 
+class ProcessCategory(models.Model):
+    name = models.CharField(max_length=255)
+    slug = models.CharField(max_length=255)
+
+
 class Process(models.Model):
     name = models.CharField(max_length=255)
+    categories = models.ManyToManyField(ProcessCategory)
     start_activity = models.ForeignKey(
         "Activity",
         on_delete=models.SET_NULL,
@@ -97,7 +103,10 @@ class Workflow(models.Model):
                 return False
         self.status = "Complete"
         self.save()
-        self.person.status = "active"
+        if self.process.name == "Termination Process":
+            self.person.status = "inactive"
+        else:
+            self.person.status = "active"
         self.person.save()
         return True
 
@@ -203,6 +212,12 @@ class TaskWorker:
                 return True
             return False
 
+        def is_transfer_epar_dup(epar_id):
+            a = Employee.objects.filter(transfer_epar_id=epar_id)
+            if a:
+                return True
+            return False
+
         def is_visions_id_dup(visions_id):
             a = Employee.objects.filter(visions_id=visions_id)
             if a:
@@ -214,6 +229,41 @@ class TaskWorker:
                 return User.objects.get(username=username)
             except ObjectDoesNotExist:
                 return False
+
+        def update_positions(employee, visions_positions):
+            secondary_positions = []
+            primary_position = employee.positions.get(is_primary=True)
+            did_update = False
+            for position in visions_positions:
+                if position.position_ranking == "Primary":
+                    location = VisionsHelper.get_position_location(position.dac)
+                    primary_position.title = position.description
+                    primary_position.visions_position_id = position.id
+                    primary_position.last_updated_by = "Visions"
+                    primary_position.last_updated_date = date.today()
+                    if location:
+                        primary_position.location = location
+                    primary_position.save()
+                    did_update = True
+                else:
+                    secondary_positions.append(position)
+            if secondary_positions:
+                for secondary_position in secondary_positions:
+                    new_position = Position.objects.create(
+                        person=employee,
+                        title=secondary_position.description,
+                        is_primary=False,
+                        last_updated_by="Visions",
+                        last_updated_date=date.today()
+                    )
+                    location = VisionsHelper.get_position_location(secondary_position.dac)
+                    if location:
+                        secondary_position.location = location
+                        new_position.save()
+                    did_update = True
+            if did_update:
+                return (True, "Success")
+            return (False, "Nothing Updated")
 
         def task_update_name(**kwargs):
             workflow_activity = kwargs["workflow_activity"]
@@ -240,7 +290,6 @@ class TaskWorker:
                 return (False, "ePAR already linked to an Employee")
             employee = TaskWorker.get_employee_from_workflow_task(workflow_task)
             update_field(employee, "epar_id", epar_id)
-            employee.update_employee_from_epar()
             return (True, "Success")
 
         def task_set_term_epar_id(**kwargs):
@@ -252,7 +301,36 @@ class TaskWorker:
                 return (False, "ePAR already linked to an Employee")
             employee = TaskWorker.get_employee_from_workflow_task(workflow_task)
             update_field(employee, "termination_epar_id", epar_id)
-            employee.update_employee_from_epar()
+            return (True, "Success")
+
+        def task_set_transfer_epar_id(**kwargs):
+            workflow_task = kwargs["workflow_task"]
+            epar_id = kwargs["epar_id"]
+            if not VisionsHelper.verify_epar(epar_id):
+                return (False, "ePAR not found")
+            if TaskWorker.is_transfer_epar_dup(epar_id):
+                return (False, "ePAR already linked to an Employee")
+            employee = TaskWorker.get_employee_from_workflow_task(workflow_task)
+            update_field(employee, "transfer_epar_id", epar_id)
+            positions = VisionsHelper.get_epar_positions(epar_id)
+            if positions:
+                return TaskWorker.update_positions(employee, positions)
+            else:
+                return (False, "No ePAR Positions Found")
+
+        def task_assign_locations(**kwargs):
+            workflow_task = kwargs["workflow_task"]
+            locations = kwargs["locations"]
+            person = TaskWorker.get_person_from_workflow_task(workflow_task)
+            if not locations:
+                return (False, "No locations")
+            person.locations.clear()
+            for location in locations:
+                try:
+                    new_location = Location.objects.get(id=location)
+                except ObjectDoesNotExist:
+                    return (False, "Invalid Location")
+                person.locations.add(new_location)
             return (True, "Success")
 
         def task_set_visions_id(**kwargs):
@@ -296,7 +374,7 @@ class TaskWorker:
             if did_update:
                 return (True, "Success")
             else:
-                return (False, "Could not find Active Directory record to update")
+                return (True, "No Active Directory account to disable.")
 
         def task_check_synergy(**kwargs):
             workflow_task = kwargs["workflow_task"]
@@ -330,7 +408,26 @@ class TaskWorker:
             if did_update:
                 return (True, "Success")
             else:
-                return (False, "Could not find Synergy record to update")
+                return (True, "No Synergy account to disable")
+
+        def task_transfer_synergy(**kwargs):
+            workflow_task = kwargs["workflow_task"]
+            status = kwargs["status"]
+            employee = TaskWorker.get_employee_from_workflow_task(workflow_task)
+            if not status:
+                update_field(employee, "is_synergy_account_needed", False)
+                return ("True", "Success")
+            synergy_username = SynergyHelper.get_synergy_login(employee.visions_id)
+            user = TaskWorker.get_user_or_false(kwargs["username"])
+            if not user:
+                return (False, "Invalid User")
+            if not synergy_username:
+                return (True, "Success. The employee/contractor has no Synergy account.")
+            did_update = employee.update_synergy_service(synergy_username, user)
+            if did_update:
+                return (True, "Success")
+            else:
+                return (False, "Unknown Error")
 
         def task_update_position(**kwargs):
             workflow_task = kwargs["workflow_task"]
@@ -338,39 +435,7 @@ class TaskWorker:
             visions_positions = VisionsHelper.get_positions_for_employee(employee.visions_id)
             if not visions_positions:
                 return (False, "No positions found")
-            secondary_positions = []
-            primary_position = employee.positions.get(is_primary=True)
-            did_update = False
-            for position in visions_positions:
-                if position.position_ranking == "Primary":
-                    location = VisionsHelper.get_position_location(position.dac)
-                    primary_position.title = position.description
-                    primary_position.visions_position_id = position.id
-                    primary_position.last_updated_by = "Visions"
-                    primary_position.last_updated_date = date.today()
-                    if location:
-                        primary_position.location = location
-                    primary_position.save()
-                    did_update = True
-                else:
-                    secondary_positions.append(position)
-            if secondary_positions:
-                for secondary_position in secondary_positions:
-                    new_position = Position.objects.create(
-                        person=employee,
-                        title=secondary_position.description,
-                        is_primary=False,
-                        last_updated_by="Visions",
-                        last_updated_date=date.today()
-                    )
-                    location = VisionsHelper.get_position_location(secondary_position.dac)
-                    if location:
-                        secondary_position.location = location
-                        new_position.save()
-                    did_update = True
-            if did_update:
-                return (True, "Success")
-            return (False, "Nothing Updated")
+            return TaskWorker.update_positions(employee, visions_positions)
 
         def task_set_tcp_id(**kwargs):
             workflow_task = kwargs["workflow_task"]

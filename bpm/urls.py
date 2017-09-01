@@ -5,6 +5,7 @@ from rest_framework.routers import DefaultRouter
 
 router = DefaultRouter()
 router.register(r'process', views.ProcessViewSet, 'process')
+router.register(r'process-by-category/(?P<category_slug>[\w\-.]+)', views.ProcessByCategoryViewSet, 'process-by-category')
 router.register(r'activity', views.ActivityViewSet, 'activity')
 router.register(r'user', views.UserViewSet)
 router.register(r'user-from-username/(?P<username>[\w\-.]+)', views.UserFromUsernameViewSet, "user-from-username")
@@ -34,4 +35,5 @@ urlpatterns = [
     url(r'^task_update_position/$', views.task_update_position_view),
     url(r'^task_generic_check/$', views.task_generic_check_view),
     url(r'^task_generic_todo/$', views.task_generic_todo_view),
+    url(r'^task_work_locations/$', views.task_work_locations_view),
 ]

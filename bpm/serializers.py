@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from bpm.models import Process, Activity, Workflow, WorkflowActivity, WorkflowTask, Task, TaskWorker
+from bpm.models import Process, Activity, Workflow, WorkflowActivity, WorkflowTask, Task, TaskWorker, ProcessCategory
 from api.models import Person
 from api.serializers import PersonSerializer
 from bpm.visions_helper import VisionsHelper
@@ -36,6 +36,14 @@ class ActivitySerializer(serializers.ModelSerializer):
         """ Perform necessary eager loading of data. """
         queryset = queryset.prefetch_related('users')
         return queryset
+
+
+class ProcessCategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProcessCategory
+        fields = (
+            "slug"
+        )
 
 
 class ProcessSerializer(serializers.ModelSerializer):
@@ -325,3 +333,27 @@ class TaskGenericTodo(serializers.Serializer):
                 for workflow_activity in workflow_activities:
                     workflow_activity.advance_workflow_activity()
             return {"workflow_task_id": workflow_task.id, "status": status, "message": message, "username": username}
+
+
+class TaskWorkLocations(serializers.Serializer):
+        workflow_task_id = serializers.IntegerField()
+        status = serializers.BooleanField()
+        message = serializers.CharField(max_length=200, allow_blank=True)
+        username = serializers.CharField(max_length=50, allow_blank=True)
+        locations = serializers.ListField(child=serializers.IntegerField())
+
+        def create(self, validated_data):
+            workflow_task = WorkflowTask.objects.get(pk=validated_data["workflow_task_id"])
+            username = validated_data["username"]
+            locations = validated_data["locations"]
+            args = {
+                "workflow_task": workflow_task,
+                "username": username,
+                "locations": locations,
+            }
+            status, message = workflow_task.run_task(args)
+            if workflow_task.status == "Complete":
+                workflow_activities = workflow_task.workflowactivity_set.all()
+                for workflow_activity in workflow_activities:
+                    workflow_activity.advance_workflow_activity()
+            return {"workflow_task_id": workflow_task.id, "status": status, "message": message, "username": username, "locations": locations}
