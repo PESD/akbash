@@ -1,5 +1,5 @@
 from api import visions
-from api.models import Employee, Location
+from api.models import Employee, Location, Position
 from django.core.exceptions import ObjectDoesNotExist
 
 
@@ -61,6 +61,13 @@ class VisionsHelper:
             return False
         return True
 
+    def get_visions_positions_from_dict(db_result_dict):
+        positions = []
+        for row in db_result_dict:
+            position = VisionsPosition(row["ID"], row["Description"], row["tblAPReqLocationsID"], row["PositionRankingType"])
+            positions.append(position)
+        return positions
+
     def get_epar(epar_id):
         vsquery = visions.Select("ID, Name, PositionDescription", "viwHPEmpPARs", ID=epar_id)
         vsresult = vsquery.fetch_all_dict()
@@ -68,6 +75,10 @@ class VisionsHelper:
             row = vsresult[0]
             return Epar(row["ID"], row["Name"], row["PositionDescription"])
         return None
+
+    def get_epar_positions(epar_id):
+        db_positions = visions.Select("pos.ID, pos.Description, pos.tblAPReqLocationsID, pos.PositionRankingType", "tblHPEmpPARPositions pp INNER JOIN viwPRPositions pos ON pp.tblPRPositionsID = pos.ID", tblHPEmpParID=epar_id)
+        return VisionsHelper.get_visions_positions_from_dict(db_positions.fetch_all_dict())
 
     def get_all_epars():
         vsquery = visions.Select("ID, Name, PositionDescription", "viwHPEmpPARs", Type="New Hire Assignment")
@@ -109,11 +120,7 @@ class VisionsHelper:
             "ID, Description, tblAPReqLocationsID, PositionRankingType",
             "tblPREmployeesID={} AND RecordType='Position' AND PositionType='Open'".format(visions_id)
         )
-        positions = []
-        for row in db_positions.fetch_all_dict():
-            position = VisionsPosition(row["ID"], row["Description"], row["tblAPReqLocationsID"], row["PositionRankingType"])
-            positions.append(position)
-        return positions
+        return VisionsHelper.get_visions_positions_from_dict(db_positions.fetch_all_dict())
 
     def get_tcp_id_for_employee(visions_id):
         db_result = visions.Viwprpositions(
@@ -124,3 +131,10 @@ class VisionsHelper:
             if row["TCIJob"] and row["TCIJob"] > 0:
                 return row["TCIJob"]
         return False
+
+    def get_all_visions_positions():
+        db_result = visions.Viwprpositions(
+            "DISTINCT PosType, Description",
+            "PositionID <> '' AND PositionID IS NOT NULL ORDER BY PosType, Description"
+        )
+        return db_result.fetch_all_dict()

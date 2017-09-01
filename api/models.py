@@ -21,6 +21,14 @@ def update_field(data_object, column, new_value, user=False):
             log.save()
 
 
+class Location(models.Model):
+    name = models.CharField(max_length=255)
+    short_name = models.CharField(max_length=50)
+    location_number = models.CharField(max_length=3)
+    visions_dac_id = models.IntegerField(null=True)
+    visions_dac_name = models.CharField(max_length=255, blank=True, null=True)
+
+
 # Vendor Classes
 class VendorType(models.Model):
     name = models.CharField(max_length=255)
@@ -104,6 +112,7 @@ class Person(models.Model):
     desk_phone_created_date = models.DateTimeField(null=True, blank=True)
     desk_phone_created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="desk_phone_created_user")
     start_date = models.DateField(null=True, blank=True)
+    locations = models.ManyToManyField(Location)
     last_updated_by = models.CharField(max_length=255, blank=True)
     last_updated_date = models.DateTimeField(null=True, blank=True, auto_now=True)
 
@@ -134,7 +143,8 @@ class Person(models.Model):
 
     def update_ad_service(self, ad_username, created_by):
         self.is_ad_account_created = True
-        self.ad_account_created_by = created_by
+        if not self.ad_account_created_by or self.ad_account_created_by == "":
+            self.ad_account_created_by = created_by
         if self.services.filter(type="ad"):
             ad_service = self.services.get(type="ad")
             update_field(ad_service, "user_info", ad_username, created_by)
@@ -156,6 +166,8 @@ class Person(models.Model):
 
     def update_synergy_service(self, synergy_username, created_by):
         self.is_synergy_account_created = True
+        if not self.synergy_account_created_by or self.synergy_account_created_by == "":
+            self.synergy_account_created_by = created_by
         self.synergy_account_created_by = created_by
         self.is_synergy_account_needed = True
         if self.services.filter(type="synergy"):
@@ -199,6 +211,7 @@ class Employee(Person):
     marked_as_hired = models.DateField(null=True, blank=True)
     epar_id = models.IntegerField(null=True, blank=True)
     termination_epar_id = models.IntegerField(null=True, blank=True)
+    transfer_epar_id = models.IntegerField(null=True, blank=True)
 
     def update_employee_from_visions(self):
         visions_user = User.objects.get(username="visions")
@@ -259,9 +272,6 @@ class Employee(Person):
             update_field(self, "gender", "M", visions_user)
         if gender == 2:
             update_field(self, "gender", "F", visions_user)
-
-    def update_employee_from_epar(self):
-        pass
 
     @staticmethod
     def should_import_employee(employee):
@@ -326,14 +336,6 @@ class Service(models.Model):
 
 # Organizational Classes
 
-class Location(models.Model):
-    name = models.CharField(max_length=255)
-    short_name = models.CharField(max_length=50)
-    location_number = models.CharField(max_length=3)
-    visions_dac_id = models.IntegerField(null=True)
-    visions_dac_name = models.CharField(max_length=255, blank=True, null=True)
-
-
 class Department(models.Model):
     name = models.CharField(max_length=255)
     supervisor = models.ForeignKey(Employee, on_delete=models.CASCADE)
@@ -365,6 +367,11 @@ class Position(models.Model):
             return True
         else:
             return False
+
+
+class VisionsPositions(models.Model):
+    description = models.CharField(max_length=255)
+    type = models.CharField(max_length=255)
 
 
 # Comments

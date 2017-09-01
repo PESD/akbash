@@ -1,5 +1,18 @@
 from rest_framework import serializers
-from api.models import Employee, Service, Contractor, Vendor, Position, Location, Department, PositionType, Person, Comment, update_field
+from api.models import (
+    Employee,
+    Service,
+    Contractor,
+    Vendor,
+    Position,
+    Location,
+    Department,
+    PositionType,
+    Person,
+    Comment,
+    VisionsPositions,
+    update_field,
+)
 from django.contrib.auth.models import User
 
 
@@ -62,6 +75,8 @@ class PersonSerializer(serializers.ModelSerializer):
     visions_account_created_by = serializers.SlugRelatedField(many=False, read_only=True, slug_field='username')
     synergy_account_created_by = serializers.SlugRelatedField(many=False, read_only=True, slug_field='username')
     ad_account_created_by = serializers.SlugRelatedField(many=False, read_only=True, slug_field='username')
+    locations = serializers.SlugRelatedField(many=True, read_only=True, slug_field='short_name')
+    status = serializers.SerializerMethodField()
 
     # Will pull in any Service usernames (Visions, Synergy, etc)
     services = ServiceSerializer(many=True, read_only=True)
@@ -72,6 +87,7 @@ class PersonSerializer(serializers.ModelSerializer):
             "api_url",
             "id",
             "type",
+            "status",
             "first_name",
             "last_name",
             "middle_name",
@@ -125,7 +141,11 @@ class PersonSerializer(serializers.ModelSerializer):
             "start_date",
             "last_updated_by",
             "last_updated_date",
+            "locations",
         )
+
+    def get_status(self, obj):
+        return obj.get_status_display()
 
     def update(self, instance, validated_data):
         user = False
@@ -178,6 +198,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
     visions_account_created_by = serializers.SlugRelatedField(many=False, read_only=True, slug_field='username')
     synergy_account_created_by = serializers.SlugRelatedField(many=False, read_only=True, slug_field='username')
     ad_account_created_by = serializers.SlugRelatedField(many=False, read_only=True, slug_field='username')
+    status = serializers.SerializerMethodField()
 
     # Will pull in any Service usernames (Visions, Synergy, etc)
     services = ServiceSerializer(many=True, read_only=True)
@@ -188,6 +209,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
             "api_url",
             "id",
             "type",
+            "status",
             "employee_id",
             "first_name",
             "last_name",
@@ -209,6 +231,8 @@ class EmployeeSerializer(serializers.ModelSerializer):
             "sub_type",
             "marked_as_hired",
             "epar_id",
+            "transfer_epar_id",
+            "termination_epar_id",
             "is_onboarded",
             "onboarded_date",
             "onboarded_by",
@@ -246,6 +270,9 @@ class EmployeeSerializer(serializers.ModelSerializer):
             "start_date",
         )
 
+    def get_status(self, obj):
+        return obj.get_status_display()
+
     @staticmethod
     def setup_eager_loading(queryset):
         """ Perform necessary eager loading of data. """
@@ -276,6 +303,7 @@ class ContractorSerializer(serializers.ModelSerializer):
     # Will pull in any Service usernames (Visions, Synergy, etc)
     services = ServiceSerializer(many=True, read_only=True)
     # vendor = VendorSerializer(many=False, read_only=True)
+    status = serializers.SerializerMethodField()
 
     class Meta:
         model = Contractor
@@ -283,6 +311,7 @@ class ContractorSerializer(serializers.ModelSerializer):
             "api_url",
             "id",
             "type",
+            "status",
             "first_name",
             "last_name",
             "middle_name",
@@ -328,6 +357,9 @@ class ContractorSerializer(serializers.ModelSerializer):
             "start_date",
         )
 
+    def get_status(self, obj):
+        return obj.get_status_display()
+
     @staticmethod
     def setup_eager_loading(queryset):
         """ Perform necessary eager loading of data. """
@@ -369,6 +401,17 @@ class DepartmentSerializer(serializers.ModelSerializer):
             "id",
             "name",
             "supervisor",
+        )
+
+
+class VisionsPositionsSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = VisionsPositions
+        fields = (
+            "id",
+            "description",
+            "type",
         )
 
 

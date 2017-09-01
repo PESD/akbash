@@ -26,8 +26,10 @@ from bpm.serializers import (UserSerializer,
                              TaskUpdateEmployeePosition,
                              TaskGenericCheck,
                              TaskGenericTodo,
+                             TaskWorkLocations,
                              )
 from bpm.models import (Process,
+                        ProcessCategory,
                         Activity,
                         Workflow,
                         WorkflowActivity,
@@ -72,6 +74,16 @@ class ProcessViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = Process.objects.all()
+        return self.get_serializer_class().setup_eager_loading(queryset)
+
+
+class ProcessByCategoryViewSet(viewsets.ModelViewSet):
+    serializer_class = ProcessSerializer
+
+    def get_queryset(self):
+        category_slug = self.request.parser_context['kwargs']['category_slug']
+        category = ProcessCategory.objects.get(slug=category_slug)
+        queryset = Process.objects.filter(categories=category)
         return self.get_serializer_class().setup_eager_loading(queryset)
 
 
@@ -291,6 +303,17 @@ def task_generic_todo_view(request):
     if request.method == 'POST':
         data = JSONParser().parse(request)
         serializer = TaskGenericTodo(data=data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return JsonResponse(serializer.data, status=201)
+        return JsonResponse(serializer.errors, status=400)
+
+
+@csrf_exempt
+def task_work_locations_view(request):
+    if request.method == 'POST':
+        data = JSONParser().parse(request)
+        serializer = TaskWorkLocations(data=data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return JsonResponse(serializer.data, status=201)
