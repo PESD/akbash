@@ -5,8 +5,7 @@ import sys
 import argparse
 import pid
 import daemon
-import logging
-# import akjob.job_loop
+from akjob_logger import get_logger
 from time import sleep
 
 
@@ -29,9 +28,12 @@ def setup_django():
 # Set up logging
 def setup_logging():
     global logger
-    logging.basicConfig()
-    logger = logging.getLogger("akjob.akjobd")
-    logger.setLevel(logging.DEBUG)
+    # logging.basicConfig()
+    # logger = logging.getLogger("akjob.akjobd")
+    # logger.setLevel(logging.DEBUG)
+    logger = get_logger(name="akjob.akjobd", logname="akjobd.log")
+
+
 
 # setup piddir and pidname from command line arguments.
 def parse_args():
