@@ -1,6 +1,6 @@
 """ akjob models """
-import logging
-import importlib
+# import importlib
+from akjob.akjob_logger import AkjobLogging
 from datetime import datetime, timezone, timedelta
 from django.db import models
 from django.core import exceptions, validators
@@ -33,9 +33,11 @@ seconds which are stored as an integer in the database.
 """ Set up logging
 """
 # I should probably put this into a function?
-logging.basicConfig()
-logger = logging.getLogger("akjob.model")
-logger.setLevel(logging.DEBUG)
+logger = AkjobLogging(
+    name="akjob.models",
+    logfilename="akjobd.log",
+    format_str=AkjobLogging.thread_format_str,
+).get_logger()
 
 
 

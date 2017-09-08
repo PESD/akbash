@@ -5,7 +5,7 @@ import sys
 import argparse
 import pid
 import daemon
-# from akjob_logger import get_logger
+import threading
 from akjob_logger import AkjobLogging
 from time import sleep
 
@@ -29,12 +29,16 @@ def setup_django():
 # Set up logging
 def setup_logging():
     global logger
-    # # logging.basicConfig()
-    # # logger = logging.getLogger("akjob.akjobd")
-    # # logger.setLevel(logging.DEBUG)
-    # logger = get_logger(name="akjob.akjobd", logname="akjobd.log")
     akjob_logging = AkjobLogging(name="akjob.akjobd", logfilename="akjobd.log")
     logger = akjob_logging.get_logger()
+
+# A different logger to run inside the daemon process.
+def get_daemon_logger():
+    akjob_logging = AkjobLogging(
+        name="akjob.akjobd.daemon",
+        logfilename="akjobd.log",
+    )
+    return akjob_logging.get_logger()
 
 
 # setup piddir and pidname from command line arguments.
@@ -70,16 +74,24 @@ def worker(idnum):
     job = Job.objects.get(id=idnum)
     job.run()
 
+# Still learning how to use threads. work in progress.
 def loop_through_jobs():
+    global dlog
     for j in Job.objects.all():
-        worker(j.id)
+        dlog.info("Starting job " + str(j.id) + ", " + j.name)
+        # worker(j.id)
+        t = threading.Thread(target=worker, args=(j.id,))
+        t.start()
         sleep(1)
 
+# maybe learn how to cat the termination signal so daemon shutdown can be
+# logged.
 def daemonize():
     with daemon.DaemonContext(
             pidfile=pid.PidFile(pidname=pidfile, piddir=piddir)):
+        global dlog
+        dlog = get_daemon_logger()
         while True:
-            # akjob.job_loop.main()
             loop_through_jobs()
             sleep(60)
 
