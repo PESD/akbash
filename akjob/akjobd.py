@@ -5,9 +5,12 @@ import sys
 import argparse
 import pid
 import daemon
-import threading
-from akjob_logger import AkjobLogging
 from time import sleep
+
+try:
+    from akjob_logger import AkjobLogging
+except ModuleNotFoundError:
+    from akjob.akjob_logger import AkjobLogging
 
 
 """ Notes:
@@ -29,7 +32,7 @@ def setup_django():
 # Set up logging
 def setup_logging():
     global logger
-    akjob_logging = AkjobLogging(name="akjob.akjobd", logfilename="akjobd.log")
+    akjob_logging = AkjobLogging(name="akjob.akjobd", logfilename="akjob.log")
     logger = akjob_logging.get_logger()
 
 # A different logger to run inside the daemon process.
@@ -71,20 +74,21 @@ def parse_args():
 
 
 def worker(idnum):
-    job = Job.objects.get(id=idnum)
-    job.run()
-
-# Still learning how to use threads. work in progress.
-def loop_through_jobs():
     global dlog
+    job = Job.objects.get(id=idnum)
+    dlog.info("Starting job " + str(job.id) + ", " + job.name)
+    try:
+        job.run()
+    except Exception as inst:
+        dlog.error("Something went wrong with Job " + str(job.id) + ", " +
+                   job.name + "\n    " + str(inst))
+
+def loop_through_jobs():
     for j in Job.objects.all():
-        dlog.info("Starting job " + str(j.id) + ", " + j.name)
-        # worker(j.id)
-        t = threading.Thread(target=worker, args=(j.id,))
-        t.start()
+        worker(j.id)
         sleep(1)
 
-# maybe learn how to cat the termination signal so daemon shutdown can be
+# maybe learn how to catch the termination signal so daemon shutdown can be
 # logged.
 def daemonize():
     with daemon.DaemonContext(

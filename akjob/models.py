@@ -716,7 +716,7 @@ class Job(models.Model):
             if self._next_run is not None:
                 self._next_run = None
                 self.save()
-            logger.debug("Job <" + str(self) + ">: Job disabled.")
+            logger.info("Job <" + str(self) + ">: Job disabled.")
             return False
 
         # If run limit is reached, return false
@@ -725,8 +725,8 @@ class Job(models.Model):
                 if self._next_run is not None:
                     self._next_run = None
                     self.save()
-                logger.debug("Job <" + str(self) + ">: Job count " +
-                             "limit reached.")
+                logger.info("Job <" + str(self) + ">: Job count " +
+                            "limit reached.")
                 return False
 
         # Run next_run() and return false if it doesn't return a value.
@@ -766,8 +766,13 @@ class Job(models.Model):
         # run
         logger.debug("Attempting to run job <" + str(self) + ">")
         code = self.job_code_object
-        code.run()
-        logger.debug("Finished running job <" + str(self) + ">")
+        try:
+            code.run()
+        except Exception as inst:
+            logger.error("Something went wrong with Job " + str(self.id) +
+                         ", " + self.name + "\n    " + str(inst))
+        else:
+            logger.debug("Finished running job <" + str(self) + ">")
 
         # Post run
         self._job_running = False

@@ -29,6 +29,8 @@ class AkjobLogging():
     # default log formats
     default_format_str = (
         '%(asctime)s %(levelname)s:%(name)s:%(module)s --- %(message)s')
+    multiline_format_str = ("%(asctime)s %(levelname)s:%(name)s:%(module)s" +
+                            "\n    %(message)s")
     thread_format_str = ("%(asctime)s %(levelname)s:%(name)s:%(module)s:" +
                          "%(threadName)s:%(thread)s\n    %(message)s")
 
