@@ -34,9 +34,9 @@ seconds which are stored as an integer in the database.
 """
 # I should probably put this into a function?
 logger = AkjobLogging(
-    name="akjob.models",
-    logfilename="akjobd.log",
-    format_str=AkjobLogging.thread_format_str,
+    name="akjob.job",
+    logfilename="akjob.job.log",
+    format_str=AkjobLogging.multiline_format_str,
 ).get_logger()
 
 

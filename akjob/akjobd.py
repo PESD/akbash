@@ -9,7 +9,7 @@ from time import sleep
 
 try:
     from akjob_logger import AkjobLogging
-except ModuleNotFoundError:
+except ModuleNotFoundError:  # noqa  pyflake/flake8 doesn't have this builtin.
     from akjob.akjob_logger import AkjobLogging
 
 
@@ -32,14 +32,14 @@ def setup_django():
 # Set up logging
 def setup_logging():
     global logger
-    akjob_logging = AkjobLogging(name="akjob.akjobd", logfilename="akjob.log")
+    akjob_logging = AkjobLogging(name="akjob.akjobd", logfilename="akjobd.log")
     logger = akjob_logging.get_logger()
 
 # A different logger to run inside the daemon process.
 def get_daemon_logger():
     akjob_logging = AkjobLogging(
         name="akjob.akjobd.daemon",
-        logfilename="akjobd.log",
+        logfilename="akjobd.daemon.log",
     )
     return akjob_logging.get_logger()
 
@@ -60,10 +60,10 @@ def parse_args():
     parser.add_argument("-pn", "--pidname",
                         required=True,
                         help="The name of the pid file.")
-    parser.add_argument("-ld", "--logdir",
-                        help="The directory used to store the log file.")
-    parser.add_argument("-ln", "--logname",
-                        help="The name of the log file.")
+    # parser.add_argument("-ld", "--logdir",
+    #                     help="The directory used to store the log file.")
+    # parser.add_argument("-ln", "--logname",
+    #                     help="The name of the log file.")
     # parser.add_argument("-bd", "--basedir",
     #                     help="The django site's base directory.")
     args = parser.parse_args()
@@ -86,7 +86,7 @@ def worker(idnum):
 def loop_through_jobs():
     for j in Job.objects.all():
         worker(j.id)
-        sleep(1)
+        # sleep(1)
 
 # maybe learn how to catch the termination signal so daemon shutdown can be
 # logged.
@@ -121,7 +121,7 @@ def get_pid_from_pidfile():
 # results so here I'm doing a pre-check on the pidfile.
 def pid_precheck():
     "Check the pidfile."
-    # logger.info("Checking PID file.")
+    # logger.debug("Pre-checking PID file.")
     pidcheck = pid.PidFile(pidname=pidfile, piddir=piddir)
     pidstatus = None
     try:

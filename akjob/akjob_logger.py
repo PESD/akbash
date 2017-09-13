@@ -7,6 +7,23 @@ closed when a deamon is detached so I need a little more flexibility for akjob.
 
 Akjob specific for now with future plans to make this available for all Akbash
 and moved into the Akbash package.
+
+Overall the akjob logging setup is messy. This is because the logging
+documentation said bad things can happen if more then one process tries to work
+with a single file. The akjob daemon runs under it's own process, different
+than the main django process. So I'm using multiple files to log akjob stuff.
+To make things even more confusing, the logging in akjob.models could be ran
+under the akjobd daemon or the main django process. So I don't know what to do
+about that except to switch to a logging propagation setup or configure daemon
+to keep the logging file descripts open when detaching. For now I'll use a 3rd
+akjob log file for akjob.models logging. All that said, it's all been working
+with no problems so far, even when multiple processes use the same log file. oh
+actually the akjob.models logger is using the file descriptors from
+akjob.akjobd when ran from akjobd and using the defined file handlers in
+akjob.models when ran from django. Perfect! It's working great but I don't
+understand why it's working and that bothers me. My plan for the future is to
+create a logging setup for all Akbash and I'll use propagation so that should
+fix everything (even though it's all working already).
 """
 
 import os
@@ -41,7 +58,8 @@ class AkjobLogging():
             logfilename="akjob.log",
             logdir=logdir,
             format_str=default_format_str,
-            interval=23,  # rotate log every 23 hours. (when="H" (hours))
+            # interval=23,  # rotate log every 23 hours. (when="H" (hours))
+            interval=1,  # DEBUG: For easier testing, 1 hour interval.
             when="H",  # Goes with inteval. "H" for hours.
             backupCount=14,  # Log rotation. Delete old files, keep last 14.
             loglevel=None
