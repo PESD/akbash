@@ -109,7 +109,7 @@ def start_daemon():
     daemonize()
 
 # To get the pid module to do this for me proved tricky. I'll get it myself.
-def get_pid_from_pidfile():
+def get_pid_from_pidfile(piddir=piddir, pidfile=pidfile):
     "Read the pid in the pidfile."
     filename = os.path.abspath(os.path.join(piddir, pidfile))
     with open(filename, "r") as fh:
@@ -119,7 +119,7 @@ def get_pid_from_pidfile():
 
 # Before the daemon starts it checks the pid file but I can't monitor the
 # results so here I'm doing a pre-check on the pidfile.
-def pid_precheck():
+def pid_precheck(piddir=piddir, pidfile=pidfile):
     "Check the pidfile."
     # logger.debug("Pre-checking PID file.")
     pidcheck = pid.PidFile(pidname=pidfile, piddir=piddir)
