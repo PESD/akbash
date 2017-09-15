@@ -9,7 +9,7 @@ from time import sleep
 
 try:
     from akjob_logger import AkjobLogging
-except ModuleNotFoundError:  # noqa  pyflake/flake8 doesn't have this builtin.
+except ModuleNotFoundError:  # noqa  My pyflake doesn't have this builtin yet.
     from akjob.akjob_logger import AkjobLogging
 
 
@@ -25,9 +25,12 @@ def setup_django():
     os.environ['AKJOB_START_DAEMON'] = 'False'
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "akbash.settings")
     import django
-    django.setup()
+    if __name__ == '__main__':
+        django.setup()
     global Job
     from akjob.models import Job
+    global BASE_DIR
+    BASE_DIR = django.conf.settings.BASE_DIR
 
 # Set up logging
 def setup_logging():
@@ -47,30 +50,40 @@ def get_daemon_logger():
 # setup piddir and pidname from command line arguments.
 def parse_args():
     global args
-    global piddir
-    global pidfile
-    # global basedir
     parser = argparse.ArgumentParser()
     parser.add_argument("action",
                         choices=["start", "stop", "restart"],
                         help="Action to perform.")
     parser.add_argument("-pd", "--piddir",
-                        required=True,
+                        # required=True,
                         help="The directory used to store the pid file.")
     parser.add_argument("-pn", "--pidname",
-                        required=True,
+                        # required=True,
                         help="The name of the pid file.")
-    # parser.add_argument("-ld", "--logdir",
-    #                     help="The directory used to store the log file.")
-    # parser.add_argument("-ln", "--logname",
-    #                     help="The name of the log file.")
-    # parser.add_argument("-bd", "--basedir",
-    #                     help="The django site's base directory.")
     args = parser.parse_args()
 
-    piddir = args.piddir
-    pidfile = args.pidname
-    # basedir = args.basedir
+
+# set the pid file name and location.defaults are used if name and location not
+# provided.
+def set_pid_file_name():
+    global pidfile
+    try:
+        if args.pidname is None:
+            pidfile = "akjobd.pid"
+        else:
+            pidfile = args.pidname
+    except NameError:
+        pidfile = "akjobd.pid"
+
+def set_pid_location():
+    global piddir
+    try:
+        if args.piddir is None:
+            piddir = os.path.join(BASE_DIR, "akjob")
+        else:
+            piddir = args.piddir
+    except NameError:
+        piddir = os.path.join(BASE_DIR, "akjob")
 
 
 def worker(idnum):
@@ -109,7 +122,7 @@ def start_daemon():
     daemonize()
 
 # To get the pid module to do this for me proved tricky. I'll get it myself.
-def get_pid_from_pidfile(piddir=piddir, pidfile=pidfile):
+def get_pid_from_pidfile():
     "Read the pid in the pidfile."
     filename = os.path.abspath(os.path.join(piddir, pidfile))
     with open(filename, "r") as fh:
@@ -119,7 +132,7 @@ def get_pid_from_pidfile(piddir=piddir, pidfile=pidfile):
 
 # Before the daemon starts it checks the pid file but I can't monitor the
 # results so here I'm doing a pre-check on the pidfile.
-def pid_precheck(piddir=piddir, pidfile=pidfile):
+def pid_precheck():
     "Check the pidfile."
     # logger.debug("Pre-checking PID file.")
     pidcheck = pid.PidFile(pidname=pidfile, piddir=piddir)
@@ -137,33 +150,51 @@ def pid_precheck(piddir=piddir, pidfile=pidfile):
         logger.error('Unknown pid related error: ' + str(sys.exc_info()[1:2]))
         raise SystemExit
 
-def main():
-    setup_logging()
-    parse_args()
+
+def do_action(action):
+    if action not in ["start", "stop", "restart"]:
+        raise Exception("The do_action function requires start, stop, or "
+                        "restart as an argument.")
     status = pid_precheck()
     if status == "AlreadyRunning":
-        if args.action == "stop":
+        if action == "stop":
             stop_daemon(get_pid_from_pidfile())
-        elif args.action == "restart":
+        elif action == "restart":
             stop_daemon(get_pid_from_pidfile())
             sleep(1)
             start_daemon()
-        raise SystemExit
-    if args.action == "stop":
+        if __name__ == '__main__':
+            raise SystemExit
+        else:
+            return
+    if action == "stop":
         if status == "PID_CHECK_NOFILE":
             logger.info("Stop command given but the pid file wasn't found.")
         else:
             stop_daemon(get_pid_from_pidfile())
-            raise SystemExit
-    elif args.action == "start":
+            if __name__ == '__main__':
+                raise SystemExit
+            else:
+                return
+    elif action == "start":
         start_daemon()
-    elif args.action == "restart":
+    elif action == "restart":
         logger.info("restart command given but the pid file wasn't found.")
         start_daemon()
     else:
         logger.error("Didn't receive start or stop command.")
 
 
+
 if __name__ == '__main__':
     setup_django()
-    main()
+    setup_logging()
+    parse_args()
+    set_pid_file_name()
+    set_pid_location()
+    do_action(args.action)
+else:
+    setup_django()
+    setup_logging()
+    set_pid_file_name()
+    set_pid_location()

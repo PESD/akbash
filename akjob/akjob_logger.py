@@ -28,6 +28,7 @@ fix everything (even though it's all working already).
 
 import os
 import logging
+import logging.handlers
 from django.conf import settings
 
 

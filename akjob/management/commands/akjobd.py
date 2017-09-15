@@ -1,5 +1,5 @@
 import os
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand  # , CommandError
 from django.conf import settings as django_settings
 from akjob import akjobd
 # from akjob.akjobd import stop_daemon, start_daemon, pid_precheck

@@ -51,6 +51,5 @@ class AkjobConfig(AppConfig):
                 "start",
                  "-pd", AKJOB_PID_DIR,
                  "-pn", AKJOB_PID_FILE,
-                 # "-bd", BASE_DIR,
                  ])
             os.environ['AKJOB_START_DAEMON'] = 'False'
