@@ -921,6 +921,7 @@ class Job(models.Model):
             print("\nList of run times:")
             pprint(self._run_datetimes)
 
+        print("\nCurrent datetime: " + str(datetime.now(timezone.utc)))
         print()
 
 
