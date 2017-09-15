@@ -103,6 +103,7 @@ dbauth.py
 **/*.xml
 api_keys.py
 akjobd.pid
+create_users.py
 
 # Test XML files
 RetrieveHiresXML.xml

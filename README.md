@@ -134,6 +134,22 @@ DEBUG: True
 [security]
 ALLOWED_HOSTS: 127.0.0.1, localhost
 ENABLE_JWT: False
+
+[email]
+EMAIL_ACTIVE: True
+EMAIL_HOST: outlook.office365.com
+EMAIL_PORT: 587
+EMAIL_FROM_ADDRESS: youremail@yourdomain.com
+EMAIL_HOST_USER: youremail@yourdomain.com
+EMAIL_HOST_PASSWORD: yourpassword
+EMAIL_USE_TLS: True
+
+[ldap]
+LDAP_SERVER: ad_server.example.com
+LDAP_DOMAIN: example.com
+LDAP_USER: username
+LDAP_PASSWORD: password
+LDAP_SEARCH_BASE: dc=example,dc=com
 ```
 
 ### TalentEd API Key

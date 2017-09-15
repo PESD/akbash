@@ -1,5 +1,5 @@
 """
-Visions Module
+Synergy Module
 
 Goals:
 * Setup a database connection
@@ -21,7 +21,7 @@ from django.conf import settings
 
 
 """
-Visions database connection
+Synergy database connection
 """
 
 # load in private seettings from the ini file
@@ -31,8 +31,8 @@ private_config_file = os.environ.get(
 config = ConfigParser(interpolation=None)
 config.read(private_config_file)
 
-# check visions database config for unrecognized options.
-for k in config['visions database']:
+# check synergy database config for unrecognized options.
+for k in config['synergy database']:
     if k.upper() in (
             'OPTIONS-DSN',
             'NAME',
@@ -40,17 +40,18 @@ for k in config['visions database']:
             'USER'):
         continue
     else:
-        raise KeyError("Unrecognized visions database option: {}".format(k))
+        raise KeyError("Unrecognized Synergy database option: {}".format(k))
 
-# Visions DB connecrtion string
+# Synergy DB connecrtion string
 cstring = (
-    'DSN=' + config['visions database']['OPTIONS-DSN'] +
-    ';PWD=' + config['visions database']['PASSWORD'] +
-    ';DATABASE=' + config['visions database']['NAME'] +
-    ';UID=' + config['visions database']['USER']
+    'DSN=' + config['synergy database']['OPTIONS-DSN'] +
+    ';PWD=' + config['synergy database']['PASSWORD'] +
+    ';DATABASE=' + config['synergy database']['NAME'] +
+    ';UID=' + config['synergy database']['USER']
 )
 
-# Establish visions DB connection and execute statements
+
+# Establish Synergy DB connection and execute statements
 #   Reading the docs, it's probably best not use use multiple cursors in a
 #   connection since cursors are not isolated. Will keep to one cursor per
 #   connection. The exception would be doing things inside transactions.
@@ -88,6 +89,7 @@ def exec_sql(sql, *params, timeout=None):
 Functions to help retreive data from the cursor
 """
 
+
 # From https://docs.djangoproject.com/en/1.11/topics/db/sql under
 # Performing Raw Queries
 def dictfetchall(cursor):
@@ -114,8 +116,9 @@ def rowfetchall(cursor):
 
 
 """
-Some classes to make it easier to grab data from the Visions DB.
+Some classes to make it easier to grab data from the Synergy DB.
 """
+
 
 class Select():
 
@@ -159,7 +162,6 @@ class Select():
 
         self.sql = self.build_sql()
 
-
     def build_sql(self):
         "Assemble a string containing an SQL statement."
         stmt = "select " + self.columns
@@ -176,7 +178,6 @@ class Select():
             stmt = None
         return stmt
 
-
     # A general purpose method to execute the sql statement.
     def execute(self):
         """Execute the sql statement and return a cursor.
@@ -190,7 +191,6 @@ class Select():
         return self.cursor
     # an alias to execute()
     fetch_cursor = execute
-
 
     # Execute the sql statement and return row or dict objects.
     #
@@ -210,7 +210,6 @@ class Select():
         cursor = self.execute()
         return dictfetchall(cursor)
 
-
     # what the doc string says
     def fetch_value(self):
         """Execute the sql statement and return the value in the first column
@@ -221,7 +220,6 @@ class Select():
         if result:
             return result[0]
         return None
-
 
     """
     Generate methods named after each column in the table where you
@@ -244,7 +242,6 @@ class Select():
         if results is not None:
             return results[0]
 
-
     # There is a chance an attribute name clashes with a db column name.
     # Consider adding a prefix to the generated method name. Like get_name.
     # No conflics that I see with the tables we're using presently.
@@ -266,25 +263,3 @@ class Select():
             def get_by_id(cls, idnum, column=c, table=cls.table):
                 return cls.get_column_by_id(column, table, idnum)
             setattr(cls, c, classmethod(get_by_id))
-
-
-
-
-class Viwpremployees(Select):
-    "Contains methods to query the viwPREmployees view in Visions."
-
-    table = "viwPREmployees"
-
-    def __init__(self, columns=None, where_str=None, **kwargs):
-        super().__init__(columns, self.table, where_str, **kwargs)
-        self.make_column_by_id_methods()
-
-
-class Viwprpositions(Select):
-    "Contains methods to query the viwPRPositions view in Visions."
-
-    table = "viwPRPositions"
-
-    def __init__(self, columns=None, where_str=None, **kwargs):
-        super().__init__(columns, self.table, where_str, **kwargs)
-        self.make_column_by_id_methods()

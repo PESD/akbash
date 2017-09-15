@@ -12,3 +12,4 @@ django-extensions
 python-daemon
 pid
 django-picklefield
+ldap3

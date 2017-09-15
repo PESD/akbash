@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/1.10/ref/settings/
 """
 
 import os
+import datetime
 from configparser import ConfigParser
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -36,6 +37,7 @@ INSTALLED_APPS = [
     'api.apps.ApiConfig',
     'bpm.apps.BpmConfig',
     'akjob.apps.AkjobConfig',
+    'auditlog.apps.AuditlogConfig',
 ]
 
 MIDDLEWARE = [
@@ -101,7 +103,6 @@ USE_I18N = True
 USE_L10N = True
 
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.10/howto/static-files/
@@ -195,6 +196,26 @@ for po, v in config['default database'].items():
 # Talented API key
 TALENTED_API_KEY = config['secrets']['TALENTED_API_KEY']
 
+# EMAIL_FROM_ADDRESS is required in bpm.models. /
+# Set it to blank in case the private settings file does not define it.
+# Also set EMAIL_ACTIVE to False, unless specifically enabled in private settings.
+EMAIL_FROM_ADDRESS = ''
+EMAIL_ACTIVE = False
+
+# Email settings (use private settings file)
+if 'email' in config:
+    email = config['email']
+    EMAIL_HOST = email['EMAIL_HOST']
+    EMAIL_PORT = email['EMAIL_PORT']
+    EMAIL_FROM_ADDRESS = email['EMAIL_FROM_ADDRESS']
+    EMAIL_ACTIVE = config.getboolean('email', 'EMAIL_ACTIVE')
+    if 'EMAIL_HOST_USER' in email:
+        EMAIL_HOST_USER = config['email']['EMAIL_HOST_USER']
+    if 'EMAIL_HOST_PASSWORD' in email:
+        EMAIL_HOST_PASSWORD = config['email']['EMAIL_HOST_PASSWORD']
+    if 'EMAIL_USE_TLS' in email:
+        EMAIL_USE_TLS = config.getboolean('email', 'EMAIL_USE_TLS')
+
 # REST Framework authentication settings. Defaulting to JWT Auth.
 # See: http://getblimp.github.io/django-rest-framework-jwt/
 REST_FRAMEWORK = {
@@ -204,4 +225,10 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.BasicAuthentication',
     ),
+}
+
+JWT_AUTH = {
+    'JWT_EXPIRATION_DELTA': datetime.timedelta(seconds=1800),
+    'JWT_REFRESH_EXPIRATION_DELTA': datetime.timedelta(days=7),
+    'JWT_ALLOW_REFRESH': True,
 }

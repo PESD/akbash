@@ -15,7 +15,7 @@ def get_talented_xml():
     # The date range we pull New Hires for. We need to not hard code this.
     post_vars = {
         "sStartDate": "20170101000000",
-        "sEndDate": "20170320000000",
+        "sEndDate": "20180630000000",
         "sKey": talented_key,
     }
 
@@ -23,7 +23,7 @@ def get_talented_xml():
     r = requests.post("https://phxschools.tedk12.com/hire/nfIntegration/srApplicantExport.asmx/RetrieveHiresXML", data=post_vars)
 
     # Right now we simply save the xml file in akbash root as test.xml. Need to think of a better solution.
-    file_path = "test.xml"
+    file_path = settings.BASE_DIR + "/test.xml"
     xml_file = open(file_path, "w")
     xml_file.truncate()
     xml_file.write(r.text)

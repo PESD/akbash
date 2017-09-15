@@ -1,6 +1,14 @@
+from datetime import date, datetime
 from django.db import models
-from api.models import Person
+from django.core.mail import send_mail
+from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
+from api.models import Person, Employee, Position, Location, update_field
+from api import ldap
+from api import visions
 from django.contrib.auth.models import User
+from bpm.visions_helper import VisionsHelper
+from bpm.synergy_helper import SynergyHelper
 
 
 # A Process is something like "New Hire Process"
@@ -18,8 +26,14 @@ from django.contrib.auth.models import User
 # It is up to whatever is calling that function to know what args it needs to pass
 
 
+class ProcessCategory(models.Model):
+    name = models.CharField(max_length=255)
+    slug = models.CharField(max_length=255)
+
+
 class Process(models.Model):
     name = models.CharField(max_length=255)
+    categories = models.ManyToManyField(ProcessCategory)
     start_activity = models.ForeignKey(
         "Activity",
         on_delete=models.SET_NULL,
@@ -30,7 +44,9 @@ class Process(models.Model):
 
     def start_workflow(self, person):
         workflow = Workflow.objects.create(person=person, process=self)
-        workflow.save()
+        person.generate_badge()
+        person.status = "inprocess"
+        person.save()
         activities = self.activities.all()
         for activity in activities:
             workflow_activity = workflow.create_workflow_activity(activity)
@@ -62,17 +78,37 @@ class Activity(models.Model):
 
 
 class Workflow(models.Model):
+    STATUSES = (
+        ("Complete", "Complete"),
+        ("Error", "Error"),
+        ("Active", "Active"),
+        ("Inactive", "Inactive"),
+    )
     person = models.ForeignKey(Person, on_delete=models.CASCADE)
     process = models.ForeignKey(Process, on_delete=models.CASCADE)
+    status = models.CharField(max_length=12, choices=STATUSES, default="Active")
 
     def get_current_workflow_activities(self):
         return self.workflow_activites.filter(status="Active")
 
     def create_workflow_activity(self, activity):
         workflow_activity = WorkflowActivity.objects.create(workflow=self, activity=activity, status="Inactive")
-        workflow_activity.save()
         workflow_activity.create_workflow_tasks()
         return workflow_activity
+
+    def check_for_completeness(self):
+        workflow_activites = self.workflow_activites.all()
+        for workflow_activity in workflow_activites:
+            if workflow_activity.status != "Complete":
+                return False
+        self.status = "Complete"
+        self.save()
+        if self.process.name == "Termination Process":
+            self.person.status = "inactive"
+        else:
+            self.person.status = "active"
+        self.person.save()
+        return True
 
 
 class WorkflowTask(models.Model):
@@ -87,9 +123,10 @@ class WorkflowTask(models.Model):
     status = models.CharField(max_length=12, choices=STATUSES)
 
     def run_task(self, args):
-        status = self.task.task_controller_function(args)
+        status, message = self.task.task_controller_function(args)
         self.status = "Complete" if status else "Error"
         self.save()
+        return (status, message)
 
 
 class WorkflowActivity(models.Model):
@@ -109,7 +146,6 @@ class WorkflowActivity(models.Model):
         tasks = self.activity.tasks.all()
         for task in tasks:
             workflow_task = WorkflowTask.objects.create(task=task, status="Not Started")
-            task.save()
             self.workflow_tasks.add(workflow_task)
         self.save()
 
@@ -124,6 +160,7 @@ class WorkflowActivity(models.Model):
     def set_workflow_activity_active(self):
         self.status = "Active"
         self.save()
+        self.email_users()
 
     def advance_workflow_activity(self):
         # Make sure all tasks are complete. If not, immediately stop.
@@ -139,14 +176,95 @@ class WorkflowActivity(models.Model):
             # child_workflow_activity_set = WorkflowActivity.objects.filter(activity=activity, workflow=workflow)
             child_workflow_activity_set = workflow.workflow_activites.filter(activity=activity)
             for child_workflow_activity in child_workflow_activity_set:
-                child_workflow_activity.status = "Active"
-                child_workflow_activity.save()
+                child_workflow_activity.set_workflow_activity_active()
+        self.workflow.check_for_completeness()
         return True
+
+    def email_users(self):
+        if settings.EMAIL_ACTIVE:
+            subject = "Tandem - Action required: " + self.activity.name
+            for user in self.activity.users.all():
+                body = "Hello, " + user.username + ". This is an automated e-mail from Tandem. You have a new task to complete: " + self.activity.name + ". For: " + self.workflow.person.first_name + " " + self.workflow.person.last_name
+                send_mail(subject, body, settings.EMAIL_FROM_ADDRESS, [user.email], fail_silently=True)
 
 
 class TaskWorker:
 
         # Proof of concept on a TaskWorker function. Needs to be cleaned up.
+        def get_person_from_workflow_task(workflow_task):
+            workflow_activities = workflow_task.workflowactivity_set.all()
+            for workflow_activity in workflow_activities:
+                return workflow_activity.workflow.person
+
+        def get_employee_from_workflow_task(workflow_task):
+            person = TaskWorker.get_person_from_workflow_task(workflow_task)
+            return person.employee
+
+        def is_epar_dup(epar_id):
+            a = Employee.objects.filter(epar_id=epar_id)
+            if a:
+                return True
+            return False
+
+        def is_term_epar_dup(epar_id):
+            a = Employee.objects.filter(termination_epar_id=epar_id)
+            if a:
+                return True
+            return False
+
+        def is_transfer_epar_dup(epar_id):
+            a = Employee.objects.filter(transfer_epar_id=epar_id)
+            if a:
+                return True
+            return False
+
+        def is_visions_id_dup(visions_id):
+            a = Employee.objects.filter(visions_id=visions_id)
+            if a:
+                return True
+            return False
+
+        def get_user_or_false(username):
+            try:
+                return User.objects.get(username=username)
+            except ObjectDoesNotExist:
+                return False
+
+        def update_positions(employee, visions_positions):
+            secondary_positions = []
+            primary_position = employee.positions.get(is_primary=True)
+            did_update = False
+            for position in visions_positions:
+                if position.position_ranking == "Primary":
+                    location = VisionsHelper.get_position_location(position.dac)
+                    primary_position.title = position.description
+                    primary_position.visions_position_id = position.id
+                    primary_position.last_updated_by = "Visions"
+                    primary_position.last_updated_date = date.today()
+                    if location:
+                        primary_position.location = location
+                    primary_position.save()
+                    did_update = True
+                else:
+                    secondary_positions.append(position)
+            if secondary_positions:
+                for secondary_position in secondary_positions:
+                    new_position = Position.objects.create(
+                        person=employee,
+                        title=secondary_position.description,
+                        is_primary=False,
+                        last_updated_by="Visions",
+                        last_updated_date=date.today()
+                    )
+                    location = VisionsHelper.get_position_location(secondary_position.dac)
+                    if location:
+                        secondary_position.location = location
+                        new_position.save()
+                    did_update = True
+            if did_update:
+                return (True, "Success")
+            return (False, "Nothing Updated")
+
         def task_update_name(**kwargs):
             workflow_activity = kwargs["workflow_activity"]
             first_name = kwargs["first_name"]
@@ -155,10 +273,207 @@ class TaskWorker:
             person.first_name = first_name
             person.last_name = last_name
             person.save()
-            return True
+            return (True, "Success")
 
         def task_update_employee_id(**kwargs):
-            return True
+            return (True, "Success")
 
         def task_dummy(**kwargs):
-            return True
+            return (True, "Success")
+
+        def task_set_epar_id(**kwargs):
+            workflow_task = kwargs["workflow_task"]
+            epar_id = kwargs["epar_id"]
+            if not VisionsHelper.verify_epar(epar_id):
+                return (False, "ePAR not found")
+            if TaskWorker.is_epar_dup(epar_id):
+                return (False, "ePAR already linked to an Employee")
+            employee = TaskWorker.get_employee_from_workflow_task(workflow_task)
+            update_field(employee, "epar_id", epar_id)
+            return (True, "Success")
+
+        def task_set_term_epar_id(**kwargs):
+            workflow_task = kwargs["workflow_task"]
+            epar_id = kwargs["epar_id"]
+            if not VisionsHelper.verify_epar(epar_id):
+                return (False, "ePAR not found")
+            if TaskWorker.is_term_epar_dup(epar_id):
+                return (False, "ePAR already linked to an Employee")
+            employee = TaskWorker.get_employee_from_workflow_task(workflow_task)
+            update_field(employee, "termination_epar_id", epar_id)
+            return (True, "Success")
+
+        def task_set_transfer_epar_id(**kwargs):
+            workflow_task = kwargs["workflow_task"]
+            epar_id = kwargs["epar_id"]
+            if not VisionsHelper.verify_epar(epar_id):
+                return (False, "ePAR not found")
+            if TaskWorker.is_transfer_epar_dup(epar_id):
+                return (False, "ePAR already linked to an Employee")
+            employee = TaskWorker.get_employee_from_workflow_task(workflow_task)
+            update_field(employee, "transfer_epar_id", epar_id)
+            positions = VisionsHelper.get_epar_positions(epar_id)
+            if positions:
+                return TaskWorker.update_positions(employee, positions)
+            else:
+                return (False, "No ePAR Positions Found")
+
+        def task_assign_locations(**kwargs):
+            workflow_task = kwargs["workflow_task"]
+            locations = kwargs["locations"]
+            person = TaskWorker.get_person_from_workflow_task(workflow_task)
+            if not locations:
+                return (False, "No locations")
+            person.locations.clear()
+            for location in locations:
+                try:
+                    new_location = Location.objects.get(id=location)
+                except ObjectDoesNotExist:
+                    return (False, "Invalid Location")
+                person.locations.add(new_location)
+            return (True, "Success")
+
+        def task_set_visions_id(**kwargs):
+            workflow_task = kwargs["workflow_task"]
+            visions_id = kwargs["visions_id"]
+            if not VisionsHelper.verify_employee(visions_id):
+                return (False, "Employee not found")
+            if TaskWorker.is_visions_id_dup(visions_id):
+                return (False, "Visions Employee already linked to an Employee")
+            employee = TaskWorker.get_employee_from_workflow_task(workflow_task)
+            employee.visions_id = visions_id
+            employee.save()
+            employee.update_employee_from_visions()
+            return (True, "Success")
+
+        def task_check_ad(**kwargs):
+            workflow_task = kwargs["workflow_task"]
+            employee = TaskWorker.get_employee_from_workflow_task(workflow_task)
+            ad_username = ldap.get_ad_username_from_visions_id(employee.visions_id)
+            user = TaskWorker.get_user_or_false(kwargs["username"])
+            if not user:
+                return (False, "Invalid User")
+            if not ad_username:
+                return (False, "Active Directory user not found")
+            did_update = employee.update_ad_service(ad_username, user)
+            if did_update:
+                return (True, "Success")
+            else:
+                return (False, "Unknown Error")
+
+        def task_disable_ad(**kwargs):
+            workflow_task = kwargs["workflow_task"]
+            employee = TaskWorker.get_employee_from_workflow_task(workflow_task)
+            ad_username = ldap.get_ad_username_from_visions_id(employee.visions_id)
+            user = TaskWorker.get_user_or_false(kwargs["username"])
+            if not user:
+                return (False, "Invalid User")
+            if ad_username:
+                return (False, "Active Directory account still active")
+            did_update = employee.disable_ad_service(user)
+            if did_update:
+                return (True, "Success")
+            else:
+                return (True, "No Active Directory account to disable.")
+
+        def task_check_synergy(**kwargs):
+            workflow_task = kwargs["workflow_task"]
+            status = kwargs["status"]
+            employee = TaskWorker.get_employee_from_workflow_task(workflow_task)
+            if not status:
+                update_field(employee, "is_synergy_account_needed", False)
+                return ("True", "Success")
+            synergy_username = SynergyHelper.get_synergy_login(employee.visions_id)
+            user = TaskWorker.get_user_or_false(kwargs["username"])
+            if not user:
+                return (False, "Invalid User")
+            if not synergy_username:
+                return (False, "Synergy user not found")
+            did_update = employee.update_synergy_service(synergy_username, user)
+            if did_update:
+                return (True, "Success")
+            else:
+                return (False, "Unknown Error")
+
+        def task_disable_synergy(**kwargs):
+            workflow_task = kwargs["workflow_task"]
+            employee = TaskWorker.get_employee_from_workflow_task(workflow_task)
+            synergy_username = SynergyHelper.get_synergy_login(employee.visions_id)
+            user = TaskWorker.get_user_or_false(kwargs["username"])
+            if not user:
+                return (False, "Invalid User")
+            if synergy_username:
+                return (False, "Synergy user still active")
+            did_update = employee.disable_synergy_service(user)
+            if did_update:
+                return (True, "Success")
+            else:
+                return (True, "No Synergy account to disable")
+
+        def task_transfer_synergy(**kwargs):
+            workflow_task = kwargs["workflow_task"]
+            status = kwargs["status"]
+            employee = TaskWorker.get_employee_from_workflow_task(workflow_task)
+            if not status:
+                update_field(employee, "is_synergy_account_needed", False)
+                return ("True", "Success")
+            synergy_username = SynergyHelper.get_synergy_login(employee.visions_id)
+            user = TaskWorker.get_user_or_false(kwargs["username"])
+            if not user:
+                return (False, "Invalid User")
+            if not synergy_username:
+                return (True, "Success. The employee/contractor has no Synergy account.")
+            did_update = employee.update_synergy_service(synergy_username, user)
+            if did_update:
+                return (True, "Success")
+            else:
+                return (False, "Unknown Error")
+
+        def task_update_position(**kwargs):
+            workflow_task = kwargs["workflow_task"]
+            employee = TaskWorker.get_employee_from_workflow_task(workflow_task)
+            visions_positions = VisionsHelper.get_positions_for_employee(employee.visions_id)
+            if not visions_positions:
+                return (False, "No positions found")
+            return TaskWorker.update_positions(employee, visions_positions)
+
+        def task_set_tcp_id(**kwargs):
+            workflow_task = kwargs["workflow_task"]
+            employee = TaskWorker.get_employee_from_workflow_task(workflow_task)
+            tcp_id = VisionsHelper.get_tcp_id_for_employee(employee.visions_id)
+            if not tcp_id:
+                return (False, "No Time Clock Plus record found in Visions")
+            else:
+                employee.tcp_id = tcp_id
+                employee.save()
+                return (True, "Success")
+
+        def task_is_onboarded(**kwargs):
+            workflow_task = kwargs["workflow_task"]
+            user = TaskWorker.get_user_or_false(kwargs["username"])
+            person = TaskWorker.get_person_from_workflow_task(workflow_task)
+            person.is_onboarded = True
+            person.onboarded_by = user
+            person.onboarded_date = datetime.now()
+            person.save()
+            return (True, "Success")
+
+        def task_is_fingerprinted(**kwargs):
+            workflow_task = kwargs["workflow_task"]
+            user = TaskWorker.get_user_or_false(kwargs["username"])
+            person = TaskWorker.get_person_from_workflow_task(workflow_task)
+            person.is_tcp_fingerprinted = True
+            person.tcp_fingerprinted_by = user
+            person.tcp_fingerprinted_date = datetime.now()
+            person.save()
+            return (True, "Success")
+
+        def task_is_badge_created(**kwargs):
+            workflow_task = kwargs["workflow_task"]
+            user = TaskWorker.get_user_or_false(kwargs["username"])
+            person = TaskWorker.get_person_from_workflow_task(workflow_task)
+            person.is_badge_created = True
+            person.badge_created_by = user
+            person.badge_created_date = datetime.now()
+            person.save()
+            return (True, "Success")
