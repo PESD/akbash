@@ -1,9 +1,7 @@
-import os
 from django.core.management.base import BaseCommand  # , CommandError
-from django.conf import settings as django_settings
 from akjob import akjobd
-# from akjob.akjobd import stop_daemon, start_daemon, pid_precheck
-# from akjob.akjobd import get_pid_from_pidfile
+from akjob.models import DayOfMonth, DayOfWeek, Months
+from akjob.models import load_DayOfMonth, load_DayOfWeek, load_Months
 
 
 class Command(BaseCommand):
@@ -12,7 +10,8 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument("action",
-                            choices=["start", "stop", "restart"],
+                            choices=["start", "stop", "restart",
+                                     "reloadfixture"],
                             help="Action to perform.")
         parser.add_argument("-pd", "--piddir",
                             help="The directory used to store the pid file. "
@@ -25,24 +24,36 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
 
         if options["piddir"] is not None:
-            piddir = options["piddir"]
-        else:
-            piddir = os.path.join(django_settings.BASE_DIR, "akjob")
+            akjobd.piddir = options["piddir"]
 
         if options["pidname"] is not None:
-            pidname = options["pidname"]
-        else:
-            pidname = "akjobd.pid"
+            akjobd.pidfile = options["pidname"]
 
-        pidfile_location = os.path.abspath(os.path.join(piddir, pidname))
+        if options["action"] == "start":
+            akjobd.do_action("start")
+        elif options["action"] == "stop":
+            akjobd.do_action("stop")
+        elif options["action"] == "restart":
+            akjobd.do_action("restart")
+        elif options["action"] == "reloadfixture":
+            from akjob.akjob_logger import AkjobLogging
+            akjob_logging = AkjobLogging(
+                name="akjob.management", logfilename="akjobd.log")
+            logger = akjob_logging.get_logger()
 
-        # This is not working. I wanted to confirm the existance of the pid
-        # file. really this stuff needs to be restructered now that the
-        # infinate loop problems is fixed. Rethink how akjobd is started. Look
-        # at apps.py, akjobd.py, and this file.
-        akjobd.piddir = piddir
-        akjobd.pidfile = pidname
-        pid = akjobd.get_pid_from_pidfile(piddir, pidname)
+            # TODO: Transactions should be used to avoid race conditions.
+            #       The people running this command should know what they're
+            #       doing so I'm not that concerned about it. actually those
+            #       functions in akjob.models should probably be made better to
+            #       handle all that.
+            logger.info("Reloading DayOfMonth")
+            DayOfMonth.objects.all().delete()
+            load_DayOfMonth()
 
-        self.stdout.write("PID: " + str(pid))
-        self.stdout.write("pid file location: " + pidfile_location)
+            logger.info("Reloading DayOfWeek")
+            DayOfWeek.objects.all().delete()
+            load_DayOfWeek()
+
+            logger.info("Reloading Months")
+            Months.objects.all().delete()
+            load_Months()
