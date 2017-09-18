@@ -1,6 +1,5 @@
 from django.core.management.base import BaseCommand  # , CommandError
 from akjob import akjobd
-from akjob.models import DayOfMonth, DayOfWeek, Months
 from akjob.models import load_DayOfMonth, load_DayOfWeek, load_Months
 
 
@@ -12,7 +11,10 @@ class Command(BaseCommand):
         parser.add_argument("action",
                             choices=["start", "stop", "restart",
                                      "reloadfixture"],
-                            help="Action to perform.")
+                            help="Action to perform. Start, stop, or restart "
+                                 "the akjobd daemon. reloadfixture will "
+                                 "remove objects from DayOfMonth, DayOfWeek, "
+                                 "and Months tables then reload them.")
         parser.add_argument("-pd", "--piddir",
                             help="The directory used to store the pid file. "
                                  "Optional. Defaults to BASE_DIR/akjob/")
@@ -36,24 +38,6 @@ class Command(BaseCommand):
         elif options["action"] == "restart":
             akjobd.do_action("restart")
         elif options["action"] == "reloadfixture":
-            from akjob.akjob_logger import AkjobLogging
-            akjob_logging = AkjobLogging(
-                name="akjob.management", logfilename="akjobd.log")
-            logger = akjob_logging.get_logger()
-
-            # TODO: Transactions should be used to avoid race conditions.
-            #       The people running this command should know what they're
-            #       doing so I'm not that concerned about it. actually those
-            #       functions in akjob.models should probably be made better to
-            #       handle all that.
-            logger.info("Reloading DayOfMonth")
-            DayOfMonth.objects.all().delete()
-            load_DayOfMonth()
-
-            logger.info("Reloading DayOfWeek")
-            DayOfWeek.objects.all().delete()
-            load_DayOfWeek()
-
-            logger.info("Reloading Months")
-            Months.objects.all().delete()
-            load_Months()
+            load_DayOfMonth(refresh=True)
+            load_DayOfWeek(refresh=True)
+            load_Months(refresh=True)

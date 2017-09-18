@@ -2,7 +2,7 @@
 # import importlib
 from akjob.akjob_logger import AkjobLogging
 from datetime import datetime, timezone, timedelta
-from django.db import models
+from django.db import models, transaction
 from django.core import exceptions, validators
 from django.utils.translation import ugettext_lazy as _
 from picklefield.fields import PickledObjectField
@@ -948,7 +948,11 @@ class JobCallable():
         python manage.py loaddata akjob_dayofweek.json akjob_dayofmonth.json \
         akjob_months.json
 """
-def load_DayOfMonth():
+@transaction.atomic
+def load_DayOfMonth(refresh=False):
+    if refresh is True:
+        logger.info("Reloading DayOfMonth")
+        DayOfMonth.objects.all().delete()
     for d in range(1, 32):
         DayOfMonth.objects.create(day=d)
 
@@ -956,7 +960,11 @@ def load_DayOfMonth():
 # lookup week_day uses and it makes sense to most Americans.
 # https://docs.djangoproject.com/en/1.11/ref/models/querysets/#week-day
 # The weekday field matches with datetime.weekday().
-def load_DayOfWeek():
+@transaction.atomic
+def load_DayOfWeek(refresh=False):
+    if refresh is True:
+        logger.info("Reloading DayOfWeek")
+        DayOfWeek.objects.all().delete()
     DayOfWeek.objects.create(day=1, weekday=6, name="Sunday")
     DayOfWeek.objects.create(day=2, weekday=0, name="Monday")
     DayOfWeek.objects.create(day=3, weekday=1, name="Tuesday")
@@ -965,7 +973,11 @@ def load_DayOfWeek():
     DayOfWeek.objects.create(day=6, weekday=4, name="Friday")
     DayOfWeek.objects.create(day=7, weekday=5, name="Saturday")
 
-def load_Months():
+@transaction.atomic
+def load_Months(refresh=False):
+    if refresh is True:
+        logger.info("Reloading Months")
+        Months.objects.all().delete()
     Months.objects.create(month=1, name="January")
     Months.objects.create(month=2, name="February")
     Months.objects.create(month=3, name="March")
