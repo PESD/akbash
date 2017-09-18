@@ -16,6 +16,14 @@ except ModuleNotFoundError:  # noqa  My pyflake doesn't have this builtin yet.
 """ Notes:
 python-daemon asks for pylockfile but that package is depreciated. Instead I'm
 using pid which is python-daemon compatible.
+
+Ideas for future versions:
+Would using signals to control things be helpful?
+Is there someway better to track if a job is running or not. If things stop
+while a job is running, the _job_running flag doesn't get turned off and the
+job will no longer run.
+Look into catching termination signals and how they could be used to end the
+loop in a better way.
 """
 
 
