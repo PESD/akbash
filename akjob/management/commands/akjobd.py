@@ -1,7 +1,6 @@
-from django.core.management.base import BaseCommand  # , CommandError
+from django.core.management.base import BaseCommand, CommandError
 from akjob import akjobd
-from akjob.models import load_DayOfMonth, load_DayOfWeek, load_Months
-
+from akjob import models
 
 class Command(BaseCommand):
     help = ("This akjobd control utility allows you to start, stop, and " +
@@ -10,17 +9,30 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument("action",
                             choices=["start", "stop", "restart",
-                                     "reloadfixture"],
-                            help="Action to perform. Start, stop, or restart "
-                                 "the akjobd daemon. reloadfixture will "
-                                 "remove objects from DayOfMonth, DayOfWeek, "
-                                 "and Months tables then reload them.")
+                                     "reloadfixture", "joblist", "enablejob",
+                                     "disablejob", "deletejob"],
+                            help="""
+Action to perform.
+
+Start, stop, or restart the akjobd daemon.
+
+reloadfixture will remove objects from DayOfMonth, DayOfWeek, and Months tables
+then reload them.
+
+joblist will display a list of all jobs.
+
+enablejob, disablejob, deletejob will enable, disble, or delete the job
+specified by -id.
+""")
         parser.add_argument("-pd", "--piddir",
                             help="The directory used to store the pid file. "
                                  "Optional. Defaults to BASE_DIR/akjob/")
         parser.add_argument("-pn", "--pidname",
                             help='The name of the pid file. Optional. Defaults'
                                  ' to "akjobd.pid"')
+        parser.add_argument("-id",
+                            help='ID number of job to enable, disable, or '
+                                 'delete')
 
 
     def handle(self, *args, **options):
@@ -38,6 +50,24 @@ class Command(BaseCommand):
         elif options["action"] == "restart":
             akjobd.do_action("restart")
         elif options["action"] == "reloadfixture":
-            load_DayOfMonth(refresh=True)
-            load_DayOfWeek(refresh=True)
-            load_Months(refresh=True)
+            models.load_DayOfMonth(refresh=True)
+            models.load_DayOfWeek(refresh=True)
+            models.load_Months(refresh=True)
+        elif options["action"] == "joblist":
+            models.list_jobs()
+        elif options["action"] in ["enablejob", "disablejob", "deletejob"]:
+            if options["id"] is None:
+                raise CommandError(
+                    'Job id is required with action "' +
+                    options["action"] + '".')
+            try:
+                if not models.job_exists(int(options["id"])):
+                    raise CommandError("Job " + options["id"] + " doesn't exist.")
+            except ValueError:
+                raise CommandError("The id supplied is not an integer.")
+            if options["action"] == "enablejob":
+                models.enable_job(int(options["id"]))
+            elif options["action"] == "disablejob":
+                models.disable_job(int(options["id"]))
+            elif options["action"] == "deletejob":
+                models.delete_job(int(options["id"]))

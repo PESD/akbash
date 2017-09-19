@@ -26,6 +26,12 @@ datetime.timedelta objects to be used as timezone offsets to create datetimes
 with. Turns out that negative timedeltas are not being stored correctly. So now
 I'm making a model field which you give a timedelta to and it converts it to
 seconds which are stored as an integer in the database.
+
+*** Ideas for future versions ***
+Create an option for the job to delete itself when it goes inactive. This can
+be done right now by including code to do that in the job_code_object so I'm
+thinking a flag that could be turned on then the job would delete itself when
+job is enabled but there are no future job runs scheduled.
 """
 
 
@@ -581,7 +587,6 @@ class Job(models.Model):
 
 
     # TODO: More testing need to be done on this method.
-    # TODO: FIXME: run_count_limit isn't working.
     def next_run(self):
         "Find the next run time."
 
@@ -647,7 +652,6 @@ class Job(models.Model):
                 second=0, microsecond=0,
                 tzinfo=timezone(self.active_time_tz_offset_timedelta))
         awd = [d.weekday for d in self.active_weekly_days.all()]
-        # TODO: This is still not working right.
         # print(jtimes)  # for debug
         jtimes_copy = jtimes.copy()
         for v in jtimes_copy:
@@ -939,6 +943,63 @@ class JobCallable():
     # Might as well make this callable since "callable" is in the name.
     def __call__(self):
         self.run()
+
+
+""" Some utility fuctions used by the akjobd management command and possibly
+    else where.
+"""
+def list_jobs():
+    active_job_list = []
+    inactive_job_list = []
+    for j in Job.objects.all():
+        if j.next_run():
+            active_job_list.append(j)
+        else:
+            inactive_job_list.append(j)
+    print("Active jobs:")
+    if active_job_list:
+        for j in active_job_list:
+            print("    Job {} | {} | {}".format(
+                str(j.id), str(j._next_run), j.name))
+    else:
+        print("    None")
+    print("Inactive jobs:")
+    if inactive_job_list:
+        for j in inactive_job_list:
+            print("    Job {0} | {1:32} | {2}".format(
+                str(j.id),
+                j.name,
+                "Job enabled: " + str(j.job_enabled)))
+    else:
+        print("    None")
+
+
+def job_exists(idnum):
+    try:
+        Job.objects.get(id=idnum)
+        return True
+    except Job.DoesNotExist:
+        return False
+
+
+def enable_job(idnum):
+    j = Job.objects.get(id=idnum)
+    j.job_enabled = True
+    logger.info("Setting job_enabled to True. Job: " + j.__str__())
+    j.save()
+
+
+def disable_job(idnum):
+    j = Job.objects.get(id=idnum)
+    j.job_enabled = False
+    logger.info("Setting job_enabled to False. Job: " + j.__str__())
+    j.save()
+
+
+def delete_job(idnum):
+    j = Job.objects.get(id=idnum)
+    logger.info("Deleting job: " + j.__str__())
+    Job.objects.filter(id=idnum).delete()
 
 
 """ Populate the DayOfMonth and DayOfWeek models
