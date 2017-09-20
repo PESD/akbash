@@ -178,7 +178,7 @@ class Job(models.Model):
 
     """ Fields to store the job code to be ran. """
     # Field holding job code to run. Store an object with a run() method. The
-    # object will be pckeled. See this documentation for details about
+    # object will be pickeled. See this documentation for details about
     # pickeling and unpickeling the objects.
     # docs.python.org/3/library/pickle.html#what-can-be-pickled-and-unpickled
     job_code_object = PickledObjectField(null=True, blank=True, default=None)
@@ -238,6 +238,7 @@ class Job(models.Model):
                   "timedelta object. ex., datetime.timedelta(minutes=5)")
 
 
+    """ Schedule jobs on a monthly or weekly basis. """
     # ##### Monthly #####
     # Using a set of days of the month, the job will run on each of those days.
     monthly_days = models.ManyToManyField(DayOfMonth)
@@ -364,6 +365,7 @@ class Job(models.Model):
         help_text="Timezone offset. If blank, UTC " +
                   "is assumed. Submit a datetime.timedelta object.")
 
+    """ Limit job runs to specific days of the week. """
     # ##### Active Days Of Week #####
     # Limit job runs to the given days of week. Use integers or DayOfWeek
     # objects for each day starting at 1 for Sunday, 2 for Monday, and so on to
@@ -403,6 +405,7 @@ class Job(models.Model):
         self.active_weekly_days.clear()
 
 
+    """ Limit job runs to specific days of the month. """
     # ##### Active Days Of Month #####
     # Limit job runs to the given days of the month. Use integers or DayOfMonth
     # objects for each day you want to limit activity to. Ex., 1,15 means limit
@@ -441,6 +444,7 @@ class Job(models.Model):
         self.active_monthly_days.clear()
 
 
+    """ Limit job runs to specific months. """
     # ##### Active Months #####
     # Limit job runs to the given months. Use integers to represent which
     # months to limit the job run to. 1 for January, 2 for February, 12 for
@@ -477,6 +481,7 @@ class Job(models.Model):
         self.active_months.clear()
 
 
+    """ Limit job runs to specific dates. """
     # ##### Active Dates #####
     # Limit job runs to a date range
     active_date_begin = models.DateField(
