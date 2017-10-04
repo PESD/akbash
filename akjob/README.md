@@ -11,7 +11,7 @@ myjob.name = "Print Hello World"
 myjob.run_every = timedelta(hours=2)
 myjob.save()
 ```
-This job will run every 2 hours and execute ```print("Hello", "World")```. The print statement will not actually acomplish anything as that process is not connected to a console.
+This job will run every 2 hours and execute ```print("Hello", "World")```. The print statement will not actually accomplish anything as that process is not connected to a console.
 ## The Akjobd Daemon
 The akjobd daemon loops through all jobs stored in the database and runs them. If the job is not schedule to run at that time, the job will perform no actions. After akjobd runs all the jobs, it sleeps for 1 minute then starts the loop again.
 
@@ -60,19 +60,36 @@ Types of limits and restrictions:
     * specific days of the month
     * specific months
     * specific dates
-### The Atrributes of akjob.models.Job
-* name - Required field. string
+### The Scheduling Atrributes of akjob.models.Job
+##### Specific Date and Time Job Attributes
+**`dates`** - A [related manager](https://docs.djangoproject.com/en/1.11/ref/models/relations/) for `akjob.models.JobDates`. The `JobDates.job_datetime` field holds a `datetime` representing a date and time the job should run.
 
-**One off job attributes:**
-* **run_once_at** - datetime. The job will run at the time specified in the datetime object.
+**`dates_list`** - `list` containing `datetime` objects. This is a property and is an alternate interface to `dates`. The job will run at the dates and times specified in the datetime objects.
 
-**Reoccuring job attributes:**
-* **run_every** - timedelta. The job runs after the time interval specified in the timedelta object or pendulum interval object. 
-## Job Code
-job_code_object
-JobCallable
-#### logging
-Which log file to log to.
+```python
+from akjob.models import Job, JobCallable
+from datetime import datetime, timezone
+myjob_code = JobCallable(somefunc, "arg1", "arg2", arg3="arg3stuff")
+runtime1 = datetime(2017, 11, 25, 14, 30, tzinfo=timezone.utc)
+runtime2 = datetime(2017, 12, 18, 18, 10, tzinfo=timezone.utc)
+
+myjob1 = Job.objects.create(name="Job Test 1")
+myjob1.dates.create(job_datetime=runtime1)
+myjob1.dates.create(job_datetime=runtime2)
+myjob1.job_code_object = myjob_code
+myjob1.save()
+
+# Do the same thing using the dates_list property.
+myjob2 = Job.objects.create(name="Job Test 2")
+myjob2.dates_list = [runtime1, runtime2]
+myjob2.job_code_object = myjob_code
+myjob2.save()
+```
+##### Reoccuring Job Attributes
+**`run_every`** - `timedelta`. The job runs after the time interval specified in the timedelta object. 
+
+**`monthly`** - 
+
 ## The akjobd Management Command
 The first argument, after "akjobd", is the action the command should perform.
 Example: ```python manage.py akjobd stop```
