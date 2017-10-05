@@ -62,9 +62,9 @@ Types of limits and restrictions:
     * specific dates
 ### The Scheduling Atrributes of akjob.models.Job
 ##### Specific Date and Time Job Attributes
-**`dates`** - A [related manager](https://docs.djangoproject.com/en/1.11/ref/models/relations/) for `akjob.models.JobDates`. The `JobDates.job_datetime` field holds a `datetime` representing a date and time the job should run.
+**`dates`** - A [related manager](https://docs.djangoproject.com/en/1.11/ref/models/relations/) for `akjob.models.JobDates`. The `JobDates.job_datetime` field holds a `datetime.datetime` representing a date and time the job should run.
 
-**`dates_list`** - `list` containing `datetime` objects. This is a property and is an alternate interface to `dates`. The job will run at the dates and times specified in the datetime objects.
+**`dates_list`** - `list` containing `datetime.datetime` objects. This is a property and is an alternate interface to `dates`. The job will run at the dates and times specified in the datetime objects. Be aware that list methods may not fire the property's setter.
 
 ```python
 from akjob.models import Job, JobCallable
@@ -86,10 +86,44 @@ myjob2.job_code_object = myjob_code
 myjob2.save()
 ```
 ##### Reoccuring Job Attributes
-**`run_every`** - `timedelta`. The job runs after the time interval specified in the timedelta object. 
+**== Intervals ==**
+**`run_every`** - `datetime.timedelta`. The job runs after the time interval specified in the timedelta object. 
 
-**`monthly`** - 
+**== Monthly ==**
+**`monthly_days`** - A `ManyToManyField` linking to `akjob.models.DayOfMonth`. Set monthly_days using `integer` or `DayOfMonth` objects to represent the days of the month you want the job to run. For example, setting 1 and 15 means the job will run on the 1st and 15th of the month.
 
+**`monthly_days_list`** - `list` containing `integer` or `DayOfMonth` objects. This is a property and is an alternate interface to `monthly_days`. Be aware that list methods may not fire the property's setter.
+
+**`monthly_time`** - `datetime.time`. The time of day when the monthly job should run.
+
+**`monthly_time_tz_offset_timedelta`** - `datetime.timedelta`. Set this to the needed timezone offset using a datetime.timedelta. This field defaults to UTC / timedelta(0) so there is no need to set it if UTC is the timezone. This field is required because of problems between django and MS SQL Server.
+
+**== Weekly ==**
+**`weekly_days`** - A `ManyToManyField` linking to `akjob.models.DayOfWeek`. Set weekly_days using `integer` or `DayOfWeek` objects to represent the days of the week you want the job to run. Use integers or `DayOfWeek` objects starting at 1 for Sunday, 2 for Monday, and so on to 7 for Saturday.
+
+**`weekly_days_list`** - `list` containing `integer` or `DayOfWeek` objects. This is a property and is an alternate interface to `weekly_days`. Be aware that list methods may not fire the property's setter.
+
+**`weekly_time`** - `datetime.time`. The time of day when the weekly job should run.
+
+**`weekly_time_tz_offset_timedelta`** - `datetime.timedelta`. Set this to the needed timezone offset using a datetime.timedelta. This field defaults to UTC / timedelta(0) so there is no need to set it if UTC is the timezone. This field is required because of problems between django and MS SQL Server.
+```python
+from akjob.models import Job, JobCallable
+from datetime import datetime, time, timezone
+myjob_code = JobCallable(somefunc, "arg1", "arg2", arg3="arg3stuff")
+
+# A job that runs every 15 minutes
+myjob1 = Job.objects.create(name="Interval")
+myjob1.run_every = timedelta(minutes=15)
+myjob1.job_code_object = myjob_code
+myjob1.save()
+
+# A job that runs on the 1st and 15th day of each month at 1:30 AM UTC.
+myjob2 = Job.objects.create(name="Monthly")
+myjob2.monthly_days_list = [1, 15]
+myjob2.monthly_time = time(1, 30)
+myjob2.job_code_object = myjob_code
+myjob2.save()
+```
 ## The akjobd Management Command
 The first argument, after "akjobd", is the action the command should perform.
 Example: ```python manage.py akjobd stop```
