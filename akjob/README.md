@@ -49,12 +49,12 @@ Types of scheduling:
 * You may specify an interval when the job executes. For instance, execute every 15 minutes. A datetime.timedelta is used.
 * You may schedule execution times on a monthly or weekly basis. In other words, you may provide a list of days of the month and the job will execute on those day. For weekly jobs, you provide a list of days of the week. Along with a list of days, you must also specify a time of the day the job should execute.
 
-In addition to scheduling when a job should execute, you may specify when the job should not execute. An example of how this is useful: A job could be schedule using an interval of 1 hour but only run between the hours of 6 am and 6 pm.
+In addition to scheduling when a job should execute, you may specify when the job should not execute. For example, a job could be scheduled using an interval of 1 hour but have limit set to only allow the job to run between the hours of 6 AM and 6 PM. The job will execute every hour between 6 AM and 6 PM each day.
 
 Types of limits and restrictions:
 * You may stop a job from executing using a generic enabled and disabled flag.
 * You may limit the number of times a job is executed. If a job reaches the run count limit, it will no longer execute.
-* You may limit job execution to a window of time each day. For example, only run the job between 9 am and 5 pm.
+* You may limit job execution to a window of time each day. For example, only run the job between 9 AM and 5 PM.
 * You may limit job execution to
     * specific days of the week
     * specific days of the month
@@ -124,6 +124,28 @@ myjob2.monthly_time = time(1, 30)
 myjob2.job_code_object = myjob_code
 myjob2.save()
 ```
+### The Schedule Limiting Atrributes of akjob.models.Job
+##### Job Enabled Flag and Restricting the Number of Runs
+**``job_enabled``** - ``boolean``. If set to False, the job will not be executed. Defaults to True so you don't need to set this unless you want to disable the job.
+
+**``run_count_limit``** - ``integer``. This will limit the number of times the job is executed. If the _run_count attribute is equal or greater than run_count_limit the the job is not executed. The print method of the job will display the run count.
+
+##### Limit Runs to a Window of Time Each Day
+Job runs will be limited to only run, each day, within the window of time defined by active_time_begin and active_time_end. The timezone offset must be defined using a timedelta in active_time_tz_offset_timedelta.
+* **``active_time_begin``** - ``datetime.time``.
+* **``active_time_end``** - ``datetime.time``.
+* **``active_time_tz_offset_timedelta``** - ``datetime.timedelta``. Defaults to timedelta(0) which is UTC.
+
+##### Limit Job Runs to Specific Days of the Month
+**``active_monthly_days``** - A `ManyToManyField` linking to `akjob.models.DayOfMonth`. Limit job runs to the given days of month. Use ``integer`` or ``DayOfMonth`` objects for each day you want to limit activity to. Ex., 1,15 means limit the run to the 1st and 15th of each month.
+
+**``active_monthly_days_list``** - ``list`` containing ``integer`` or ``DayOfMonth`` objects. This is a property and is an alternate interface to active_monthly_days. Be aware that list methods may not fire the property's setter.
+
+##### Limit Job Runs to Specific Days of the Week
+**``active_weekly_days``** - A `ManyToManyField` linking to `akjob.models.DayOfWeek`. Limit job runs to the given days of week. Use ``integer`` or ``DayOfWeek`` objects for each day starting at 1 for Sunday, 2 for Monday, and so on to 7 for Saturday.
+
+**``active_weekly_days_list``** - ``list`` containing ``integer`` or ``DayOfWeek`` objects. This is a property and is an alternate interface to active_weekly_days. Be aware that list methods may not fire the property's setter.
+
 ## The akjobd Management Command
 The first argument, after "akjobd", is the action the command should perform.
 Example: ```python manage.py akjobd stop```
