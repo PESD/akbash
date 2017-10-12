@@ -6,6 +6,7 @@ Things to test:
     * if daemon is running don't start another one
 """
 
+"""
 # import akjob.akjob
 from datetime import datetime, timedelta, timezone, time, date
 from akjob.models import Job, load_DayOfMonth, load_DayOfWeek, load_Months
@@ -13,7 +14,8 @@ from django.test import TestCase
 from django.db import IntegrityError
 
 utc = timezone.utc
-# mst = timezone(timedelta(hours=-7))
+mst = timezone(timedelta(hours=-7))
+"""
 
 
 """ Test scheduled jobs
@@ -25,6 +27,7 @@ some things to test:
 * Disabled jobs are not ran.
 """
 
+"""
 class JobsToRunTestCase(TestCase):
     "Test that akjob can figure out which jobs to run"
 
@@ -100,3 +103,4 @@ class JobsToRunTestCase(TestCase):
 
     def test_find_jobs(self):
         pass
+"""
