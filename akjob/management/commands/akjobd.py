@@ -10,7 +10,7 @@ class Command(BaseCommand):
         parser.add_argument("action",
                             choices=["start", "stop", "restart",
                                      "reloadfixture", "joblist", "enablejob",
-                                     "disablejob", "deletejob"],
+                                     "disablejob", "deletejob", "showinfo"],
                             help="""
 Action to perform.
 
@@ -23,6 +23,8 @@ joblist will display a list of all jobs.
 
 enablejob, disablejob, deletejob will enable, disble, or delete the job
 specified by -id.
+
+showinfo will display information about the job specified by -id.
 """)
         parser.add_argument("-pd", "--piddir",
                             help="The directory used to store the pid file. "
@@ -31,8 +33,8 @@ specified by -id.
                             help='The name of the pid file. Optional. Defaults'
                                  ' to "akjobd.pid"')
         parser.add_argument("-id",
-                            help='ID number of job to enable, disable, or '
-                                 'delete')
+                            help='ID number of job to enable, disable, '
+                                 'delete or showinfo')
 
 
     def handle(self, *args, **options):
@@ -55,7 +57,8 @@ specified by -id.
             models.load_Months(refresh=True)
         elif options["action"] == "joblist":
             models.list_jobs()
-        elif options["action"] in ["enablejob", "disablejob", "deletejob"]:
+        elif options["action"] in ["enablejob", "disablejob", "deletejob",
+                                   "showinfo"]:
             if options["id"] is None:
                 raise CommandError(
                     'Job id is required with action "' +
@@ -71,3 +74,5 @@ specified by -id.
                 models.disable_job(int(options["id"]))
             elif options["action"] == "deletejob":
                 models.delete_job(int(options["id"]))
+            elif options["action"] == "showinfo":
+                models.Job.objects.get(id=int(options["id"])).print()

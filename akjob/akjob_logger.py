@@ -60,7 +60,7 @@ class AkjobLogging():
             logdir=logdir,
             format_str=default_format_str,
             # interval=23,  # rotate log every 23 hours. (when="H" (hours))
-            interval=1,  # DEBUG: For easier testing, 1 hour interval.
+            interval=23,
             when="H",  # Goes with inteval. "H" for hours.
             backupCount=14,  # Log rotation. Delete old files, keep last 14.
             loglevel=None

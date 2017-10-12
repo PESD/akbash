@@ -32,6 +32,12 @@ Create an option for the job to delete itself when it goes inactive. This can
 be done right now by including code to do that in the job_code_object so I'm
 thinking a flag that could be turned on then the job would delete itself when
 job is enabled but there are no future job runs scheduled.
+
+Similar to monthly days, you could shedule hours. So you could schedule hourly
+jobs but control when they run. For instance, run at the top of the hour.
+Currently, you can schedule an interval using hours but you don't know at what
+minute the job will run. This could be expanded furthor to make crontab like
+scheduling.
 """
 
 
@@ -335,6 +341,9 @@ class Job(models.Model):
                   "is assumed. Submit a datetime.timedelta object.")
 
 
+    """ Limiting options
+    """
+
     """ A generic enabled / disabled toggle so jobs can be paused """
     job_enabled = models.BooleanField(default=True)
 
@@ -592,6 +601,9 @@ class Job(models.Model):
 
 
     # TODO: More testing need to be done on this method.
+    # FIXME: run_every job create outside run limits works correctly but will
+    # appear as inactive in management command akjobd joblist and self.next_run
+    # will be None. This could be confusing to the user.
     def next_run(self):
         "Find the next run time."
 
@@ -817,6 +829,7 @@ class Job(models.Model):
         self.execute()
 
 
+    # This should probably be called something else. maybe print_info()?
     # I didn't test this section well since it's not essential and time is
     # limited.
     def print(self):
@@ -908,7 +921,7 @@ class Job(models.Model):
                        " not set.")
 
         if self.active_monthly_days.all():
-            print("\nThis job will not run outside of the following days of ",
+            print("\nThis job will not run outside of the following days of",
                   "the month:")
             print("    ", end='')
             for d in self.active_monthly_days.all():
@@ -916,7 +929,7 @@ class Job(models.Model):
             print()
 
         if self.active_weekly_days.all():
-            print("\nThis job will not run outside of the following days of ",
+            print("\nThis job will not run outside of the following days of",
                   "the week:")
             for d in self.active_weekly_days.all():
                 print("    " + d.name)
