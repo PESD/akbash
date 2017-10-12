@@ -196,7 +196,10 @@ Set the job_enabled attribute in a Job instance object. To either enable or disa
 #### deletejob
 Delete the job specified by the -id argument.
 
+#### showinfo
+Display information about the job specified by the -id argument.
+
 ## Known Issues, Quirks, and Work Arounds
-When a new run_every (interval) jobs is created with limits specified, if created at a time outside run limits, there is some behavior that may seem unexpected to the user. The jobs works correctly but it will appear as inactive in management command `akjobd joblist` and self.next_run will be None. It will work correctly but this behavior could be confusing to the user.
+When a new run_every (interval) job is created with limits specified, if created at a time outside run limits, there is some behavior that may seem unexpected to the user. The jobs works correctly but it will appear as inactive in management command `akjobd joblist` and self.next_run will be None. It will work correctly but this behavior could be confusing to the user.
 
-
+The _job_running attribute is set to True before the job code is executed and is set back to false after the execution. Akjobd will not execute the job if _job_running is True. If for some reason things crash before _job_running is set back to False, the job will no longer be executed. The log file will show "Job didn't run because job running flag is True."
