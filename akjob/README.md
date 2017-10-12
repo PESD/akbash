@@ -108,7 +108,7 @@ myjob2.save()
 **`weekly_time_tz_offset_timedelta`** - `datetime.timedelta`. Set this to the needed timezone offset using a datetime.timedelta. This field defaults to UTC / timedelta(0) so there is no need to set it if UTC is the timezone. This field is required because of problems between django and MS SQL Server.
 ```python
 from akjob.models import Job, JobCallable
-from datetime import datetime, time, timezone
+from datetime import time, timedelta
 myjob_code = JobCallable(somefunc, "arg1", "arg2", arg3="arg3stuff")
 
 # A job that runs every 15 minutes
@@ -123,6 +123,14 @@ myjob2.monthly_days_list = [1, 15]
 myjob2.monthly_time = time(1, 30)
 myjob2.job_code_object = myjob_code
 myjob2.save()
+
+# A job that runs each weekday at 10 PM MST (UTC -7 not considering DST)
+myjob3 = Job.objects.create(name="Weekdays 10PM somefunc")
+myjob3.weekly_days_list = [2, 3, 4, 5, 6]
+myjob3.weekly_time = time(22, 0)
+myjob3.weekly_time_tz_offset_timedelta = timedelta(hours=-7)
+myjob3.job_code_object = myjob_code
+myjob3.save()
 ```
 ### The Schedule Limiting Atrributes of akjob.models.Job
 ##### Job Enabled Flag and Restricting the Number of Runs
@@ -146,6 +154,34 @@ Job runs will be limited to only run, each day, within the window of time define
 
 **``active_weekly_days_list``** - ``list`` containing ``integer`` or ``DayOfWeek`` objects. This is a property and is an alternate interface to active_weekly_days. Be aware that list methods may not fire the property's setter.
 
+##### Limit Job Runs to Specific Months
+**`active_months`** - A `ManyToManyField` linking to `akjob.models.Months`. Limit job runs to the given months. Use `integer` or `Months` objects for each month using 1 for January, 2 for February up to 12 December.
+
+**`active_months`** - `list` containing `integer` or `Months` objects. This is a property and is an alternate interface to active_months. Be aware that list methods may not fire the property's setter.
+
+##### Limit Job Runs to a Specific Date Range.
+Provide beggining and end dates using datetime.time objects to define a date range in which the job may run. Job run times out side of the date range will not execute.
+**`active_date_begin`** - `datetime.date`.
+**`active_date_end`** - `datetime.date`.
+
+#### Example
+```python
+from akjob.models import Job, JobCallable
+from datetime import time, timedelta
+myjob_code = JobCallable(somefunc, "arg1", "arg2", arg3="arg3stuff")
+
+# A job that runs every 15 minutes on weekdays
+#   between 8 AM and 4 PM MST (UTC -7 not considering DST.)
+myjob1 = Job.objects.create(name="Interval")
+myjob1.run_every = timedelta(minutes=15)
+myjob1.active_time_begin = time(8)
+myjob1.active_time_end = time(16)
+myjob1.active_time_tz_offset_timedelta = timedelta(hours=-7)
+myjob1.active_weekly_days_list = [2, 3, 4, 5, 6]
+myjob1.job_code_object = myjob_code
+myjob1.save()
+```
+
 ## The akjobd Management Command
 The first argument, after "akjobd", is the action the command should perform.
 Example: ```python manage.py akjobd stop```
@@ -159,4 +195,8 @@ Display a list of all jobs.
 Set the job_enabled attribute in a Job instance object. To either enable or disable the job. Using "enablejob" sets the attribute to True and "disablejob" sets the attribute to False. You must use the -id argument to specify the id number of the job.
 #### deletejob
 Delete the job specified by the -id argument.
+
+## Known Issues, Quirks, and Work Arounds
+When a new run_every (interval) jobs is created with limits specified, if created at a time outside run limits, there is some behavior that may seem unexpected to the user. The jobs works correctly but it will appear as inactive in management command `akjobd joblist` and self.next_run will be None. It will work correctly but this behavior could be confusing to the user.
+
 
