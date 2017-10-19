@@ -6,31 +6,82 @@ Things to test:
     * if daemon is running don't start another one
 """
 
-"""
-# import akjob.akjob
-from datetime import datetime, timedelta, timezone, time, date
-from akjob.models import Job, load_DayOfMonth, load_DayOfWeek, load_Months
+import os
 from django.test import TestCase
-from django.db import IntegrityError
+from django.conf import settings
+from akjob.models import Job
+# from datetime import datetime, timedelta, timezone, time, date
+# from akjob.models import load_DayOfMonth, load_DayOfWeek, load_Months
+# from akjob.models import JobCallable
+# from django.db import IntegrityError
+from akjob import akjobd
+from time import sleep
+from subprocess import run
 
-utc = timezone.utc
-mst = timezone(timedelta(hours=-7))
+
+""" Test for the pidfile
 """
+class DaemonStartStopTestCase(TestCase):
+
+    def setUp(self):
+        self.pidfile = os.path.join(settings.BASE_DIR, "akjob", "akjobd.pid")
+        Job.objects.all().delete()
+
+
+    # Needs to be ran in a separate process because it's going to deamonize and
+    # detach from everything which would mess up testing.
+    @staticmethod
+    def start_daemon():
+        run(["python", os.path.join(settings.BASE_DIR, "manage.py"), "akjobd",
+             "start"])
+
+
+    def test_1_pidfile_exists(self):
+        """The daemon should have auto started so the pidfile should exist.
+           This is wrong since tests are supposed to be self contained."""
+        self.assertTrue(os.path.isfile(self.pidfile))
+        print("1")  # for debug
+
+
+    def test_2_stop_daemon(self):
+        self.start_daemon()
+        sleep(1)
+        akjobd.do_action("stop")
+        sleep(1)
+        self.assertFalse(os.path.isfile(self.pidfile))
+        print("2")  # for debug
+
+
+    def test_3_start_daemon(self):
+        akjobd.do_action("stop")
+        sleep(1)
+        self.start_daemon()
+        sleep(1)
+        self.assertTrue(os.path.isfile(self.pidfile))
+        print("3")  # for debug
 
 
 """ Test scheduled jobs
-some things to test:
-* Jobs with run time around now() are run now.
-* Jobs with past run time but didn't run are ran now.
-* Jobs with past run time are not ran now.
-* Jobs with run times in the future are not run now.
-* Disabled jobs are not ran.
 """
 
 """
 class JobsToRunTestCase(TestCase):
     "Test that akjob can figure out which jobs to run"
 
+    # date and time variables
+    def setDateTimeVars(self):
+        self.utc = timezone.utc
+        self.mst = timezone(timedelta(hours=-7))
+        self.now = datetime.now(tz=self.utc)
+        self.future = datetime.now(tz=self.utc) + timedelta(minutes=30)
+        self.past = datetime.now(tz=self.utc) - timedelta(minutes=30)
+        self.pastday = datetime.now(tz=self.utc) - timedelta(days=1)
+        self.tomorrow = datetime.now(tz=self.utc) + timedelta(days=1)
+
+
+    # Ignoring IntegrityError because that's what you get when the data is
+    # already loaded and you hit a primary key constraint. Should I do a
+    # refresh instead?
     def setUp(self):
         try:
             load_DayOfMonth()
@@ -39,11 +90,7 @@ class JobsToRunTestCase(TestCase):
         except IntegrityError:
             pass
 
-        self.now = datetime.now(tz=utc)
-        self.future = datetime.now(tz=utc) + timedelta(minutes=30)
-        self.past = datetime.now(tz=utc) - timedelta(minutes=30)
-        self.pastday = datetime.now(tz=utc) - timedelta(days=1)
-        self.tomorrow = datetime.now(tz=utc) + timedelta(days=1)
+
 
         ra1 = Job.objects.create(name="Job dates")
         ra1.dates_list = [self.past, self.now, self.future, self.pastday,

@@ -17,6 +17,11 @@ except ModuleNotFoundError:  # noqa  My pyflake doesn't have this builtin yet.
 python-daemon asks for pylockfile but that package is depreciated. Instead I'm
 using pid which is python-daemon compatible.
 
+This module does not work from the command line although it's almost there. I
+think all I need to do is import django into the global namespace from
+setup_django(). I'm going to leave it alone for now and use the management
+command instead.
+
 Ideas for future versions:
 Would using signals to control things be helpful?
 Is there someway better to track if a job is running or not. If things stop
