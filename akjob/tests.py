@@ -8,6 +8,7 @@ Things to test:
 
 import os
 from django.test import TestCase
+from unittest import skipIf
 from django.conf import settings
 from akjob.models import Job
 # from datetime import datetime, timedelta, timezone, time, date
@@ -21,11 +22,14 @@ from subprocess import run
 
 """ Test for the pidfile
 """
+@skipIf(os.environ.get("CIRCLECI") == "true",
+        "Akjobd not tested under CircleCI.")
 class DaemonStartStopTestCase(TestCase):
+
 
     def setUp(self):
         self.pidfile = os.path.join(settings.BASE_DIR, "akjob", "akjobd.pid")
-        Job.objects.all().delete()
+        Job.objects.all().delete()  # just in case. this shouldn't be needed.
 
 
     # Needs to be ran in a separate process because it's going to deamonize and
