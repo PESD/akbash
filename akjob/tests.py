@@ -36,29 +36,26 @@ class DaemonStartStopTestCase(TestCase):
              "start"])
 
 
-    def test_1_pidfile_exists(self):
-        """The daemon should have auto started so the pidfile should exist.
-           This is wrong since tests are supposed to be self contained."""
-        self.assertTrue(os.path.isfile(self.pidfile))
-        print("1")  # for debug
+    # def test_1_pidfile_exists(self):
+    #     """The daemon should have auto started so the pidfile should exist.
+    #        This is wrong since tests are supposed to be self contained."""
+    #     self.assertTrue(os.path.isfile(self.pidfile))
 
 
     def test_2_stop_daemon(self):
         self.start_daemon()
-        sleep(1)
+        sleep(3)
         akjobd.do_action("stop")
-        sleep(1)
+        sleep(3)
         self.assertFalse(os.path.isfile(self.pidfile))
-        print("2")  # for debug
 
 
     def test_3_start_daemon(self):
         akjobd.do_action("stop")
-        sleep(1)
+        sleep(3)
         self.start_daemon()
-        sleep(1)
+        sleep(3)
         self.assertTrue(os.path.isfile(self.pidfile))
-        print("3")  # for debug
 
 
 """ Test scheduled jobs
