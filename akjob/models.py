@@ -174,7 +174,7 @@ class Job(models.Model):
 
 
     name = models.CharField(
-        max_length=50,
+        max_length=100,
         null=False,
         blank=False,
         default=None,  # Used to cause error if name isn't provided.
