@@ -1,14 +1,38 @@
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from django.db import models
 from django.core.mail import send_mail
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
+from akjob.models import Job
 from api.models import Person, Employee, Position, Location, update_field
 from api import ldap
 from api import visions
 from django.contrib.auth.models import User
 from bpm.visions_helper import VisionsHelper
 from bpm.synergy_helper import SynergyHelper
+
+
+class Observer:
+    job_id = None
+    workflow_task_id = None
+
+    def __init__(self, job_id, workflow_task_id):
+        self.job_id = job_id
+        self.workflow_task_id = workflow_task_id
+
+    def run(self):
+        workflow_task = WorkflowTask.objects.get(pk=self.workflow_task_id)
+        job_id = Job.objects.get(pk=self.job_id)
+        args = {
+            "workflow_task": workflow_task,
+            "username": "tandem",
+        }
+        # Do more stuff here.
+        status, message = workflow_task.run_task(args)
+        if status:
+            job = Job.objects.get(pk=jobid)
+            job.delete()
+        return (status, message)
 
 
 # A Process is something like "New Hire Process"
@@ -43,16 +67,20 @@ class Process(models.Model):
     )
 
     def start_workflow(self, person):
+        if person.current_workflow:
+            return (False, "Finish or cancel current workflow before starting new one.")
         workflow = Workflow.objects.create(person=person, process=self)
-        person.generate_badge()
+        if not person.badge_number:
+            person.generate_badge()
         person.status = "inprocess"
+        person.current_workflow = workflow
         person.save()
         activities = self.activities.all()
         for activity in activities:
             workflow_activity = workflow.create_workflow_activity(activity)
             if activity == self.start_activity:
                 workflow_activity.set_workflow_activity_active()
-        return workflow
+        return (True, "Workflow successfully created.")
 
 
 class Task(models.Model):
@@ -107,6 +135,8 @@ class Workflow(models.Model):
             self.person.status = "inactive"
         else:
             self.person.status = "active"
+        self.person.current_workflow = None
+        self.person.cancel_workflow = None
         self.person.save()
         return True
 
@@ -124,9 +154,27 @@ class WorkflowTask(models.Model):
 
     def run_task(self, args):
         status, message = self.task.task_controller_function(args)
-        self.status = "Complete" if status else "Error"
-        self.save()
+        if status:
+            self.status = "Complete"
+            self.save()
+            self.advance_activities()
+        else:
+            self.status = "Error"
+            self.save()
         return (status, message)
+
+    def advance_activities(self):
+        workflow_activities = self.workflowactivity_set.all()
+        for workflow_activity in workflow_activities:
+            workflow_activity.advance_workflow_activity()
+
+    def start_observer(self, minutes, args):
+        workflow_task = args["workflow_task"]
+        job = Job.objects.create(name=self.task.name)
+        code = Observer(job.id, workflow_task.id)
+        job.job_code_object = code
+        job.run_every = timedelta(minutes=minutes)
+        job.save()
 
 
 class WorkflowActivity(models.Model):
@@ -162,6 +210,21 @@ class WorkflowActivity(models.Model):
         self.save()
         self.email_users()
 
+    def start_tasks(self):
+        workflow_tasks = self.workflow_tasks.all()
+        for workflow_task in workflow_tasks:
+            task = workflow_task.task
+            if task.task_type == "Observer":
+                args = {
+                    "workflow_task": workflow_task,
+                    "username": "tandem",
+                }
+                workflow_task.start_observer(5, args)
+                workflow_task.status = "Running"
+            else:
+                workflow_task.status = "Waiting"
+        workflow_task.save()
+
     def advance_workflow_activity(self):
         # Make sure all tasks are complete. If not, immediately stop.
         if not self.checkTasksStatuses():
@@ -177,6 +240,7 @@ class WorkflowActivity(models.Model):
             child_workflow_activity_set = workflow.workflow_activites.filter(activity=activity)
             for child_workflow_activity in child_workflow_activity_set:
                 child_workflow_activity.set_workflow_activity_active()
+                child_workflow_activity.start_tasks()
         self.workflow.check_for_completeness()
         return True
 
@@ -412,11 +476,15 @@ class TaskWorker:
 
         def task_transfer_synergy(**kwargs):
             workflow_task = kwargs["workflow_task"]
-            status = kwargs["status"]
+            # If the 'status' arg is defined, that means the request
+            # originated from the front end. We need to check it and
+            # see if the user opted to skip over Synergy creation.
+            if "status" in kwargs:
+                status = kwargs["status"]
+                if not status:
+                    update_field(employee, "is_synergy_account_needed", False)
+                    return ("True", "Success")
             employee = TaskWorker.get_employee_from_workflow_task(workflow_task)
-            if not status:
-                update_field(employee, "is_synergy_account_needed", False)
-                return ("True", "Success")
             synergy_username = SynergyHelper.get_synergy_login(employee.visions_id)
             user = TaskWorker.get_user_or_false(kwargs["username"])
             if not user:

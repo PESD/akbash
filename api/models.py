@@ -113,6 +113,8 @@ class Person(models.Model):
     desk_phone_created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="desk_phone_created_user")
     start_date = models.DateField(null=True, blank=True)
     locations = models.ManyToManyField(Location)
+    current_workflow = models.ForeignKey('bpm.Workflow', on_delete=models.SET_NULL, null=True)
+    cancel_workflow = models.ForeignKey('bpm.Workflow', on_delete=models.SET_NULL, null=True)
     last_updated_by = models.CharField(max_length=255, blank=True)
     last_updated_date = models.DateTimeField(null=True, blank=True, auto_now=True)
 

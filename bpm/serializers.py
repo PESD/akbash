@@ -165,11 +165,16 @@ class WorkflowCompleteSerializer(serializers.ModelSerializer):
 class CreateWorkflowSerializer(serializers.Serializer):
     process_id = serializers.IntegerField()
     person_id = serializers.IntegerField()
+    status = serializers.BooleanField()
+    message = serializers.CharField(max_length=200, allow_blank=True)
 
     def create(self, validated_data):
-        process = Process.objects.get(pk=validated_data["process_id"])
-        person = Person.objects.get(pk=validated_data["person_id"])
-        return process.start_workflow(person)
+        process_id = validated_data["process_id"]
+        person_id = validated_data["person_id"]
+        process = Process.objects.get(pk=process_id)
+        person = Person.objects.get(pk=person_id)
+        status, message = process.start_workflow(person)
+        return {"process_id": process_id, "person_id": person_id, "status": status, "message": message}
 
 
 # Visions Serializers
@@ -199,10 +204,6 @@ class TaskEparSerializer(serializers.Serializer):
             "epar_id": epar
         }
         status, message = workflow_task.run_task(args)
-        if workflow_task.status == "Complete":
-            workflow_activities = workflow_task.workflowactivity_set.all()
-            for workflow_activity in workflow_activities:
-                workflow_activity.advance_workflow_activity()
         return {"workflow_task_id": workflow_task.id, "epar_id": epar, "status": status, "message": message}
 
 
@@ -220,10 +221,6 @@ class TaskVisionsIDSerializer(serializers.Serializer):
             "visions_id": visions_id
         }
         status, message = workflow_task.run_task(args)
-        if workflow_task.status == "Complete":
-            workflow_activities = workflow_task.workflowactivity_set.all()
-            for workflow_activity in workflow_activities:
-                workflow_activity.advance_workflow_activity()
         return {"workflow_task_id": workflow_task.id, "visions_id": visions_id, "status": status, "message": message}
 
 
@@ -243,12 +240,6 @@ class TaskEmployeeADSerializer(serializers.Serializer):
         }
         status, message = workflow_task.run_task(args)
         ad_username = ""
-        if workflow_task.status == "Complete":
-            employee = TaskWorker.get_employee_from_workflow_task(workflow_task)
-            ad_username = employee.get_ad_username_or_blank()
-            workflow_activities = workflow_task.workflowactivity_set.all()
-            for workflow_activity in workflow_activities:
-                workflow_activity.advance_workflow_activity()
         return {"workflow_task_id": workflow_task.id, "ad_username": ad_username, "username": username, "status": status, "message": message}
 
 
@@ -272,9 +263,6 @@ class TaskEmployeeSynergySerializer(serializers.Serializer):
         if workflow_task.status == "Complete":
             employee = TaskWorker.get_employee_from_workflow_task(workflow_task)
             synergy_username = employee.get_synergy_username_or_blank()
-            workflow_activities = workflow_task.workflowactivity_set.all()
-            for workflow_activity in workflow_activities:
-                workflow_activity.advance_workflow_activity()
         return {"workflow_task_id": workflow_task.id, "synergy_username": synergy_username, "username": username, "status": status, "message": message}
 
 
@@ -289,10 +277,6 @@ class TaskUpdateEmployeePosition(serializers.Serializer):
             "workflow_task": workflow_task,
         }
         status, message = workflow_task.run_task(args)
-        if workflow_task.status == "Complete":
-            workflow_activities = workflow_task.workflowactivity_set.all()
-            for workflow_activity in workflow_activities:
-                workflow_activity.advance_workflow_activity()
         return {"workflow_task_id": workflow_task.id, "status": status, "message": message}
 
 
@@ -307,53 +291,41 @@ class TaskGenericCheck(serializers.Serializer):
             "workflow_task": workflow_task,
         }
         status, message = workflow_task.run_task(args)
-        if workflow_task.status == "Complete":
-            workflow_activities = workflow_task.workflowactivity_set.all()
-            for workflow_activity in workflow_activities:
-                workflow_activity.advance_workflow_activity()
         return {"workflow_task_id": workflow_task.id, "status": status, "message": message}
 
 
 class TaskGenericTodo(serializers.Serializer):
-        workflow_task_id = serializers.IntegerField()
-        status = serializers.BooleanField()
-        message = serializers.CharField(max_length=200, allow_blank=True)
-        username = serializers.CharField(max_length=50, allow_blank=True)
+    workflow_task_id = serializers.IntegerField()
+    status = serializers.BooleanField()
+    message = serializers.CharField(max_length=200, allow_blank=True)
+    username = serializers.CharField(max_length=50, allow_blank=True)
 
-        def create(self, validated_data):
-            workflow_task = WorkflowTask.objects.get(pk=validated_data["workflow_task_id"])
-            username = validated_data["username"]
-            args = {
-                "workflow_task": workflow_task,
-                "username": username,
-            }
-            status, message = workflow_task.run_task(args)
-            if workflow_task.status == "Complete":
-                workflow_activities = workflow_task.workflowactivity_set.all()
-                for workflow_activity in workflow_activities:
-                    workflow_activity.advance_workflow_activity()
-            return {"workflow_task_id": workflow_task.id, "status": status, "message": message, "username": username}
+    def create(self, validated_data):
+        workflow_task = WorkflowTask.objects.get(pk=validated_data["workflow_task_id"])
+        username = validated_data["username"]
+        args = {
+            "workflow_task": workflow_task,
+            "username": username,
+        }
+        status, message = workflow_task.run_task(args)
+        return {"workflow_task_id": workflow_task.id, "status": status, "message": message, "username": username}
 
 
 class TaskWorkLocations(serializers.Serializer):
-        workflow_task_id = serializers.IntegerField()
-        status = serializers.BooleanField()
-        message = serializers.CharField(max_length=200, allow_blank=True)
-        username = serializers.CharField(max_length=50, allow_blank=True)
-        locations = serializers.ListField(child=serializers.IntegerField())
+    workflow_task_id = serializers.IntegerField()
+    status = serializers.BooleanField()
+    message = serializers.CharField(max_length=200, allow_blank=True)
+    username = serializers.CharField(max_length=50, allow_blank=True)
+    locations = serializers.ListField(child=serializers.IntegerField())
 
-        def create(self, validated_data):
-            workflow_task = WorkflowTask.objects.get(pk=validated_data["workflow_task_id"])
-            username = validated_data["username"]
-            locations = validated_data["locations"]
-            args = {
-                "workflow_task": workflow_task,
-                "username": username,
-                "locations": locations,
-            }
-            status, message = workflow_task.run_task(args)
-            if workflow_task.status == "Complete":
-                workflow_activities = workflow_task.workflowactivity_set.all()
-                for workflow_activity in workflow_activities:
-                    workflow_activity.advance_workflow_activity()
-            return {"workflow_task_id": workflow_task.id, "status": status, "message": message, "username": username, "locations": locations}
+    def create(self, validated_data):
+        workflow_task = WorkflowTask.objects.get(pk=validated_data["workflow_task_id"])
+        username = validated_data["username"]
+        locations = validated_data["locations"]
+        args = {
+            "workflow_task": workflow_task,
+            "username": username,
+            "locations": locations,
+        }
+        status, message = workflow_task.run_task(args)
+        return {"workflow_task_id": workflow_task.id, "status": status, "message": message, "username": username, "locations": locations}
