@@ -35,30 +35,37 @@ class DaemonStartStopTestCase(TestCase):
     # Needs to be ran in a separate process because it's going to deamonize and
     # detach from everything which would mess up testing.
     @staticmethod
-    def start_daemon():
+    def start_daemon(start_daemon_env=True):
+        if start_daemon_env is True:
+            os.environ['AKJOB_START_DAEMON'] = 'True'
+        else:
+            os.environ['AKJOB_START_DAEMON'] = 'False'
         run(["python", os.path.join(settings.BASE_DIR, "manage.py"), "akjobd",
              "start"])
 
 
-    # def test_1_pidfile_exists(self):
-    #     """The daemon should have auto started so the pidfile should exist.
-    #        This is wrong since tests are supposed to be self contained."""
-    #     self.assertTrue(os.path.isfile(self.pidfile))
+    def test_1_doesnt_start_with_env_false(self):
+        akjobd.do_action("stop")
+        sleep(1)
+        self.assertFalse(os.path.isfile(self.pidfile))
+        self.start_daemon("False")
+        sleep(1)
+        self.assertFalse(os.path.isfile(self.pidfile))
 
 
     def test_2_stop_daemon(self):
         self.start_daemon()
-        sleep(3)
+        sleep(1)
         akjobd.do_action("stop")
-        sleep(3)
+        sleep(1)
         self.assertFalse(os.path.isfile(self.pidfile))
 
 
     def test_3_start_daemon(self):
         akjobd.do_action("stop")
-        sleep(3)
+        sleep(1)
         self.start_daemon()
-        sleep(3)
+        sleep(1)
         self.assertTrue(os.path.isfile(self.pidfile))
 
 
