@@ -17,7 +17,7 @@ from akjob.models import Job
 # from django.db import IntegrityError
 from akjob import akjobd
 from time import sleep
-from subprocess import run
+from subprocess import run, DEVNULL
 
 
 """ Test for the pidfile
@@ -28,6 +28,7 @@ class DaemonStartStopTestCase(TestCase):
 
 
     def setUp(self):
+        os.putenv('AKJOB_START_DAEMON', "True")
         self.pidfile = os.path.join(settings.BASE_DIR, "akjob", "akjobd.pid")
         Job.objects.all().delete()  # just in case. this shouldn't be needed.
 
@@ -35,22 +36,39 @@ class DaemonStartStopTestCase(TestCase):
     # Needs to be ran in a separate process because it's going to deamonize and
     # detach from everything which would mess up testing.
     @staticmethod
-    def start_daemon(start_daemon_env=True):
-        if start_daemon_env is True:
-            os.environ['AKJOB_START_DAEMON'] = 'True'
-        else:
-            os.environ['AKJOB_START_DAEMON'] = 'False'
+    def start_daemon():
         run(["python", os.path.join(settings.BASE_DIR, "manage.py"), "akjobd",
              "start"])
 
 
-    def test_1_doesnt_start_with_env_false(self):
+    #  This is wrong since tests are supposed to be self contained. I
+    #  wish I could test that somehow.
+    #  I also would like to test the AKJOB_START_DAEMON enviroment veriable.
+    #  def test_1_pidfile_exists(self):
+    #      """The daemon should have auto started so the pidfile should exist."""
+    #      self.assertTrue(os.path.isfile(self.pidfile))
+
+
+    def test_1_daemon_auto_start(self):
+        # First stop the daemon if it's running.
         akjobd.do_action("stop")
         sleep(1)
         self.assertFalse(os.path.isfile(self.pidfile))
-        self.start_daemon("False")
-        sleep(1)
+        # Environment variable so the daemon doesn't auto-start.
+        os.putenv('AKJOB_START_DAEMON', "False")
+        # Just running the management script should auto-start akjob.
+        run(["python", os.path.join(settings.BASE_DIR, "manage.py")],
+            stdout=DEVNULL)
+        # check that the daemon didn't auto-start.
         self.assertFalse(os.path.isfile(self.pidfile))
+        # Environment variable so the daemon does auto-start.
+        os.putenv('AKJOB_START_DAEMON', "True")
+        # Just running the management script should auto-start akjob.
+        run(["python", os.path.join(settings.BASE_DIR, "manage.py")],
+            stdout=DEVNULL)
+        sleep(1)
+        # check that the daemon did auto-start.
+        self.assertTrue(os.path.isfile(self.pidfile))
 
 
     def test_2_stop_daemon(self):
