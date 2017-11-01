@@ -110,7 +110,7 @@ def worker(idnum):
                    job.name + "\n    " + str(inst))
 
 def loop_through_jobs():
-    for j in Job.objects.all():
+    for j in Job.objects.filter(job_enabled=True):
         worker(j.id)
         # sleep(1)
 
