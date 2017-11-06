@@ -12,6 +12,9 @@ from bpm.visions_helper import VisionsHelper
 from bpm.synergy_helper import SynergyHelper
 
 
+# This is the Observer class. It is created when a task of the "Observer" type is activated.
+# This object is sent to a newly created Akjob Job as the code to be run.
+
 class Observer:
     job_id = None
     workflow_task_id = None
@@ -22,15 +25,17 @@ class Observer:
 
     def run(self):
         workflow_task = WorkflowTask.objects.get(pk=self.workflow_task_id)
-        job_id = Job.objects.get(pk=self.job_id)
+        job = Job.objects.get(pk=self.job_id)
         args = {
             "workflow_task": workflow_task,
             "username": "tandem",
+            "status": True,
         }
         # Do more stuff here.
         status, message = workflow_task.run_task(args)
         if status:
-            job = Job.objects.get(pk=jobid)
+            job.job_enabled = False
+            job.save()
             job.delete()
         return (status, message)
 
@@ -66,20 +71,29 @@ class Process(models.Model):
         related_name="+"
     )
 
+    # All new Workflows start here. Starts a Workflow for this process and the assigned person.
+    # This generates a badge number (if needed), checks to make sure there's no other Workflows
+    # active for this person, and creates all of the WorkflowActivities and WorkflowTasks. It
+    # also sets the current workflow field for the Person.
+
     def start_workflow(self, person):
-        if person.current_workflow:
+        if person.current_workflow and self.name != "Cancel Workflow Process":
             return (False, "Finish or cancel current workflow before starting new one.")
         workflow = Workflow.objects.create(person=person, process=self)
         if not person.badge_number:
             person.generate_badge()
         person.status = "inprocess"
-        person.current_workflow = workflow
+        if self.name == "Cancel Workflow Process":
+            person.cancel_workflow = workflow
+        else:
+            person.current_workflow = workflow
         person.save()
         activities = self.activities.all()
         for activity in activities:
             workflow_activity = workflow.create_workflow_activity(activity)
             if activity == self.start_activity:
                 workflow_activity.set_workflow_activity_active()
+                workflow_activity.start_tasks()
         return (True, "Workflow successfully created.")
 
 
@@ -111,6 +125,7 @@ class Workflow(models.Model):
         ("Error", "Error"),
         ("Active", "Active"),
         ("Inactive", "Inactive"),
+        ("Canceled", "Canceled"),
     )
     person = models.ForeignKey(Person, on_delete=models.CASCADE)
     process = models.ForeignKey(Process, on_delete=models.CASCADE)
@@ -155,18 +170,24 @@ class WorkflowTask(models.Model):
     def run_task(self, args):
         status, message = self.task.task_controller_function(args)
         if status:
+            user = None
+            if "username" in args:
+                try:
+                    user = User.objects.get(username=args["username"])
+                except ObjectDoesNotExist:
+                    user = None
             self.status = "Complete"
             self.save()
-            self.advance_activities()
+            self.advance_activities(user)
         else:
             self.status = "Error"
             self.save()
         return (status, message)
 
-    def advance_activities(self):
+    def advance_activities(self, user=None):
         workflow_activities = self.workflowactivity_set.all()
         for workflow_activity in workflow_activities:
-            workflow_activity.advance_workflow_activity()
+            workflow_activity.advance_workflow_activity(user)
 
     def start_observer(self, minutes, args):
         workflow_task = args["workflow_task"]
@@ -189,6 +210,8 @@ class WorkflowActivity(models.Model):
     activity = models.ForeignKey(Activity, on_delete=models.CASCADE)
     status = models.CharField(max_length=8, choices=STATUSES)
     workflow_tasks = models.ManyToManyField(WorkflowTask)
+    completed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="completed_user")
+    completed_date = models.DateTimeField(null=True, blank=True)
 
     def create_workflow_tasks(self):
         tasks = self.activity.tasks.all()
@@ -218,19 +241,25 @@ class WorkflowActivity(models.Model):
                 args = {
                     "workflow_task": workflow_task,
                     "username": "tandem",
+                    "status": True,
                 }
-                workflow_task.start_observer(5, args)
-                workflow_task.status = "Running"
+                status, message = workflow_task.run_task(args)
+                if not status:
+                    workflow_task.start_observer(5, args)
+                    workflow_task.status = "Running"
             else:
                 workflow_task.status = "Waiting"
         workflow_task.save()
 
-    def advance_workflow_activity(self):
+    def advance_workflow_activity(self, user=None):
         # Make sure all tasks are complete. If not, immediately stop.
         if not self.checkTasksStatuses():
             return False
         workflow = self.workflow
         self.status = "Complete"
+        self.completed_date = datetime.now()
+        if user is not None:
+            self.completed_by = user
         self.save()
         children = self.activity.children.all()
         for activity in children:
@@ -263,6 +292,16 @@ class TaskWorker:
         def get_employee_from_workflow_task(workflow_task):
             person = TaskWorker.get_person_from_workflow_task(workflow_task)
             return person.employee
+
+        def get_person_workflow_from_workflow_task(workflow_task):
+            workflow_activities = workflow_task.workflowactivity_set.all()
+            for workflow_activity in workflow_activities:
+                return workflow_activity.workflow.person.current_workflow
+
+        def get_workflow_from_workflow_task(workflow_task):
+            workflow_activities = workflow_task.workflowactivity_set.all()
+            for workflow_activity in workflow_activities:
+                return workflow_activity.workflow
 
         def is_epar_dup(epar_id):
             a = Employee.objects.filter(epar_id=epar_id)
@@ -442,11 +481,12 @@ class TaskWorker:
 
         def task_check_synergy(**kwargs):
             workflow_task = kwargs["workflow_task"]
-            status = kwargs["status"]
             employee = TaskWorker.get_employee_from_workflow_task(workflow_task)
-            if not status:
-                update_field(employee, "is_synergy_account_needed", False)
-                return ("True", "Success")
+            if "status" in kwargs:
+                status = kwargs["status"]
+                if not status:
+                    update_field(employee, "is_synergy_account_needed", False)
+                    return ("True", "Success")
             synergy_username = SynergyHelper.get_synergy_login(employee.visions_id)
             user = TaskWorker.get_user_or_false(kwargs["username"])
             if not user:
@@ -544,4 +584,26 @@ class TaskWorker:
             person.badge_created_by = user
             person.badge_created_date = datetime.now()
             person.save()
+            return (True, "Success")
+
+        def task_cancel_workflow(**kwargs):
+            workflow_task = kwargs["workflow_task"]
+            user = TaskWorker.get_user_or_false(kwargs["username"])
+            cancel_workflow = TaskWorker.get_person_workflow_from_workflow_task(workflow_task)
+            cancel_workflow.status = "Canceled"
+            cancel_workflow.save()
+            workflow = TaskWorker.get_workflow_from_workflow_task(workflow_task)
+            person = TaskWorker.get_person_from_workflow_task(workflow_task)
+            person.current_workflow = workflow
+            person.cancel_workflow = cancel_workflow
+            person.save()
+            return (True, "Success")
+
+        def task_reverse_ad(**kwargs):
+            return (True, "Success")
+
+        def task_reverse_synergy(**kwargs):
+            return (True, "Success")
+
+        def task_reverse_visions(**kwargs):
             return (True, "Success")

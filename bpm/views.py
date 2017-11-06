@@ -10,6 +10,10 @@ from rest_framework.parsers import JSONParser
 
 from bpm.serializers import (UserSerializer,
                              ActivitySerializer,
+                             ChildActivitySerializer,
+                             WorkflowWithActivitySerializer,
+                             WorkflowWithActivity,
+                             get_workflow_with_activity_from_workflow,
                              ProcessSerializer,
                              WorkflowSerializer,
                              WorkflowActivitySerializer,
@@ -67,6 +71,35 @@ class ActivityViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = Activity.objects.all()
         return self.get_serializer_class().setup_eager_loading(queryset)
+
+
+class ChildActivityViewSet(viewsets.ModelViewSet):
+    serializer_class = ChildActivitySerializer
+    # queryset = WorkflowActivity.objects.filter(id=13)
+    queryset = WorkflowActivity.objects.filter(id=86)
+
+
+class WorkflowWithActivityViewSet(viewsets.ViewSet):
+    # Required for the Browsable API renderer to have a nice form.
+    serializer_class = WorkflowWithActivitySerializer
+
+    def list(self, request):
+        workflow_id = 16
+        serializer = WorkflowWithActivitySerializer(
+            instance=get_workflow_with_activity_from_workflow(Workflow.objects.get(id=workflow_id)), many=True, context={'the_workflow_id': workflow_id})
+        return Response(serializer.data)
+
+    def retrieve(self, request, pk=None):
+        workflow_id = self.request.parser_context['kwargs']['pk']
+        serializer = WorkflowWithActivitySerializer(
+            instance=get_workflow_with_activity_from_workflow(Workflow.objects.get(id=workflow_id)), many=True, context={'the_workflow_id': workflow_id})
+        return Response(serializer.data)
+
+    def get_serializer_context(self):
+        workflow_id = self.request.parser_context['kwargs']['pk']
+        context = super(WorkflowWithActivityViewSet, self).get_serializer_context()
+        context.update({"the_workflow_id": workflow_id})
+        return context
 
 
 class ProcessViewSet(viewsets.ModelViewSet):
@@ -172,6 +205,15 @@ class WorkflowCompleteActiveViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = Workflow.objects.filter(status="Active")
+        queryset = self.get_serializer_class().setup_eager_loading(queryset)
+        return queryset
+
+
+class WorkflowCompleteCanceledViewSet(viewsets.ModelViewSet):
+    serializer_class = WorkflowCompleteSerializer
+
+    def get_queryset(self):
+        queryset = Workflow.objects.filter(status="Canceled")
         queryset = self.get_serializer_class().setup_eager_loading(queryset)
         return queryset
 
