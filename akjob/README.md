@@ -39,13 +39,40 @@ TODO: Documentation on using akjob's logging in custom job code objects.
 ### Overview
 Jobs are created and scheduled by saving an instance of akjob.models.Job. Create an instance of akjob.models.Job. Set the various scheduling attributes. Set the job_code_object attribute using an object containing the code to run. Save the instance.
 ### Job Code Objects
-To execute job code, akjob will call the run(self) method contained in the object stored in job_code_object. You may create your own containers with run() methods that contain your code to be executed.
+To execute job code, akjob will call the run method contained in the object stored in job_code_object and pass a referance to the job object like so: `run(ownjob=self)`. You may create your own containers with `run(self, ownjob)` methods that contain your code to be executed. Akjob passes a referance to the job instance so code in the job code object may modify it's own job. Be careful to not accidently work with a copy of the job instance. The Job attribue deleteme is also provided so custom job code objects may schedule their own job to be delete. Set `ownjob.deleteme = True` and the job will be deleted during akjobd's next loop through all the jobs. These work arounds are provided because code in a custom job code object is unable to modify or delete it's own job in the normal way. You are able to manipulate other jobs in the normal way.
 
 Alternatively, the class **akjob.models.JobCallable** is provided.
 ```akjob.models.JobCallable(callable, *args, **kwargs)```
 When creating an instance of JobCallable, provide a callable object and any arguments the callable requires. The JobCallable instance contains a run() method that will call the callable using the provided arguments.
 
 The job code object will be pickeled and stored in the database. Make sure everything within may be pickeled. http://docs.python.org/3/library/pickle.html#what-can-be-pickled-and-unpickled
+
+Example showing how a custom job code object may modify it's own job:
+```python
+from akjob.akjob_logger import AkjobLogging
+class JobTest:
+    """ Change the name of the job 5 times then delete the job. """
+    logger = AkjobLogging(
+        name="JobTest",
+        logfilename="akjob.job.log",
+        format_str=AkjobLogging.multiline_format_str,
+    ).get_logger()
+
+    def __init__(self):
+        self.count = 0
+
+    def run(self, ownjob):
+        if self.count > 4:
+            self.logger.info("Scheduling job to be deleted: " + ownjob.name)
+            ownjob.deleteme = True
+            ownjob.save()
+            return
+        self.count += 1
+        self.logger.info("Working with job named " + ownjob.name)
+        self.logger.info("Changing the name to " + ownjob.name + str(self.count))
+        ownjob.name += str(self.count)
+        ownjob.save()
+```
 ### Scheduling and Limiting Job Execution
 Types of scheduling:
 * You may specify specific dates and times when the job executes. A list of datetimes is used.
@@ -203,14 +230,11 @@ Delete the job specified by the -id argument.
 Display information about the job specified by the -id argument.
 
 ## Known Issues, Quirks, and Work Arounds
-When a new job is created, akjob will not actually schedule the job to be
-executed until the job is ran in akjobd's loop. So it's possible your 1st
-expected job execution run won't happen if it's close to the job creation time
-and hasn't yet been through akjobd's loop. To avoid this problem, run the job's
-next_run() method. This will schedule the 1st run right away. I just thought of
-something that needs to be tested. Will a similar problem occur if you've used
-run limits? Might the 1st run after a limit passes be skipped?
+When a new job is created, akjob will not actually schedule the job to be executed until the job is ran in akjobd's loop. So it's possible your 1st expected job execution run won't happen if it's close to the job creation time and hasn't yet been through akjobd's loop. To avoid this problem, run the job's next_run() method. This will schedule the 1st run right away.
+
+I just thought of something that needs to be tested. Will a similar problem occur if you've used run limits? Might the 1st run after a limit passes be delayed?
 
 When a new run_every (interval) job is created with limits specified, if created at a time outside run limits, there is some behavior that may seem unexpected to the user. The jobs works correctly but it may appear as inactive in management command `akjobd joblist` and self._next_run may be None. It will work correctly but this behavior could be confusing to the user. Running the job's next_run() method after job creation migth avoid this problem but not always.
 
 The _job_running attribute is set to True before the job code is executed and is set back to false after the execution. Akjobd will not execute the job if _job_running is True. If for some reason things crash before _job_running is set back to False, the job will no longer be executed. The log file will show "Job didn't run because job running flag is True."
+
