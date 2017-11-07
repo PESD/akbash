@@ -37,6 +37,7 @@ loop in a better way.
 def setup_django():
     os.environ['AKJOB_START_DAEMON'] = 'False'
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "akbash.settings")
+    global django
     import django
     if __name__ == '__main__':
         django.setup()
@@ -109,10 +110,19 @@ def worker(idnum):
         dlog.error("Something went wrong with Job " + str(job.id) + ", " +
                    job.name + "\n    " + str(inst))
 
+
 def loop_through_jobs():
     for j in Job.objects.filter(job_enabled=True):
         worker(j.id)
         # sleep(1)
+
+
+def delete_jobs():
+    """ Delete Jobs with the deleteme flag set to True. """
+    global dlog
+    for j in Job.objects.filter(deleteme=True):
+        dlog.info("Deleting job " + str(j.id) + ", " + j.name)
+        j.delete()
 
 # maybe learn how to catch the termination signal so daemon shutdown can be
 # logged.
@@ -122,6 +132,7 @@ def daemonize():
         global dlog
         dlog = get_daemon_logger()
         while True:
+            delete_jobs()
             loop_through_jobs()
             sleep(60)
 

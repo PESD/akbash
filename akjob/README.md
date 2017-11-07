@@ -32,11 +32,14 @@ You may want to examine the log files written by akjob to confirm your job is ru
 Akjob logging is a mess. Multiple files are used because when akjobd daemonized, all file descriptors are closed so new ones need to be opened. Also, the logging documentation says you should not log to the same file from different processes (from different modules is fine if they're ran in the same process). The akjobd daemon runs from a different process then django so multiple files need to be used. The python logging module seem to choose to use whatever the last logging file handler that was used so logging seems to jump around between files. 
 
 Here are some ideas to improve logging in future versions. Use a more standard python logging setup that uses propogation. Configure the daemon to not close the logging file descriptors when it deamonizes.
+
+TODO: Documentation on using akjob's logging in custom job code objects.
+
 ## Creating and Scheduling Jobs
 ### Overview
 Jobs are created and scheduled by saving an instance of akjob.models.Job. Create an instance of akjob.models.Job. Set the various scheduling attributes. Set the job_code_object attribute using an object containing the code to run. Save the instance.
 ### Job Code Objects
-To execute job code, akjob will call the run() method contained in the object stored in job_code_object. You may create your own containers with run() methods that contain your code to be executed.
+To execute job code, akjob will call the run(self) method contained in the object stored in job_code_object. You may create your own containers with run() methods that contain your code to be executed.
 
 Alternatively, the class **akjob.models.JobCallable** is provided.
 ```akjob.models.JobCallable(callable, *args, **kwargs)```
@@ -200,6 +203,14 @@ Delete the job specified by the -id argument.
 Display information about the job specified by the -id argument.
 
 ## Known Issues, Quirks, and Work Arounds
-When a new run_every (interval) job is created with limits specified, if created at a time outside run limits, there is some behavior that may seem unexpected to the user. The jobs works correctly but it will appear as inactive in management command `akjobd joblist` and self.next_run will be None. It will work correctly but this behavior could be confusing to the user.
+When a new job is created, akjob will not actually schedule the job to be
+executed until the job is ran in akjobd's loop. So it's possible your 1st
+expected job execution run won't happen if it's close to the job creation time
+and hasn't yet been through akjobd's loop. To avoid this problem, run the job's
+next_run() method. This will schedule the 1st run right away. I just thought of
+something that needs to be tested. Will a similar problem occur if you've used
+run limits? Might the 1st run after a limit passes be skipped?
+
+When a new run_every (interval) job is created with limits specified, if created at a time outside run limits, there is some behavior that may seem unexpected to the user. The jobs works correctly but it may appear as inactive in management command `akjobd joblist` and self._next_run may be None. It will work correctly but this behavior could be confusing to the user. Running the job's next_run() method after job creation migth avoid this problem but not always.
 
 The _job_running attribute is set to True before the job code is executed and is set back to false after the execution. Akjobd will not execute the job if _job_running is True. If for some reason things crash before _job_running is set back to False, the job will no longer be executed. The log file will show "Job didn't run because job running flag is True."

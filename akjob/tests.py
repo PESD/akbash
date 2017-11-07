@@ -41,14 +41,6 @@ class DaemonStartStopTestCase(TestCase):
              "start"])
 
 
-    #  This is wrong since tests are supposed to be self contained. I
-    #  wish I could test that somehow.
-    #  I also would like to test the AKJOB_START_DAEMON enviroment veriable.
-    #  def test_1_pidfile_exists(self):
-    #      """The daemon should have auto started so the pidfile should exist."""
-    #      self.assertTrue(os.path.isfile(self.pidfile))
-
-
     def test_1_daemon_auto_start(self):
         # First stop the daemon if it's running.
         akjobd.do_action("stop")
@@ -85,6 +77,14 @@ class DaemonStartStopTestCase(TestCase):
         self.start_daemon()
         sleep(1)
         self.assertTrue(os.path.isfile(self.pidfile))
+
+""" something to test
+"""
+
+@skipIf(os.environ.get("CIRCLECI") == "true",
+        "Akjobd not tested under CircleCI.")
+class Something(TestCase):
+    pass
 
 
 """ Test scheduled jobs
