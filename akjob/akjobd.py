@@ -18,9 +18,9 @@ python-daemon asks for pylockfile but that package is depreciated. Instead I'm
 using pid which is python-daemon compatible.
 
 This module does not work from the command line although it's almost there. I
-think all I need to do is import django into the global namespace from
-setup_django(). I'm going to leave it alone for now and use the management
-command instead.
+think maybe I need to import django into the global namespace from
+setup_django(). Also something is going wrong when importing from akjob_logger.
+I'm going to leave it alone for now and use the management command instead.
 
 Ideas for future versions:
 Would using signals to control things be helpful?
@@ -37,7 +37,7 @@ loop in a better way.
 def setup_django():
     os.environ['AKJOB_START_DAEMON'] = 'False'
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "akbash.settings")
-    global django
+    # global django
     import django
     if __name__ == '__main__':
         django.setup()
@@ -207,7 +207,6 @@ def do_action(action):
         start_daemon()
     else:
         logger.error("Didn't receive start or stop command.")
-
 
 
 if __name__ == '__main__':
