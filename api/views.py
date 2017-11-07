@@ -1,3 +1,4 @@
+from datetime import datetime
 from api.models import (
     Employee,
     Contractor,
@@ -53,6 +54,18 @@ class PersonViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = Person.objects.all()
+        return self.get_serializer_class().setup_eager_loading(queryset)
+
+
+class PersonMissedStartDateViewSet(viewsets.ModelViewSet):
+    serializer_class = PersonSkinnySerializer
+
+    def get_queryset(self):
+        queryset = Person.objects.filter(
+            start_date__lte=datetime.today(),
+            status="inprocess",
+            current_workflow__process__name__in=["New Hire Process", "Transfer Process"]
+        ).exclude(start_date__isnull=True).order_by("start_date")
         return self.get_serializer_class().setup_eager_loading(queryset)
 
 

@@ -59,6 +59,14 @@ def get_workflow_with_activity_from_workflow_id_and_activity(workflow_id, activi
     return wwa
 
 
+class CharListField(serializers.ListField):
+    child = serializers.CharField()
+
+
+class IntegerListField(serializers.ListField):
+    child = serializers.IntegerField()
+
+
 class RecursiveField(serializers.Serializer):
     def to_representation(self, value):
         the_workflow_id = self.context.get("the_workflow_id")
@@ -78,6 +86,23 @@ class WorkflowWithActivitySerializer(serializers.Serializer):
     expanded = serializers.BooleanField()
     data = WorkflowWithActivityDataSerializer(many=False)
     children = RecursiveField(many=True)
+
+
+# Dashboard Stats Serializer
+class DashboardStatsSerializer(serializers.Serializer):
+    my_tasks = serializers.IntegerField()
+    hires_this_month = serializers.IntegerField()
+    active_workflows = serializers.IntegerField()
+
+
+class GraphDataSetSerializer(serializers.Serializer):
+    label = serializers.CharField(max_length=255)
+    data = IntegerListField()
+
+
+class GraphSerializer(serializers.Serializer):
+    labels = CharListField()
+    datasets = GraphDataSetSerializer(many=True)
 
 
 class UserSerializer(serializers.ModelSerializer):

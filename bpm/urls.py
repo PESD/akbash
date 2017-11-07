@@ -39,4 +39,6 @@ urlpatterns = [
     url(r'^task_generic_check/$', views.task_generic_check_view),
     url(r'^task_generic_todo/$', views.task_generic_todo_view),
     url(r'^task_work_locations/$', views.task_work_locations_view),
+    url(r'^dashboard-stats/(?P<username>.+)/$', views.DashboardStatsViewSet.as_view()),
+    url(r'^graph-process/$', views.ProcessGraphViewSet.as_view()),
 ]

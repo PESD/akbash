@@ -130,6 +130,10 @@ class Workflow(models.Model):
     person = models.ForeignKey(Person, on_delete=models.CASCADE)
     process = models.ForeignKey(Process, on_delete=models.CASCADE)
     status = models.CharField(max_length=12, choices=STATUSES, default="Active")
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="workflow_created_user")
+    created_date = models.DateTimeField(null=True, blank=True, auto_now_add=True)
+    completed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="workflow_completed_user")
+    completed_date = models.DateTimeField(null=True, blank=True)
 
     def get_current_workflow_activities(self):
         return self.workflow_activites.filter(status="Active")
