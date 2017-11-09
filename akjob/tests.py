@@ -99,6 +99,7 @@ class DaemonStartStopTestCase(TestCase):
 
 """ Test the custom model fields
 """
+# I think this might work in circleci
 # @skipIf(os.environ.get("CIRCLECI") == "true",
 #         "Akjobd not tested under CircleCI.")
 class CustomModelFieldTestCase(TestCase):
@@ -106,17 +107,17 @@ class CustomModelFieldTestCase(TestCase):
     def test_TimeZoneOffsetField(self):
         from django.db import connection
         jx = Job.objects.create(name="Test TimeZoneOffsetField")
-        jx.active_time_tz_offseet_timedelta = datetime.timedelta(
+        jx.active_time_tz_offset_timedelta = datetime.timedelta(
             days=2, hours=2, minutes=25)  # stored as 181500 in the DB
         jx.save()
         # refresh the field from the DB
-        del jx.active_time_tz_offseet_timedelta
-        self.assertEqual(jx.active_time_tz_offseet_timedelta,
+        del jx.active_time_tz_offset_timedelta
+        self.assertEqual(jx.active_time_tz_offset_timedelta,
                          datetime.timedelta(days=2, hours=2, minutes=25))
 
         # Checking the value stored in the DB
         with connection.cursor() as cursor:
-            cursor.execute("select active_time_tz_offseet_timedelta from "
+            cursor.execute("select active_time_tz_offset_timedelta from "
                            "akjob_job where id=%s", [jx.id])
             row = cursor.fetchone()
             result = row[0]
