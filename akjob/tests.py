@@ -1,17 +1,23 @@
 """
-Things to test:
-* daemon control and daemon start / stop
-    * start command starts daemon
-    * stop command stops daemon
-    * if daemon is running don't start another one
-"""
 
+WARNING!
+You may not want to run this on production. This doesn't create a testing
+instance of akjobd. The production DB will be untouched but akjobd will be
+started and stopped.
+
+Notes:
+Some things to test:
+    *   Jobs with deleteme flag are deleted
+    *   Disabled jobs are not ran
+    *   Errors are logged
+
+"""
 import os
+import datetime
 from django.test import TestCase
 from unittest import skipIf
 from django.conf import settings
 from akjob.models import Job
-# from datetime import datetime, timedelta, timezone, time, date
 # from akjob.models import load_DayOfMonth, load_DayOfWeek, load_Months
 # from akjob.models import JobCallable
 # from django.db import IntegrityError
@@ -20,7 +26,7 @@ from time import sleep
 from subprocess import run, DEVNULL
 
 
-""" Test for the pidfile
+""" Test for the pidfile. akjobd start and stop
 """
 @skipIf(os.environ.get("CIRCLECI") == "true",
         "Akjobd not tested under CircleCI.")
@@ -78,13 +84,52 @@ class DaemonStartStopTestCase(TestCase):
         sleep(1)
         self.assertTrue(os.path.isfile(self.pidfile))
 
-""" something to test
-"""
+    # I can't think of a good way to test that akjobd will only run once. I
+    # could read the pid in the pid file then start akjobd again then check if
+    # the pid has changed. But is that really a good test?
+    def test_4_daemon_run_once_only(self):
+        akjobd.do_action("start")
+        sleep(1)
+        pid1 = akjobd.get_pid_from_pidfile()
+        akjobd.do_action("start")
+        sleep(1)
+        pid2 = akjobd.get_pid_from_pidfile()
+        self.assertEqual(pid1, pid2)
 
-@skipIf(os.environ.get("CIRCLECI") == "true",
-        "Akjobd not tested under CircleCI.")
-class Something(TestCase):
-    pass
+
+""" Test the custom model fields
+"""
+# @skipIf(os.environ.get("CIRCLECI") == "true",
+#         "Akjobd not tested under CircleCI.")
+class CustomModelFieldTestCase(TestCase):
+
+    def test_TimeZoneOffsetField(self):
+        from django.db import connection
+        jx = Job.objects.create(name="Test TimeZoneOffsetField")
+        jx.active_time_tz_offseet_timedelta = datetime.timedelta(
+            days=2, hours=2, minutes=25)  # stored as 181500 in the DB
+        jx.save()
+        # refresh the field from the DB
+        del jx.active_time_tz_offseet_timedelta
+        self.assertEqual(jx.active_time_tz_offseet_timedelta,
+                         datetime.timedelta(days=2, hours=2, minutes=25))
+
+        # Checking the value stored in the DB
+        with connection.cursor() as cursor:
+            cursor.execute("select active_time_tz_offseet_timedelta from "
+                           "akjob_job where id=%s", [jx.id])
+            row = cursor.fetchone()
+            result = row[0]
+
+        self.assertEqual(result, 181500)
+
+
+
+
+
+
+
+
 
 
 """ Test scheduled jobs

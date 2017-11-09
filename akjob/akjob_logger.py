@@ -131,5 +131,5 @@ class AkjobLogging():
         self.setup_handlers()
         self.setup_formatter(format_str=format_str)
         self.setup_logger(name=name)
-        self.logger.debug("Logger is setup.")
+        # self.logger.debug("Logger is setup.")
         return self.logger

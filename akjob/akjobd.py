@@ -114,7 +114,6 @@ def worker(idnum):
 def loop_through_jobs():
     for j in Job.objects.filter(job_enabled=True):
         worker(j.id)
-        # sleep(1)
 
 
 def delete_jobs():
@@ -137,6 +136,8 @@ def daemonize():
             sleep(60)
 
 
+# Next Version TODO: Check that the pid file is gone. If not, try again,
+# possibly with SIGKILL.
 def stop_daemon(pid):
     logger.info("Stopping Daemon. Sending SIGTERM to pid " + str(pid))
     os.kill(pid, 15)  # 15 = SIGTERM - "Software termination signal"
