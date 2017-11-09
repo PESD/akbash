@@ -101,7 +101,7 @@ class TimeZoneOffsetField(models.Field):
 
     # Use formfield from sibling class models.DurationField.
     def formfield(self, **kwargs):
-        super(models.DurationField, self).formfield(**wkargs)
+        super(models.DurationField, self).formfield(**kwargs)
 
 
 """ Relational models used by the main Job model.
