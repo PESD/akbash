@@ -29,7 +29,7 @@ fix everything (even though it's all working already).
 import os
 import logging
 import logging.handlers
-from django.conf import settings
+# from django.conf import settings
 
 
 class AkjobLogging():
@@ -42,8 +42,8 @@ class AkjobLogging():
 
 
     # default log file location
-    basedir = settings.BASE_DIR
-    logdir = os.path.join(basedir, "akjob", "logs")
+    # basedir = settings.BASE_DIR
+    # logdir = os.path.join(basedir, "akjob", "logs")
     # default log formats
     default_format_str = (
         '%(asctime)s %(levelname)s:%(name)s:%(module)s --- %(message)s')
@@ -55,13 +55,13 @@ class AkjobLogging():
 
     def __init__(
             self,
+            logdir,
             name="akjob",
             logfilename="akjob.log",
-            logdir=logdir,
             format_str=default_format_str,
             # interval=23,  # rotate log every 23 hours. (when="H" (hours))
             interval=23,
-            when="H",  # Goes with inteval. "H" for hours.
+            when="H",  # Goes with interval. "H" for hours.
             backupCount=14,  # Log rotation. Delete old files, keep last 14.
             loglevel=None
     ):
@@ -120,10 +120,10 @@ class AkjobLogging():
         if self.loglevel is not None:
             self.logger.setLevel(self.loglevel)
         else:
-            if settings.DEBUG is True:
-                self.logger.setLevel(logging.DEBUG)
-            else:
-                self.logger.setLevel(logging.WARNING)
+            # if settings.DEBUG is True:
+            #     self.logger.setLevel(logging.DEBUG)
+            # else:
+            self.logger.setLevel(logging.WARNING)
 
     def get_logger(self=None, logdir=None, logfilename=None, format_str=None,
                    name=None):
@@ -131,5 +131,5 @@ class AkjobLogging():
         self.setup_handlers()
         self.setup_formatter(format_str=format_str)
         self.setup_logger(name=name)
-        # self.logger.debug("Logger is setup.")
+        self.logger.debug("Logger is setup.")
         return self.logger
