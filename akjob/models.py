@@ -38,6 +38,9 @@ jobs but control when they run. For instance, run at the top of the hour.
 Currently, you can schedule an interval using hours but you don't know at what
 minute the job will run. This could be expanded furthor to make crontab like
 scheduling.
+
+Create a logging object that can be used by job code objects that won't be
+detached when akjobd daemonizes.
 """
 
 
@@ -45,11 +48,10 @@ scheduling.
 """ Set up logging
 """
 # I should probably put this into a function?
-logger = AkjobLogging(
-    name="akjob.job",
-    logfilename="akjob.job.log",
-    format_str=AkjobLogging.multiline_format_str,
-).get_logger()
+models_logging = AkjobLogging(name="akjob.job",
+                              logfilename="akjob.job.log",
+                              format_str=AkjobLogging.multiline_format_str)
+logger = models_logging.get_logger()
 
 
 

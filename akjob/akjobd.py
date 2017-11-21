@@ -5,8 +5,9 @@ import sys
 import argparse
 import pid
 import daemon
+# import datetime
 from time import sleep
-from contextlib import redirect_stderr
+# from contextlib import redirect_stderr, redirect_stdout
 
 
 """ Notes:
@@ -87,23 +88,20 @@ def setup_django():
     global django  # not sure if django in global is needed.
     import django
     if __name__ == '__main__':
-        # chdir to the BASE_DIR so the akbash.settings module and the app
-        # packages can be found by django.setup().
+        # make sure the BASE_DIR is in sys.path so the akbash.settings module
+        # and the app packages can be found by django.setup().
         set_pre_setup_base_dir()
-        # print(pre_setup_base_dir)  # for debug
-        # os.chdir(pre_setup_base_dir)
-        # print(os.getcwd())  # for debug
-        # print(sys.path)  # for debug
         if pre_setup_base_dir not in sys.path:
             sys.path.insert(0, pre_setup_base_dir)
-            # print(sys.path)  # for debug
         django.setup()
     global BASE_DIR
     BASE_DIR = django.conf.settings.BASE_DIR
     # print(BASE_DIR)  # for debug
     # os.chdir(BASE_DIR)
     global Job
-    from akjob.models import Job
+    global job_log_stream
+    from akjob.models import Job, models_logging
+    job_log_stream = models_logging.fh.stream
     global loglevel
     if django.conf.settings.DEBUG is True:
         loglevel = 10  # 10 = DEBUG
@@ -155,18 +153,19 @@ def setup_logging():
     # except ModuleNotFoundError:  # noqa  My pyflake doesn't have this builtin.
     from akjob.akjob_logger import AkjobLogging
 
+    global akjob_logging
     global logger
     akjob_logging = AkjobLogging(name="akjob.akjobd", logfilename="akjobd.log",
                                  logdir=logdir, loglevel=loglevel)
     logger = akjob_logging.get_logger()
 
 # A different logger to run inside the daemon process.
-def get_daemon_logger():
-    akjob_logging = AkjobLogging(  # noqa
-        name="akjob.akjobd.daemon",
-        logfilename="akjobd.daemon.log",
-    )
-    return akjob_logging.get_logger()
+# def get_daemon_logger():
+#     akjob_logging = AkjobLogging(  # noqa
+#         name="akjob.akjobd.daemon",
+#         logfilename="akjobd.daemon.log",
+#     )
+#     return akjob_logging.get_logger()
 
 
 def worker(idnum):
@@ -195,15 +194,20 @@ def delete_jobs():
 # maybe learn how to catch the termination signal so daemon shutdown can be
 # logged.
 def daemonize():
-    with daemon.DaemonContext(
-            pidfile=pid.PidFile(pidname=pidfile, piddir=piddir)):
-        # with open(os.path.join(
-        global dlog
-        dlog = get_daemon_logger()
-        while True:
-            delete_jobs()
-            loop_through_jobs()
-            sleep(60)
+    with open(os.path.join(logdir, "akjobd.out"), "w+") as outfile:
+        # print(str(datetime.datetime.now()) + "  akjob daemon starting.")
+        with daemon.DaemonContext(
+                stdout=outfile, stderr=outfile,
+                files_preserve=[akjob_logging.fh.stream, job_log_stream],
+                pidfile=pid.PidFile(pidname=pidfile, piddir=piddir)):
+            global dlog
+            # dlog = get_daemon_logger()
+            dlog = logger
+            while True:
+                # print("Loop: " + str(datetime.datetime.now()) + " ----------")
+                delete_jobs()
+                loop_through_jobs()
+                sleep(60)
 
 
 # Next Version TODO: Check that the pid file is gone. If not, try again,
