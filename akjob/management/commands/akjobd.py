@@ -42,6 +42,7 @@ showinfo will display information about the job specified by -id.
 
     def handle(self, *args, **options):
 
+        # akjobd configuration
         if options["piddir"] is not None:
             akjobd.piddir = options["piddir"]
 
@@ -51,6 +52,10 @@ showinfo will display information about the job specified by -id.
         if options["logdir"] is not None:
             akjobd.logdir = options["logdir"]
 
+        akjobd.setup()
+
+
+        # do the stuff
         if options["action"] == "start":
             akjobd.do_action("start")
         elif options["action"] == "stop":

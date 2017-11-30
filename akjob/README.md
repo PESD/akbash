@@ -11,7 +11,7 @@ myjob.name = "Print Hello World"
 myjob.run_every = timedelta(hours=2)
 myjob.save()
 ```
-This job will run every 2 hours and execute ```print("Hello", "World")```. The print statement will not actually accomplish anything as that process is not connected to a console.
+This job will run every 2 hours and execute ```print("Hello", "World")```. The results of the print statement can be seen in the akjobd.out file in the logs directory.
 ## The Akjobd Daemon
 The akjobd daemon loops through all jobs stored in the database and runs them. If the job is not schedule to run at that time, the job will perform no actions. After akjobd runs all the jobs, it sleeps for 1 minute then starts the loop again.
 
@@ -27,11 +27,13 @@ There is an akjobd management command available. Using the start, stop, and rest
 
 This is not normal but there is a small possibility that when you make a change to a job, the akjobd daemon might be reading from a cache and not see that change. You may need to restart the daemon so the change is picked up. Again, this is not typical.
 ### Logging
-You may want to examine the log files written by akjob to confirm your job is running without problems. The log files are located in BASE_DIR/akjob/logs. The log files rotate once a day and only 15 days of logs are kept.
+You may want to examine the log files written by akjob to confirm your job is running without problems. The log files are located in BASE_DIR/akjob/logs.
 
-Akjob logging is a mess. Multiple files are used because when akjobd daemonized, all file descriptors are closed so new ones need to be opened. Also, the logging documentation says you should not log to the same file from different processes (from different modules is fine if they're ran in the same process). The akjobd daemon runs from a different process then django so multiple files need to be used. The python logging module seem to choose to use whatever the last logging file handler that was used so logging seems to jump around between files. 
+**akjobd.log** contains log messages from the akjob.akjobd. This file is rotated once a day and 15 days of logs are kept.
+**akjob.job.log** contains log messages from akjob.models and contains more information about the jobs running. This file is rotated once a day and 15 days of logs are kept.
+**akjobd.out** contains the stdout and stderr output from akjobd after it daemonizes. This file is truncated each time akjobd is started.
 
-Here are some ideas to improve logging in future versions. Use a more standard python logging setup that uses propogation. Configure the daemon to not close the logging file descriptors when it deamonizes.
+Akjob logging is a mess. Here are some ideas to improve logging in future versions. Use a more standard python logging setup that uses propogation. Figure out a better way to handle logging before and after akjobd has daemonized. The logging documentation says you should not log to the same file from different processes (from different modules is fine if they're ran in the same process). The akjobd daemon runs from a different process then django so multiple files need to be used.
 
 TODO: Documentation on using akjob's logging in custom job code objects.
 
@@ -39,13 +41,15 @@ TODO: Documentation on using akjob's logging in custom job code objects.
 ### Overview
 Jobs are created and scheduled by saving an instance of akjob.models.Job. Create an instance of akjob.models.Job. Set the various scheduling attributes. Set the job_code_object attribute using an object containing the code to run. Save the instance.
 ### Job Code Objects
-To execute job code, akjob will call the run method contained in the object stored in job_code_object and pass a referance to the job object like so: `run(ownjob=self)`. You may create your own containers with `run(self, ownjob)` methods that contain your code to be executed. Akjob passes a referance to the job instance so code in the job code object may modify it's own job. Be careful to not accidently work with a copy of the job instance. The Job attribue deleteme is also provided so custom job code objects may schedule their own job to be delete. Set `ownjob.deleteme = True` and the job will be deleted during akjobd's next loop through all the jobs. These work arounds are provided because code in a custom job code object is unable to modify or delete it's own job in the normal way. You are able to manipulate other jobs in the normal way.
+To execute job code, akjob will call the run method contained in the object stored in job_code_object. When akjob calls the run method, it also passes a referance to the job instance like so: `run(ownjob=self)`.
 
-Alternatively, the class **akjob.models.JobCallable** is provided.
+The class **akjob.models.JobCallable** is provided to easily create job code objects.
 ```akjob.models.JobCallable(callable, *args, **kwargs)```
 When creating an instance of JobCallable, provide a callable object and any arguments the callable requires. The JobCallable instance contains a run() method that will call the callable using the provided arguments.
 
-The job code object will be pickeled and stored in the database. Make sure everything within may be pickeled. http://docs.python.org/3/library/pickle.html#what-can-be-pickled-and-unpickled
+You may create your own containers with `run(self, ownjob)` methods that contain your code to be executed. Akjob passes a referance to the job instance so code in the job code object may modify it's own job. The Job attribue deleteme is also provided so custom job code objects may schedule their own job to be delete. Set `ownjob.deleteme = True` and the job will be deleted during akjobd's next loop through all the jobs. These work arounds are provided because code in a custom job code object is unable to modify or delete it's own job in the normal way. You are able to manipulate other jobs in the normal way.
+
+The job code object will be pickeled and stored in the database. Make sure everything within may be pickeled ([What can be pickled](http://docs.python.org/3/library/pickle.html#what-can-be-pickled-and-unpickled)). When working with pickled objects it's easy to accidently make a copy of an instance object instead of referancing the actual instance object. **Be very careful to not accidently work with a copy of the job instance.** 
 
 Example showing how a custom job code object may modify it's own job:
 ```python
@@ -77,7 +81,7 @@ class JobTest:
 Types of scheduling:
 * You may specify specific dates and times when the job executes. A list of datetimes is used.
 * You may specify an interval when the job executes. For instance, execute every 15 minutes. A datetime.timedelta is used.
-* You may schedule execution times on a monthly or weekly basis. In other words, you may provide a list of days of the month and the job will execute on those day. For weekly jobs, you provide a list of days of the week. Along with a list of days, you must also specify a time of the day the job should execute.
+* You may schedule execution times on a monthly or weekly basis. In other words, you may provide a list of days of the month and the job will execute on those day. For weekly jobs, you provide a list of days of the week. Along with a list of days, you must specify a time of the day the job should execute.
 
 In addition to scheduling when a job should execute, you may specify when the job should not execute. For example, a job could be scheduled using an interval of 1 hour but have limit set to only allow the job to run between the hours of 6 AM and 6 PM. The job will execute every hour between 6 AM and 6 PM each day.
 
@@ -166,7 +170,7 @@ myjob3.save()
 ##### Job Enabled Flag and Restricting the Number of Runs
 **``job_enabled``** - ``boolean``. If set to False, the job will not be executed. Defaults to True so you don't need to set this unless you want to disable the job.
 
-**``run_count_limit``** - ``integer``. This will limit the number of times the job is executed. If the _run_count attribute is equal or greater than run_count_limit the the job is not executed. The print method of the job will display the run count.
+**``run_count_limit``** - ``integer``. This will limit the number of times the job is executed. If the _run_count attribute is equal or greater than run_count_limit then the job is not executed. The print method of the job will display the run count.
 
 ##### Limit Runs to a Window of Time Each Day
 Job runs will be limited to only run, each day, within the window of time defined by active_time_begin and active_time_end. The timezone offset must be defined using a timedelta in active_time_tz_offset_timedelta.
@@ -216,7 +220,7 @@ myjob1.save()
 The first argument, after "akjobd", is the action the command should perform.
 Example: ```python manage.py akjobd stop```
 #### stop, start, restart
-Stop, start, or restart the akjobd daemon. The options -pd / --piddir, and -pn / --pidname may be used to specify the pid file to use.
+Stop, start, or restart the akjobd daemon. The options -pd / --piddir, and -pn / --pidname may be used to specify the pid file to use. The option -ld / --logdir my be used to set the directory where log files are stored.
 #### reloadfixture
 Clears out the DayOfMonth, DayofWeek, and Months tables then reloads them. This is useful if you accidently insert extra data into these tables or accidently delete needed records.
 #### joblist
@@ -230,11 +234,12 @@ Delete the job specified by the -id argument.
 Display information about the job specified by the -id argument.
 
 ## Known Issues, Quirks, and Work Arounds
-When a new job is created, akjob will not actually schedule the job to be executed until the job is ran in akjobd's loop. So it's possible your 1st expected job execution run won't happen if it's close to the job creation time and hasn't yet been through akjobd's loop. To avoid this problem, run the job's next_run() method. This will schedule the 1st run right away.
+Akjob doesn't work with exact times and exact intervals. The job loop runs then it sleeps for 60 seconds then runs again. So akjob doesn't really check exactly every minute when a job should run.
+
+When a new job is created, akjob will not actually schedule the job to be executed until the first time the job is ran in akjobd's loop. So it's possible your 1st expected job execution run won't happen if it's close to the job creation time and hasn't yet been through akjobd's loop. To avoid this problem, run the job's next_run() method. This will schedule the 1st run right away.
 
 I just thought of something that needs to be tested. Will a similar problem occur if you've used run limits? Might the 1st run after a limit passes be delayed?
 
 When a new run_every (interval) job is created with limits specified, if created at a time outside run limits, there is some behavior that may seem unexpected to the user. The jobs works correctly but it may appear as inactive in management command `akjobd joblist` and self._next_run may be None. It will work correctly but this behavior could be confusing to the user. Running the job's next_run() method after job creation migth avoid this problem but not always.
 
 The _job_running attribute is set to True before the job code is executed and is set back to false after the execution. Akjobd will not execute the job if _job_running is True. If for some reason things crash before _job_running is set back to False, the job will no longer be executed. The log file will show "Job didn't run because job running flag is True."
-

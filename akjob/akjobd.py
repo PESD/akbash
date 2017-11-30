@@ -113,39 +113,61 @@ def setup_django():
 # not provided.
 def set_pid_file_name():
     global pidfile
+
     try:
-        if args.pidname is None:
+        if pidfile is None:
             pidfile = "akjobd.pid"
-        else:
-            pidfile = args.pidname
     except NameError:
         pidfile = "akjobd.pid"
 
+    try:
+        if args.pidname is not None:
+            pidfile = args.pidname
+    except NameError:
+        pass
+
+
 def set_pid_location():
     global piddir
+
     try:
-        if args.piddir is None:
+        if piddir is None:
             piddir = os.path.join(BASE_DIR, "akjob")
-        else:
-            piddir = args.piddir
     except NameError:
         piddir = os.path.join(BASE_DIR, "akjob")
+
+    try:
+        if args.piddir is not None:
+            piddir = args.piddir
+    except NameError:
+        pass
 
 
 def set_log_location():
     global logdir
+
+    # Make sure logdir is defined. If not defined, set it to default. This is
+    # done because the akjobd management command may have set the logdir var.
     try:
-        if args.logdir is None:
+        if logdir is None:
             logdir = os.path.join(BASE_DIR, "akjob", "logs")
-        else:
-            logdir = args.logdir
     except NameError:
         logdir = os.path.join(BASE_DIR, "akjob", "logs")
+
+    # If logdir argument was given, set logdir, overriding anything else.
+    try:
+        if args.logdir is not None:
+            logdir = args.logdir
+    except NameError:
+        pass  # args.logdir not defined. Do nothing.
 
 
 # Set up logging
 def setup_logging():
-    # TODO: change akjob logging so log file location is accepted as a paramater
+    # TODO: This is working but the logging doc says don't write to the same
+    #       file from multiple processes so I should bring back using a file
+    #       when not daemonized and another file for inside the daemon.
+    #
     # django needs to be setup before importing akjob_logger. (this is ghetto)
     set_log_location()
     # try:
@@ -155,7 +177,8 @@ def setup_logging():
 
     global akjob_logging
     global logger
-    akjob_logging = AkjobLogging(name="akjob.akjobd", logfilename="akjobd.log",
+    akjob_logging = AkjobLogging(name="akjob.akjobd",
+                                 logfilename="akjobd.log",
                                  logdir=logdir, loglevel=loglevel)
     logger = akjob_logging.get_logger()
 
@@ -284,9 +307,8 @@ def do_action(action):
         logger.error("Didn't receive start or stop command.")
 
 
-# Idea: Move everything under the else clause into a setup() function. Modify
-# the akjobd management command to use setup(). That way the module can be
-# imported with anything happening.
+# set things up if ran from the command line or the subprocessing module from
+# apps.py or tests.py.
 if __name__ == '__main__':
     parse_args()
     setup_django()
@@ -294,8 +316,11 @@ if __name__ == '__main__':
     set_pid_location()
     setup_logging()
     do_action(args.action)
-else:
-    # required to be used within the django context. django.setup() not ran.
+
+
+# For setting things up when this module is imported.
+# required to be used within the django context. django.setup() not ran.
+def setup():
     setup_django()
     set_pid_file_name()
     set_pid_location()

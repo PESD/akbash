@@ -33,32 +33,79 @@ from subprocess import run, DEVNULL
 class DaemonStartStopTestCase(TestCase):
 
 
-    def setUp(self):
-        os.putenv('AKJOB_START_DAEMON', "True")
-        self.pidfile = os.path.join(settings.BASE_DIR, "akjob", "akjobd.pid")
+    _testdir = os.path.join(settings.BASE_DIR, "akjob", "unittest")
+    _pidname = "akjobd-unittest.pid"
+    _pidfile = os.path.join(_testdir, _pidname)
+
+
+    @classmethod
+    def removeTestDir(cls):
+        # delete the log files
+        for logfilename in ["akjob.job.log", "akjobd.log", "akjobd.out"]:
+            try:
+                os.remove(os.path.join(cls._testdir, logfilename))
+            except FileNotFoundError:
+                pass
+
+        # remove the testdir
+        os.rmdir(cls._testdir)
+
+
+    @classmethod
+    def setUpClass(cls):
+        # is there anyway this might run in prod db? that would be bad.
         Job.objects.all().delete()  # just in case. this shouldn't be needed.
+
+        # create test directory where log and pid files will be placed.
+        os.makedirs(cls._testdir)
+
+        # akjobd configuration
+        os.environ["AKJOB_START_DAEMON"] = "False"
+        os.environ["AKJOB_PID_DIR"] = cls._testdir
+        os.environ["AKJOB_PID_FILE"] = cls._pidname
+        os.environ["AKJOB_LOG_DIR"] = cls._testdir
+        akjobd.piddir = cls._testdir
+        akjobd.pidfile = cls._pidname
+        akjobd.logdir = cls._testdir
+        akjobd.setup()
+
+
+    @classmethod
+    def tearDownClass(cls):
+        # Make sure the unittest akjobd isn't running
+        akjobd.do_action("stop")
+        sleep(1)
+        if os.path.isfile(cls._pidfile):
+            raise Exception("Unittest akjobd PID file still exists.")
+        cls.removeTestDir()
+
+
+    def setUp(self):
+        pass
+        # os.putenv('AKJOB_START_DAEMON', "True")
 
 
     # Needs to be ran in a separate process because it's going to deamonize and
     # detach from everything which would mess up testing.
-    @staticmethod
-    def start_daemon():
+    @classmethod
+    def start_daemon(cls):
         run(["python", os.path.join(settings.BASE_DIR, "manage.py"), "akjobd",
-             "start"])
+             "start", "-pd", cls._testdir, "-pn", cls._pidname, "-ld",
+             cls._testdir])
 
 
     def test_1_daemon_auto_start(self):
         # First stop the daemon if it's running.
         akjobd.do_action("stop")
         sleep(1)
-        self.assertFalse(os.path.isfile(self.pidfile))
+        self.assertFalse(os.path.isfile(self._pidfile))
         # Environment variable so the daemon doesn't auto-start.
         os.putenv('AKJOB_START_DAEMON', "False")
         # Just running the management script should auto-start akjob.
         run(["python", os.path.join(settings.BASE_DIR, "manage.py")],
             stdout=DEVNULL)
         # check that the daemon didn't auto-start.
-        self.assertFalse(os.path.isfile(self.pidfile))
+        self.assertFalse(os.path.isfile(self._pidfile))
         # Environment variable so the daemon does auto-start.
         os.putenv('AKJOB_START_DAEMON', "True")
         # Just running the management script should auto-start akjob.
@@ -66,7 +113,7 @@ class DaemonStartStopTestCase(TestCase):
             stdout=DEVNULL)
         sleep(1)
         # check that the daemon did auto-start.
-        self.assertTrue(os.path.isfile(self.pidfile))
+        self.assertTrue(os.path.isfile(self._pidfile))
 
 
     def test_2_stop_daemon(self):
@@ -74,7 +121,7 @@ class DaemonStartStopTestCase(TestCase):
         sleep(1)
         akjobd.do_action("stop")
         sleep(1)
-        self.assertFalse(os.path.isfile(self.pidfile))
+        self.assertFalse(os.path.isfile(self._pidfile))
 
 
     def test_3_start_daemon(self):
@@ -82,7 +129,7 @@ class DaemonStartStopTestCase(TestCase):
         sleep(1)
         self.start_daemon()
         sleep(1)
-        self.assertTrue(os.path.isfile(self.pidfile))
+        self.assertTrue(os.path.isfile(self._pidfile))
 
     # I can't think of a good way to test that akjobd will only run once. I
     # could read the pid in the pid file then start akjobd again then check if
