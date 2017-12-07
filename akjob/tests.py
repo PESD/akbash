@@ -1,16 +1,13 @@
 """
 
-WARNING!
-You may not want to run this on production. This doesn't create a testing
-instance of akjobd. The production DB will be untouched but akjobd will be
-started and stopped.
-
 Notes:
 Some things to test:
     *   Jobs with deleteme flag are deleted
     *   Disabled jobs are not ran
     *   Errors are logged
 
+Do we want to test the contents of logs or logging?
+https://docs.python.org/3/library/unittest.html#unittest.TestCase.assertLogs
 """
 import os
 import datetime
@@ -26,11 +23,11 @@ from time import sleep
 from subprocess import run, DEVNULL
 
 
-""" Test for the pidfile. akjobd start and stop
+""" Test for the pidfile. akjobd start and stop. Log files.
 """
 @skipIf(os.environ.get("CIRCLECI") == "true",
         "Akjobd not tested under CircleCI.")
-class DaemonStartStopTestCase(TestCase):
+class AkjobdTestCase(TestCase):
 
 
     _testdir = os.path.join(settings.BASE_DIR, "akjob", "unittest")
@@ -78,11 +75,6 @@ class DaemonStartStopTestCase(TestCase):
         if os.path.isfile(cls._pidfile):
             raise Exception("Unittest akjobd PID file still exists.")
         cls.removeTestDir()
-
-
-    def setUp(self):
-        pass
-        # os.putenv('AKJOB_START_DAEMON', "True")
 
 
     # Needs to be ran in a separate process because it's going to deamonize and
@@ -142,6 +134,27 @@ class DaemonStartStopTestCase(TestCase):
         sleep(1)
         pid2 = akjobd.get_pid_from_pidfile()
         self.assertEqual(pid1, pid2)
+
+
+    # Check if log files exist and are not empty.
+    def test_5_log_files_exist(self):
+        akjobd.do_action("start")
+        sleep(1)
+        # there should be akjobd.log and akjobd.out but there may not be a
+        # akjob.job.log since no jobs are scheduled.
+        if (os.path.isfile(os.path.join(
+                self._testdir, "akjobd.log")) is True and
+            os.path.isfile(os.path.join(
+                self._testdir, "akjobd.out")) is True):
+            self.assertNotEqual(0, os.path.getsize(os.path.join(self._testdir,
+                                                                "akjobd.out")))
+            self.assertNotEqual(0, os.path.getsize(os.path.join(self._testdir,
+                                                                "akjobd.log")))
+        else:
+            self.assertTrue(os.path.isfile(os.path.join(self._testdir,
+                                                        "akjobd.log")))
+            self.assertTrue(os.path.isfile(os.path.join(self._testdir,
+                                                        "akjobd.out")))
 
 
 """ Test the custom model fields
