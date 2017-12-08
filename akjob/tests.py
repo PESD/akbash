@@ -9,6 +9,8 @@ Some things to test:
 Do we want to test the contents of logs or logging?
 https://docs.python.org/3/library/unittest.html#unittest.TestCase.assertLogs
 """
+
+
 import os
 import datetime
 from django.test import TestCase
@@ -23,6 +25,59 @@ from time import sleep
 from subprocess import run, DEVNULL
 
 
+""" Setup the module so that a separate instance of akjobd is spawned that does
+    not effect the default akjobd instance.
+"""
+def setUpModule():
+    # Assign global variables defining pidfile name and directory where logs
+    # and pidfile are stored.
+    global testdir, pidname, pidfile
+    testdir = os.path.join(settings.BASE_DIR, "akjob", "unittest")
+    pidname = "akjobd-unittest.pid"
+    pidfile = os.path.join(testdir, pidname)
+
+    # create test directory where log and pid files will be placed.
+    os.makedirs(testdir)
+
+    # akjobd configuration
+    # This is require to run an alternate instance of akjobd
+    os.environ["AKJOB_START_DAEMON"] = "False"
+    os.environ["AKJOB_PID_DIR"] = testdir
+    os.environ["AKJOB_PID_FILE"] = pidname
+    os.environ["AKJOB_LOG_DIR"] = testdir
+    akjobd.piddir = testdir
+    akjobd.pidfile = pidname
+    akjobd.logdir = testdir
+    akjobd.setup()
+
+
+def tearDownModule():
+    # Make sure the unittest akjobd isn't running
+    akjobd.do_action("stop")
+    sleep(1)
+    if os.path.isfile(pidfile):
+        raise Exception("Unittest akjobd PID file still exists.")
+
+    # delete the log files
+    for logfilename in ["akjob.job.log", "akjobd.log", "akjobd.out"]:
+        try:
+            os.remove(os.path.join(testdir, logfilename))
+        except FileNotFoundError:
+            pass
+
+    # remove the testdir
+    os.rmdir(testdir)
+
+
+""" The akjob daemon needs to be ran in a separate process because it's going
+    to deamonize and detach from everything which would mess up testing.
+"""
+def start_daemon():
+    run(["python", os.path.join(settings.BASE_DIR, "manage.py"), "akjobd",
+         "start", "-pd", testdir, "-pn", pidname, "-ld",
+         testdir])
+
+
 """ Test for the pidfile. akjobd start and stop. Log files.
 """
 @skipIf(os.environ.get("CIRCLECI") == "true",
@@ -30,74 +85,18 @@ from subprocess import run, DEVNULL
 class AkjobdTestCase(TestCase):
 
 
-    _testdir = os.path.join(settings.BASE_DIR, "akjob", "unittest")
-    _pidname = "akjobd-unittest.pid"
-    _pidfile = os.path.join(_testdir, _pidname)
-
-
-    @classmethod
-    def removeTestDir(cls):
-        # delete the log files
-        for logfilename in ["akjob.job.log", "akjobd.log", "akjobd.out"]:
-            try:
-                os.remove(os.path.join(cls._testdir, logfilename))
-            except FileNotFoundError:
-                pass
-
-        # remove the testdir
-        os.rmdir(cls._testdir)
-
-
-    @classmethod
-    def setUpClass(cls):
-        # is there anyway this might run in prod db? that would be bad.
-        Job.objects.all().delete()  # just in case. this shouldn't be needed.
-
-        # create test directory where log and pid files will be placed.
-        os.makedirs(cls._testdir)
-
-        # akjobd configuration
-        os.environ["AKJOB_START_DAEMON"] = "False"
-        os.environ["AKJOB_PID_DIR"] = cls._testdir
-        os.environ["AKJOB_PID_FILE"] = cls._pidname
-        os.environ["AKJOB_LOG_DIR"] = cls._testdir
-        akjobd.piddir = cls._testdir
-        akjobd.pidfile = cls._pidname
-        akjobd.logdir = cls._testdir
-        akjobd.setup()
-
-
-    @classmethod
-    def tearDownClass(cls):
-        # Make sure the unittest akjobd isn't running
-        akjobd.do_action("stop")
-        sleep(1)
-        if os.path.isfile(cls._pidfile):
-            raise Exception("Unittest akjobd PID file still exists.")
-        cls.removeTestDir()
-
-
-    # Needs to be ran in a separate process because it's going to deamonize and
-    # detach from everything which would mess up testing.
-    @classmethod
-    def start_daemon(cls):
-        run(["python", os.path.join(settings.BASE_DIR, "manage.py"), "akjobd",
-             "start", "-pd", cls._testdir, "-pn", cls._pidname, "-ld",
-             cls._testdir])
-
-
     def test_1_daemon_auto_start(self):
         # First stop the daemon if it's running.
         akjobd.do_action("stop")
         sleep(1)
-        self.assertFalse(os.path.isfile(self._pidfile))
+        self.assertFalse(os.path.isfile(pidfile))
         # Environment variable so the daemon doesn't auto-start.
         os.putenv('AKJOB_START_DAEMON', "False")
         # Just running the management script should auto-start akjob.
         run(["python", os.path.join(settings.BASE_DIR, "manage.py")],
             stdout=DEVNULL)
         # check that the daemon didn't auto-start.
-        self.assertFalse(os.path.isfile(self._pidfile))
+        self.assertFalse(os.path.isfile(pidfile))
         # Environment variable so the daemon does auto-start.
         os.putenv('AKJOB_START_DAEMON', "True")
         # Just running the management script should auto-start akjob.
@@ -105,23 +104,23 @@ class AkjobdTestCase(TestCase):
             stdout=DEVNULL)
         sleep(1)
         # check that the daemon did auto-start.
-        self.assertTrue(os.path.isfile(self._pidfile))
+        self.assertTrue(os.path.isfile(pidfile))
 
 
     def test_2_stop_daemon(self):
-        self.start_daemon()
+        start_daemon()
         sleep(1)
         akjobd.do_action("stop")
         sleep(1)
-        self.assertFalse(os.path.isfile(self._pidfile))
+        self.assertFalse(os.path.isfile(pidfile))
 
 
     def test_3_start_daemon(self):
         akjobd.do_action("stop")
         sleep(1)
-        self.start_daemon()
+        start_daemon()
         sleep(1)
-        self.assertTrue(os.path.isfile(self._pidfile))
+        self.assertTrue(os.path.isfile(pidfile))
 
     # I can't think of a good way to test that akjobd will only run once. I
     # could read the pid in the pid file then start akjobd again then check if
@@ -143,17 +142,17 @@ class AkjobdTestCase(TestCase):
         # there should be akjobd.log and akjobd.out but there may not be a
         # akjob.job.log since no jobs are scheduled.
         if (os.path.isfile(os.path.join(
-                self._testdir, "akjobd.log")) is True and
+                testdir, "akjobd.log")) is True and
             os.path.isfile(os.path.join(
-                self._testdir, "akjobd.out")) is True):
-            self.assertNotEqual(0, os.path.getsize(os.path.join(self._testdir,
+                testdir, "akjobd.out")) is True):
+            self.assertNotEqual(0, os.path.getsize(os.path.join(testdir,
                                                                 "akjobd.out")))
-            self.assertNotEqual(0, os.path.getsize(os.path.join(self._testdir,
+            self.assertNotEqual(0, os.path.getsize(os.path.join(testdir,
                                                                 "akjobd.log")))
         else:
-            self.assertTrue(os.path.isfile(os.path.join(self._testdir,
+            self.assertTrue(os.path.isfile(os.path.join(testdir,
                                                         "akjobd.log")))
-            self.assertTrue(os.path.isfile(os.path.join(self._testdir,
+            self.assertTrue(os.path.isfile(os.path.join(testdir,
                                                         "akjobd.out")))
 
 

@@ -203,6 +203,13 @@ def worker(idnum):
 
 
 def loop_through_jobs():
+    # If job is disabled but _next_run is not None, set to _next_run to None.
+    for j in Job.objects.filter(
+            job_enabled=False).exclude(_next_run__isnull=True):
+        dlog.debug("Setting _next_run to None on disabled job " +
+                   str(j.id) + ", " + j.name)
+        j._next_run = None
+        j.save()
     for j in Job.objects.filter(job_enabled=True):
         worker(j.id)
 

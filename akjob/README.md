@@ -243,3 +243,17 @@ I just thought of something that needs to be tested. Will a similar problem occu
 When a new run_every (interval) job is created with limits specified, if created at a time outside run limits, there is some behavior that may seem unexpected to the user. The jobs works correctly but it may appear as inactive in management command `akjobd joblist` and self._next_run may be None. It will work correctly but this behavior could be confusing to the user. Running the job's next_run() method after job creation migth avoid this problem but not always.
 
 The _job_running attribute is set to True before the job code is executed and is set back to false after the execution. Akjobd will not execute the job if _job_running is True. If for some reason things crash before _job_running is set back to False, the job will no longer be executed. The log file will show "Job didn't run because job running flag is True."
+
+## Spaghetti Code
+*Some messy notes about how this spaghetti code works.*
+* In akjobd.py the daemon loops through all jobs in the database.
+* Job.run() in each Job instance is executed. Don't confuse this with Job.job_code_object.run(). 
+* Job.run() calls Job.isruntime().
+* Job.isruntime()
+    * determines if the job code should be executed right now and returns True or False. 
+    * If job is disabled, returns False and sets Job._next_run to None. This part might be broken because the daemon loop no longer runs disabled jobs.
+    * Check Job._run_count is greater than or equal to the Job.run_count_limit. Return False if the limit is reached. Sets Job._next_run to None if run limit reached.
+
+
+
+

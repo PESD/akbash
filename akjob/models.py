@@ -752,6 +752,8 @@ class Job(models.Model):
         "Determine if this job should be ran now. Return True or False."
 
         # Return False if job is disabled.
+        # FIXME: The akjobd loop no longer runs disabled jobs. Will this part
+        # ever run? Will _next_run ever be set to None?
         if self.job_enabled is False:
             if self._next_run is not None:
                 self._next_run = None
