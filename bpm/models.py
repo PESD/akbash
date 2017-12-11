@@ -611,3 +611,53 @@ class TaskWorker:
 
         def task_reverse_visions(**kwargs):
             return (True, "Success")
+
+        def task_mark_long_term(**kwargs):
+            workflow_task = kwargs["workflow_task"]
+            visions_id = kwargs["visions_id"]
+            person = TaskWorker.get_person_from_workflow_task(workflow_task)
+            if visions_id and visions_id != "":
+                if not VisionsHelper.verify_employee(visions_id):
+                    return (False, "Employee not found")
+                else:
+                    person.long_term_sub_replacing = visions_id
+            person.long_term_sub = True
+            person.save()
+            return (True, "Success")
+
+        def task_create_long_term_synergy(**kwargs):
+            workflow_task = kwargs["workflow_task"]
+            if "status" in kwargs:
+                status = kwargs["status"]
+                if not status:
+                    update_field(employee, "is_synergy_account_needed", False)
+                    return ("True", "Success")
+            if kwargs["synergy_username"] == "":
+                return ("False", "No Synergy username entered.")
+            synergy_username = SynergyHelper.verify_synergy_username(kwargs["synergy_username"])
+            user = TaskWorker.get_user_or_false(kwargs["username"])
+            if not user:
+                return (False, "Invalid User")
+            if not synergy_username:
+                return (False, "Synergy user not found")
+            did_update = employee.update_synergy_service(synergy_username, user)
+            if did_update:
+                return (True, "Success")
+            else:
+                return (False, "Unknown Error")
+
+        def task_create_long_term_ad(**kwargs):
+            workflow_task = kwargs["workflow_task"]
+            if kwargs["ad_username"] == "":
+                return ("False", "No Active Directory username entered.")
+            user = TaskWorker.get_user_or_false(kwargs["username"])
+            ad_username = kwargs["ad_username"]
+            if not user:
+                return (False, "Invalid User")
+            if not ad_username:
+                return (False, "Active Directory user not found")
+            did_update = employee.update_ad_service(ad_username, user)
+            if did_update:
+                return (True, "Success")
+            else:
+                return (False, "Unknown Error")

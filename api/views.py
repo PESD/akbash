@@ -85,6 +85,14 @@ class PersonAllEmployeesViewSet(viewsets.ModelViewSet):
         return self.get_serializer_class().setup_eager_loading(queryset)
 
 
+class PersonAllLongTermSubsViewSet(viewsets.ModelViewSet):
+    serializer_class = PersonSkinnySerializer
+
+    def get_queryset(self):
+        queryset = Person.objects.filter(long_term_sub=True)
+        return self.get_serializer_class().setup_eager_loading(queryset)
+
+
 class PersonFromWorkflowViewSet(viewsets.ModelViewSet):
     serializer_class = PersonSkinnySerializer
 

@@ -76,6 +76,8 @@ class Person(models.Model):
     ethnicity = models.CharField(max_length=50, blank=True)
     hqt = models.CharField(max_length=16, blank=True)
     ssn = models.CharField(max_length=9, blank=True)
+    long_term_sub = models.BooleanField(default=False)
+    long_term_sub_replacing = models.IntegerField(null=True)
     tcp_id = models.IntegerField(null=True)
     talented_id = models.IntegerField(null=True)
     is_onboarded = models.BooleanField(default=False)
