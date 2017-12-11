@@ -32,6 +32,10 @@ AKJOB_PID_FILE = os.environ.get(
     "AKJOB_PID_FILE",
     "akjobd.pid")
 
+AKJOB_LOG_DIR = os.environ.get(
+    "AKJOB_LOG_DIR",
+    os.path.join(BASE_DIR, "akjob", "logs"))
+
 
 class AkjobConfig(AppConfig):
     name = "akjob"
@@ -42,7 +46,9 @@ class AkjobConfig(AppConfig):
                                   'Y', 'Yes', 'yes', 'YES', '1', 1]:
             # Run akjobd.py from the BASE_DIR instead of from the akjob dir.
             os.chdir(BASE_DIR)
-            os.putenv('PYTHONPATH', BASE_DIR)
+            # os.putenv('PYTHONPATH', BASE_DIR)
+            # os.putenv('PYTHONPATH', BASE_DIR + os.pathsep +
+            #           os.path.join(BASE_DIR, "akbash"))
 
             # start akjobd using it's own process and instance of python so
             # that it will detach when it daemonizes and this process may
@@ -51,5 +57,7 @@ class AkjobConfig(AppConfig):
                 "start",
                  "-pd", AKJOB_PID_DIR,
                  "-pn", AKJOB_PID_FILE,
+                 "-ld", AKJOB_LOG_DIR,
+                 "-bd", BASE_DIR,
                  ])
             os.environ['AKJOB_START_DAEMON'] = 'False'

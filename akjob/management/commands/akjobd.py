@@ -32,6 +32,9 @@ showinfo will display information about the job specified by -id.
         parser.add_argument("-pn", "--pidname",
                             help='The name of the pid file. Optional. Defaults'
                                  ' to "akjobd.pid"')
+        parser.add_argument("-ld", "--logdir",
+                            help="The directory used to store the log file. "
+                                 "Optional. Defaults to BASE_DIR/akjob/logs/")
         parser.add_argument("-id",
                             help='ID number of job to enable, disable, '
                                  'delete or showinfo')
@@ -39,12 +42,20 @@ showinfo will display information about the job specified by -id.
 
     def handle(self, *args, **options):
 
+        # akjobd configuration
         if options["piddir"] is not None:
             akjobd.piddir = options["piddir"]
 
         if options["pidname"] is not None:
             akjobd.pidfile = options["pidname"]
 
+        if options["logdir"] is not None:
+            akjobd.logdir = options["logdir"]
+
+        akjobd.setup()
+
+
+        # do the stuff
         if options["action"] == "start":
             akjobd.do_action("start")
         elif options["action"] == "stop":

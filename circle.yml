@@ -1,5 +1,5 @@
 machine:
   python:
-    version: 3.6.0
+    version: 3.6.2
   environment:
     AKBASH_CONFIG_FILE: akbash_circle_settings.ini

@@ -61,7 +61,7 @@ class AkjobLogging():
             format_str=default_format_str,
             # interval=23,  # rotate log every 23 hours. (when="H" (hours))
             interval=23,
-            when="H",  # Goes with inteval. "H" for hours.
+            when="H",  # Goes with interval. "H" for hours.
             backupCount=14,  # Log rotation. Delete old files, keep last 14.
             loglevel=None
     ):
@@ -131,5 +131,5 @@ class AkjobLogging():
         self.setup_handlers()
         self.setup_formatter(format_str=format_str)
         self.setup_logger(name=name)
-        self.logger.debug("Logger is setup.")
+        # self.logger.debug("Logger is setup.")
         return self.logger

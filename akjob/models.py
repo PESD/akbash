@@ -38,6 +38,9 @@ jobs but control when they run. For instance, run at the top of the hour.
 Currently, you can schedule an interval using hours but you don't know at what
 minute the job will run. This could be expanded furthor to make crontab like
 scheduling.
+
+Create a logging object that can be used by job code objects that won't be
+detached when akjobd daemonizes.
 """
 
 
@@ -45,11 +48,10 @@ scheduling.
 """ Set up logging
 """
 # I should probably put this into a function?
-logger = AkjobLogging(
-    name="akjob.job",
-    logfilename="akjob.job.log",
-    format_str=AkjobLogging.multiline_format_str,
-).get_logger()
+models_logging = AkjobLogging(name="akjob.job",
+                              logfilename="akjob.job.log",
+                              format_str=AkjobLogging.multiline_format_str)
+logger = models_logging.get_logger()
 
 
 
@@ -101,7 +103,7 @@ class TimeZoneOffsetField(models.Field):
 
     # Use formfield from sibling class models.DurationField.
     def formfield(self, **kwargs):
-        super(models.DurationField, self).formfield(**wkargs)
+        super(models.DurationField, self).formfield(**kwargs)
 
 
 """ Relational models used by the main Job model.
@@ -174,7 +176,7 @@ class Job(models.Model):
 
 
     name = models.CharField(
-        max_length=50,
+        max_length=100,
         null=False,
         blank=False,
         default=None,  # Used to cause error if name isn't provided.
@@ -505,7 +507,8 @@ class Job(models.Model):
                   "active_date_begin and active_date_end.")
 
 
-    """ Job run status """
+    """ Job run status
+    """
     # Datetime of the next run. Blank if no future runs scheduled.
     _next_run = models.DateTimeField(null=True, blank=True)
     # Datetime of last run. Also shows that the last run completed.
@@ -520,6 +523,14 @@ class Job(models.Model):
     # datetime of the last interval.
     # For use with run_every to help figure the next interval
     _last_interval = models.DateTimeField(null=True, blank=True)
+
+
+    """ Delete me flag
+        Setting deleteme to True will delete the job on the next run.
+        Inside of job code objects, use this flag instead of the stardard ways
+        to delete a job object.
+    """
+    deleteme = models.BooleanField(default=False)
 
 
     def __str__(self):
@@ -603,7 +614,10 @@ class Job(models.Model):
     # TODO: More testing need to be done on this method.
     # FIXME: run_every job create outside run limits works correctly but will
     # appear as inactive in management command akjobd joblist and self.next_run
-    # will be None. This could be confusing to the user.
+    # will be None. This could be confusing to the user. I don't have a good
+    # solution to fix and it seems like a minor problem I might ignore?
+    # Maybe create new method that will tell if a dt should not be included
+    # because of set limits. Then you could iterate until the next dt if found.
     def next_run(self):
         "Find the next run time."
 
@@ -631,9 +645,11 @@ class Job(models.Model):
             elif self.dtfloormin(self._last_interval + self.run_every) <= now:
                 # This job should run now
                 self._run_now_set_by = "re"
-                return now
-            else:
-                jtimes.append(self._last_interval + self.run_every)
+                jtimes.append(now)
+            # add in extra intervals in jtimes in case run limits are used.
+            # Hopefully we can find a _next_run.
+            for i in range(2, 301):
+                jtimes.append(self._last_interval + self.run_every * i)
         # check self.dates
         if self.dates.all():
             jtimes += self.dates_list
@@ -670,6 +686,7 @@ class Job(models.Model):
                 tzinfo=timezone(self.active_time_tz_offset_timedelta))
         awd = [d.weekday for d in self.active_weekly_days.all()]
         # print(jtimes)  # for debug
+        # logger.debug(jtimes)  # for debug
         jtimes_copy = jtimes.copy()
         for v in jtimes_copy:
             if atb:
@@ -708,6 +725,7 @@ class Job(models.Model):
                     continue
         # print(jtimes)  # for debug
         # print()  # for debug
+        # logger.debug(jtimes)  # for debug
         if not jtimes:
             if self._next_run is not None:
                 self._next_run = None
@@ -715,12 +733,13 @@ class Job(models.Model):
             return None
         jtimes.sort()
         jtimes = [self.dtfloormin(t) for t in jtimes if self.dtfloormin(t) >= now]
-        self._run_datetimes = jtimes.copy()
         if not jtimes:
             if self._next_run is not None:
                 self._next_run = None
                 self.save()
             return None
+        # Done with _run_datetimes at this point. This is for debug.
+        self._run_datetimes = jtimes.copy()
         # the list was sorted and datetimes in the past removed so this should
         # return the lowest (earliest) datetime.
         self._next_run = jtimes[0]
@@ -733,6 +752,8 @@ class Job(models.Model):
         "Determine if this job should be ran now. Return True or False."
 
         # Return False if job is disabled.
+        # FIXME: The akjobd loop no longer runs disabled jobs. Will this part
+        # ever run? Will _next_run ever be set to None?
         if self.job_enabled is False:
             if self._next_run is not None:
                 self._next_run = None
@@ -788,7 +809,7 @@ class Job(models.Model):
         logger.debug("Attempting to run job <" + str(self) + ">")
         code = self.job_code_object
         try:
-            code.run()
+            code.run(ownjob=self)
         except Exception as inst:
             logger.error("Something went wrong with Job " + str(self.id) +
                          ", " + self.name + "\n    " + str(inst))
@@ -939,6 +960,7 @@ class Job(models.Model):
             for m in self.active_months.all():
                 iprint(m.name)
 
+        # This is not saved in the model so this will rarely be set.
         if self._run_datetimes:
             print("\nList of run times:")
             pprint(self._run_datetimes)
@@ -955,7 +977,7 @@ class JobCallable():
         self.args = args
         self.kwargs = kwargs
 
-    def run(self):
+    def run(self, ownjob=None):
         self.callable_object(*self.args, **self.kwargs)
 
     # Might as well make this callable since "callable" is in the name.

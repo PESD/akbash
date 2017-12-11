@@ -1,64 +1,195 @@
 """
-Things to test:
-* daemon control and daemon start / stop
-    * start command starts daemon
-    * stop command stops daemon
-    * if daemon is running don't start another one
+
+Notes:
+Some things to test:
+    *   Jobs with deleteme flag are deleted
+    *   Disabled jobs are not ran
+    *   Errors are logged
+
+Do we want to test the contents of logs or logging?
+https://docs.python.org/3/library/unittest.html#unittest.TestCase.assertLogs
 """
 
+
 import os
+import datetime
 from django.test import TestCase
+from unittest import skipIf
 from django.conf import settings
 from akjob.models import Job
-# from datetime import datetime, timedelta, timezone, time, date
 # from akjob.models import load_DayOfMonth, load_DayOfWeek, load_Months
 # from akjob.models import JobCallable
 # from django.db import IntegrityError
 from akjob import akjobd
 from time import sleep
-from subprocess import run
+from subprocess import run, DEVNULL
 
 
-""" Test for the pidfile
+""" Setup the module so that a separate instance of akjobd is spawned that does
+    not effect the default akjobd instance.
 """
-class DaemonStartStopTestCase(TestCase):
+def setUpModule():
+    # Assign global variables defining pidfile name and directory where logs
+    # and pidfile are stored.
+    global testdir, pidname, pidfile
+    testdir = os.path.join(settings.BASE_DIR, "akjob", "unittest")
+    pidname = "akjobd-unittest.pid"
+    pidfile = os.path.join(testdir, pidname)
 
-    def setUp(self):
-        self.pidfile = os.path.join(settings.BASE_DIR, "akjob", "akjobd.pid")
-        Job.objects.all().delete()
+    # create test directory where log and pid files will be placed.
+    os.makedirs(testdir)
+
+    # akjobd configuration
+    # This is require to run an alternate instance of akjobd
+    os.environ["AKJOB_START_DAEMON"] = "False"
+    os.environ["AKJOB_PID_DIR"] = testdir
+    os.environ["AKJOB_PID_FILE"] = pidname
+    os.environ["AKJOB_LOG_DIR"] = testdir
+    akjobd.piddir = testdir
+    akjobd.pidfile = pidname
+    akjobd.logdir = testdir
+    akjobd.setup()
 
 
-    # Needs to be ran in a separate process because it's going to deamonize and
-    # detach from everything which would mess up testing.
-    @staticmethod
-    def start_daemon():
-        run(["python", os.path.join(settings.BASE_DIR, "manage.py"), "akjobd",
-             "start"])
+def tearDownModule():
+    # Make sure the unittest akjobd isn't running
+    akjobd.do_action("stop")
+    sleep(1)
+    if os.path.isfile(pidfile):
+        raise Exception("Unittest akjobd PID file still exists.")
+
+    # delete the log files
+    for logfilename in ["akjob.job.log", "akjobd.log", "akjobd.out"]:
+        try:
+            os.remove(os.path.join(testdir, logfilename))
+        except FileNotFoundError:
+            pass
+
+    # remove the testdir
+    os.rmdir(testdir)
 
 
-    def test_1_pidfile_exists(self):
-        """The daemon should have auto started so the pidfile should exist.
-           This is wrong since tests are supposed to be self contained."""
-        self.assertTrue(os.path.isfile(self.pidfile))
-        print("1")  # for debug
+""" The akjob daemon needs to be ran in a separate process because it's going
+    to deamonize and detach from everything which would mess up testing.
+"""
+def start_daemon():
+    run(["python", os.path.join(settings.BASE_DIR, "manage.py"), "akjobd",
+         "start", "-pd", testdir, "-pn", pidname, "-ld",
+         testdir])
+
+
+""" Test for the pidfile. akjobd start and stop. Log files.
+"""
+@skipIf(os.environ.get("CIRCLECI") == "true",
+        "Akjobd not tested under CircleCI.")
+class AkjobdTestCase(TestCase):
+
+
+    def test_1_daemon_auto_start(self):
+        # First stop the daemon if it's running.
+        akjobd.do_action("stop")
+        sleep(1)
+        self.assertFalse(os.path.isfile(pidfile))
+        # Environment variable so the daemon doesn't auto-start.
+        os.putenv('AKJOB_START_DAEMON', "False")
+        # Just running the management script should auto-start akjob.
+        run(["python", os.path.join(settings.BASE_DIR, "manage.py")],
+            stdout=DEVNULL)
+        # check that the daemon didn't auto-start.
+        self.assertFalse(os.path.isfile(pidfile))
+        # Environment variable so the daemon does auto-start.
+        os.putenv('AKJOB_START_DAEMON', "True")
+        # Just running the management script should auto-start akjob.
+        run(["python", os.path.join(settings.BASE_DIR, "manage.py")],
+            stdout=DEVNULL)
+        sleep(1)
+        # check that the daemon did auto-start.
+        self.assertTrue(os.path.isfile(pidfile))
 
 
     def test_2_stop_daemon(self):
-        self.start_daemon()
+        start_daemon()
         sleep(1)
         akjobd.do_action("stop")
         sleep(1)
-        self.assertFalse(os.path.isfile(self.pidfile))
-        print("2")  # for debug
+        self.assertFalse(os.path.isfile(pidfile))
 
 
     def test_3_start_daemon(self):
         akjobd.do_action("stop")
         sleep(1)
-        self.start_daemon()
+        start_daemon()
         sleep(1)
-        self.assertTrue(os.path.isfile(self.pidfile))
-        print("3")  # for debug
+        self.assertTrue(os.path.isfile(pidfile))
+
+    # I can't think of a good way to test that akjobd will only run once. I
+    # could read the pid in the pid file then start akjobd again then check if
+    # the pid has changed. But is that really a good test?
+    def test_4_daemon_run_once_only(self):
+        akjobd.do_action("start")
+        sleep(1)
+        pid1 = akjobd.get_pid_from_pidfile()
+        akjobd.do_action("start")
+        sleep(1)
+        pid2 = akjobd.get_pid_from_pidfile()
+        self.assertEqual(pid1, pid2)
+
+
+    # Check if log files exist and are not empty.
+    def test_5_log_files_exist(self):
+        akjobd.do_action("start")
+        sleep(1)
+        # there should be akjobd.log and akjobd.out but there may not be a
+        # akjob.job.log since no jobs are scheduled.
+        if (os.path.isfile(os.path.join(
+                testdir, "akjobd.log")) is True and
+            os.path.isfile(os.path.join(
+                testdir, "akjobd.out")) is True):
+            self.assertNotEqual(0, os.path.getsize(os.path.join(testdir,
+                                                                "akjobd.out")))
+            self.assertNotEqual(0, os.path.getsize(os.path.join(testdir,
+                                                                "akjobd.log")))
+        else:
+            self.assertTrue(os.path.isfile(os.path.join(testdir,
+                                                        "akjobd.log")))
+            self.assertTrue(os.path.isfile(os.path.join(testdir,
+                                                        "akjobd.out")))
+
+
+""" Test the custom model fields
+"""
+# I think this might work in circleci
+# @skipIf(os.environ.get("CIRCLECI") == "true",
+#         "Akjobd not tested under CircleCI.")
+class CustomModelFieldTestCase(TestCase):
+
+    def test_TimeZoneOffsetField(self):
+        from django.db import connection
+        jx = Job.objects.create(name="Test TimeZoneOffsetField")
+        jx.active_time_tz_offset_timedelta = datetime.timedelta(
+            days=2, hours=2, minutes=25)  # stored as 181500 in the DB
+        jx.save()
+        # refresh the field from the DB
+        del jx.active_time_tz_offset_timedelta
+        self.assertEqual(jx.active_time_tz_offset_timedelta,
+                         datetime.timedelta(days=2, hours=2, minutes=25))
+
+        # Checking the value stored in the DB
+        with connection.cursor() as cursor:
+            cursor.execute("select active_time_tz_offset_timedelta from "
+                           "akjob_job where id=%s", [jx.id])
+            row = cursor.fetchone()
+            result = row[0]
+
+        self.assertEqual(result, 181500)
+
+
+
+
+
+
+
+
 
 
 """ Test scheduled jobs
