@@ -5,6 +5,8 @@ Some things to test:
     *   Jobs with deleteme flag are deleted
     *   Disabled jobs are not ran
     *   Errors are logged
+    *   test if run count limit works
+    *   test if delete_on_run_count_limit works
 
 Do we want to test the contents of logs or logging?
 https://docs.python.org/3/library/unittest.html#unittest.TestCase.assertLogs

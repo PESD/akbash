@@ -5,7 +5,7 @@ import sys
 import argparse
 import pid
 import daemon
-# import datetime
+from datetime import datetime
 from time import sleep
 # from contextlib import redirect_stderr, redirect_stdout
 
@@ -85,8 +85,9 @@ def setup_django():
     # Set akjob to not auto start to avoid an infinate loop.
     os.environ['AKJOB_START_DAEMON'] = 'False'
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "akbash.settings")
-    global django  # not sure if django in global is needed.
+    global django, F, Q  # not sure if django in global is needed.
     import django
+    from django.db.models import F, Q
     if __name__ == '__main__':
         # make sure the BASE_DIR is in sys.path so the akbash.settings module
         # and the app packages can be found by django.setup().
@@ -175,8 +176,7 @@ def setup_logging():
     # except ModuleNotFoundError:  # noqa  My pyflake doesn't have this builtin.
     from akjob.akjob_logger import AkjobLogging
 
-    global akjob_logging
-    global logger
+    global akjob_logging, logger
     akjob_logging = AkjobLogging(name="akjob.akjobd",
                                  logfilename="akjobd.log",
                                  logdir=logdir, loglevel=loglevel)
@@ -192,7 +192,6 @@ def setup_logging():
 
 
 def worker(idnum):
-    global dlog
     job = Job.objects.get(id=idnum)
     dlog.info("Starting job " + str(job.id) + ", " + job.name)
     try:
@@ -203,6 +202,36 @@ def worker(idnum):
 
 
 def loop_through_jobs():
+    "Loop through the jobs in the database and perform actions."
+
+    # # print debugging message to stdout -> akjobd.out.
+    # def debugRunCountMsg(j):
+    #     print("--DEBUG ", str(j.id), "--> _run_count: ", j._run_count,
+    #           " / limit: ", j.run_count_limit, " / delete on limit: ",
+    #           j.delete_on_run_count_limit)
+
+    # Delete Jobs with the deleteme flag set to True.
+    for j in Job.objects.filter(deleteme=True):
+        dlog.info("Deleting job " + str(j.id) + ", " + j.name)
+        j.delete()
+
+    # Deal with jobs with run count limits. If limit is reached set _next_run
+    # to None. Delete Jobs set to be deleted when run count limit is reached.
+    for j in Job.objects.filter(_run_count__gte=F('run_count_limit')):
+        # debugRunCountMsg(j)
+        if j.delete_on_run_count_limit is True:
+            dlog.info("Run count limit reached. Deleting job " +
+                      str(j.id) + ", " + j.name)
+            j.delete()
+        elif j._next_run is not None:
+            dlog.debug("Run count limit reached. Setting _next_run to None on"
+                       " job " + str(j.id) + ", " + j.name)
+            j._next_run = None
+            j.save()
+        else:
+            dlog.info("Run count limit reached. Job " +
+                      str(j.id) + ", " + j.name)
+
     # If job is disabled but _next_run is not None, set to _next_run to None.
     for j in Job.objects.filter(
             job_enabled=False).exclude(_next_run__isnull=True):
@@ -210,33 +239,35 @@ def loop_through_jobs():
                    str(j.id) + ", " + j.name)
         j._next_run = None
         j.save()
-    for j in Job.objects.filter(job_enabled=True):
+
+    # run Job.run() on each job
+    # Filter to only enabled jobs and jobs under run count limit
+    for j in Job.objects.filter(
+            Q(job_enabled=True),                    # job_enabled is True AND
+            Q(run_count_limit__isnull=True) |       # ( run_count_limit is None
+            Q(_run_count__lt=F('run_count_limit'))  # OR run_count < limit )
+    ):
+        # debugRunCountMsg(j)
         worker(j.id)
 
-
-def delete_jobs():
-    """ Delete Jobs with the deleteme flag set to True. """
-    global dlog
-    for j in Job.objects.filter(deleteme=True):
-        dlog.info("Deleting job " + str(j.id) + ", " + j.name)
-        j.delete()
 
 # maybe learn how to catch the termination signal so daemon shutdown can be
 # logged.
 def daemonize():
     with open(os.path.join(logdir, "akjobd.out"), "w+") as outfile:
-        # print(str(datetime.datetime.now()) + "  akjob daemon starting.")
         with daemon.DaemonContext(
                 stdout=outfile, stderr=outfile,
                 files_preserve=[akjob_logging.fh.stream, job_log_stream],
                 pidfile=pid.PidFile(pidname=pidfile, piddir=piddir)):
+            print("akjob daemon starting. ", str(datetime.now()))
             global dlog
             # dlog = get_daemon_logger()
             dlog = logger
             while True:
-                # print("Loop: " + str(datetime.datetime.now()) + " ----------")
-                delete_jobs()
+                # print(" " * 5, "=" * 21, str(datetime.now()), "=" * 21)
+                print(" " * 5, "=" * 70)
                 loop_through_jobs()
+                print(" " * 5, "_" * 70)
                 sleep(60)
 
 

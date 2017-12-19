@@ -533,6 +533,13 @@ class Job(models.Model):
     deleteme = models.BooleanField(default=False)
 
 
+    """ Delete job when run count limit reached
+    """
+    delete_on_run_count_limit = models.BooleanField(default=False)
+
+
+
+
     def __str__(self):
         if self.id and self.name:
             return str(self.id) + " - " + self.name
@@ -578,6 +585,15 @@ class Job(models.Model):
                 raise exceptions.ValidationError(
                     'If either active_date_begin or active_date_end are ' +
                     'set, both must be set.')
+
+        # Make sure there is a run_count_limit if delete_on_run_count_limit=T
+        if self.delete_on_run_count_limit is True:
+            if self.run_count_limit is None:
+                raise exceptions.ValidationError(
+                    'run_count_limit is not set while'
+                    ' delete_on_run_count_limit is True. Eiter set a'
+                    ' run_count_limit or set delete_on_run_count_limit to'
+                    ' False.')
 
         # Relationships can't touched until self.id is created so some
         # validations will have to be skipped.
@@ -751,9 +767,8 @@ class Job(models.Model):
     def isruntime(self):
         "Determine if this job should be ran now. Return True or False."
 
+        # akjobd filters out disabled jobs so this block isn't used often.
         # Return False if job is disabled.
-        # FIXME: The akjobd loop no longer runs disabled jobs. Will this part
-        # ever run? Will _next_run ever be set to None?
         if self.job_enabled is False:
             if self._next_run is not None:
                 self._next_run = None
@@ -761,6 +776,8 @@ class Job(models.Model):
             logger.info("Job <" + str(self) + ">: Job disabled.")
             return False
 
+        # akjobd filters out jobs passed the count limit so this block isn't
+        # used often.
         # If run limit is reached, return false
         if self.run_count_limit:
             if self._run_count >= self.run_count_limit:
