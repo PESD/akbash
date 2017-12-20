@@ -15,15 +15,15 @@ class SynergyHelper:
             return sresult
         return False
 
-        def verify_synergy_username(synergy_username):
-            if not synergy_username:
-                return False
-            squery = synergy.Select(
-                "LOGIN_NAME",
-                "rev.REV_USER",
-                "LOGIN_NAME=" + synergy_username + " AND DISABLED = 'N'"
-            )
-            sresult = squery.fetch_value()
-            if sresult:
-                return sresult
+    def verify_synergy_username(synergy_username):
+        if not synergy_username:
             return False
+        squery = synergy.Select(
+            "LOGIN_NAME",
+            "rev.REV_USER",
+            "LOGIN_NAME= '" + synergy_username + "' AND DISABLED = 'N'"
+        )
+        sresult = squery.fetch_value()
+        if sresult:
+            return sresult
+        return False

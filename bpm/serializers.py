@@ -364,12 +364,15 @@ class TaskEmployeeADSerializer(serializers.Serializer):
     def create(self, validated_data):
         workflow_task = WorkflowTask.objects.get(pk=validated_data["workflow_task_id"])
         username = validated_data["username"]
+        ad_username = ""
+        if validated_data["ad_username"] and validated_data["ad_username"] != "":
+            ad_username = validated_data["ad_username"]
         args = {
             "workflow_task": workflow_task,
             "username": username,
+            "ad_username": ad_username,
         }
         status, message = workflow_task.run_task(args)
-        ad_username = ""
         return {"workflow_task_id": workflow_task.id, "ad_username": ad_username, "username": username, "status": status, "message": message}
 
 
@@ -383,13 +386,16 @@ class TaskEmployeeSynergySerializer(serializers.Serializer):
     def create(self, validated_data):
         workflow_task = WorkflowTask.objects.get(pk=validated_data["workflow_task_id"])
         username = validated_data["username"]
+        synergy_username = ""
+        if validated_data["synergy_username"] and validated_data["synergy_username"] != "":
+            synergy_username = validated_data["synergy_username"]
         args = {
             "workflow_task": workflow_task,
             "username": username,
             "status": validated_data["status"],
+            "synergy_username": synergy_username,
         }
         status, message = workflow_task.run_task(args)
-        synergy_username = ""
         if workflow_task.status == "Complete":
             employee = TaskWorker.get_employee_from_workflow_task(workflow_task)
             synergy_username = employee.get_synergy_username_or_blank()
@@ -410,7 +416,7 @@ class TaskUpdateEmployeePosition(serializers.Serializer):
             "username": username,
         }
         status, message = workflow_task.run_task(args)
-        return {"workflow_task_id": workflow_task.id, "status": status, "message": message}
+        return {"workflow_task_id": workflow_task.id, "status": status, "message": message, "username": username}
 
 
 class TaskGenericCheck(serializers.Serializer):

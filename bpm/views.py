@@ -355,6 +355,21 @@ class VisionsEmployeeViewSet(viewsets.ViewSet):
         return Response(serializer.data)
 
 
+class ActiveDirectoryViewSet(viewsets.ViewSet):
+    # Required for the Browsable API renderer to have a nice form.
+    serializer_class = VisionsEmployeeSerializer
+
+    def list(self, request):
+        employees = VisionsHelper.get_all_employees()
+        serializer = VisionsEmployeeSerializer(instance=employees, many=True)
+        return Response(serializer.data)
+
+    def retrieve(self, request, pk=None):
+        employee = VisionsHelper.get_employee(pk)
+        serializer = VisionsEmployeeSerializer(instance=employee)
+        return Response(serializer.data)
+
+
 # Task Views
 @csrf_exempt
 def task_set_epar_id_view(request):

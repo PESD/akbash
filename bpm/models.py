@@ -23,7 +23,7 @@ class Observer:
         self.job_id = job_id
         self.workflow_task_id = workflow_task_id
 
-    def run(self):
+    def run(self, ownjob):
         workflow_task = WorkflowTask.objects.get(pk=self.workflow_task_id)
         job = Job.objects.get(pk=self.job_id)
         args = {
@@ -34,9 +34,9 @@ class Observer:
         # Do more stuff here.
         status, message = workflow_task.run_task(args)
         if status:
-            job.job_enabled = False
-            job.save()
-            job.delete()
+            ownjob.job_enabled = False
+            ownjob.deleteme = True
+            ownjob.save()
         return (status, message)
 
 
@@ -130,10 +130,24 @@ class Workflow(models.Model):
     person = models.ForeignKey(Person, on_delete=models.CASCADE)
     process = models.ForeignKey(Process, on_delete=models.CASCADE)
     status = models.CharField(max_length=12, choices=STATUSES, default="Active")
+    jobs = models.ManyToManyField(Job)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="workflow_created_user")
     created_date = models.DateTimeField(null=True, blank=True, auto_now_add=True)
     completed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="workflow_completed_user")
     completed_date = models.DateTimeField(null=True, blank=True)
+
+    def cancel_all_jobs(self):
+        self.jobs.all().delete()
+        self.save()
+
+    def cancel_workflow(self):
+        self.cancel_all_jobs()
+        self.status = "Canceled"
+        self.save()
+        wfas = self.workflow_activites.all()
+        for wfa in wfas:
+            wfa.status = "Canceled"
+            wfa.save()
 
     def get_current_workflow_activities(self):
         return self.workflow_activites.filter(status="Active")
@@ -144,12 +158,13 @@ class Workflow(models.Model):
         return workflow_activity
 
     def check_for_completeness(self):
-        workflow_activites = self.workflow_activites.all()
+        workflow_activites = self.workflow_activites.exclude(status="Canceled")
         for workflow_activity in workflow_activites:
             if workflow_activity.status != "Complete":
                 return False
         self.status = "Complete"
         self.save()
+        self.cancel_all_jobs()
         if self.process.name == "Termination Process":
             self.person.status = "inactive"
         else:
@@ -166,7 +181,8 @@ class WorkflowTask(models.Model):
         ("Running", "Running"),
         ("Waiting", "Waiting"),
         ("Error", "Error"),
-        ("Complete", "Complete")
+        ("Complete", "Complete"),
+        ("Canceled", "Canceled"),
     )
     task = models.ForeignKey(Task, on_delete=models.CASCADE)
     status = models.CharField(max_length=12, choices=STATUSES)
@@ -193,6 +209,11 @@ class WorkflowTask(models.Model):
         for workflow_activity in workflow_activities:
             workflow_activity.advance_workflow_activity(user)
 
+    def add_job_to_workflow(self, job):
+        wfas = self.workflowactivity_set.all()
+        for wfa in wfas:
+            wfa.workflow.jobs.add(job)
+
     def start_observer(self, minutes, args):
         workflow_task = args["workflow_task"]
         job = Job.objects.create(name=self.task.name)
@@ -200,6 +221,7 @@ class WorkflowTask(models.Model):
         job.job_code_object = code
         job.run_every = timedelta(minutes=minutes)
         job.save()
+        self.add_job_to_workflow(job)
 
 
 class WorkflowActivity(models.Model):
@@ -208,7 +230,8 @@ class WorkflowActivity(models.Model):
         ("Error", "Error"),
         ("Active", "Active"),
         ("Inactive", "Inactive"),
-        ("Next", "Next")
+        ("Next", "Next"),
+        ("Canceled", "Canceled"),
     )
     workflow = models.ForeignKey(Workflow, on_delete=models.CASCADE, related_name="workflow_activites")
     activity = models.ForeignKey(Activity, on_delete=models.CASCADE)
@@ -595,6 +618,7 @@ class TaskWorker:
             user = TaskWorker.get_user_or_false(kwargs["username"])
             cancel_workflow = TaskWorker.get_person_workflow_from_workflow_task(workflow_task)
             cancel_workflow.status = "Canceled"
+            cancel_workflow.cancel_all_jobs()
             cancel_workflow.save()
             workflow = TaskWorker.get_workflow_from_workflow_task(workflow_task)
             person = TaskWorker.get_person_from_workflow_task(workflow_task)
@@ -627,10 +651,14 @@ class TaskWorker:
 
         def task_create_long_term_synergy(**kwargs):
             workflow_task = kwargs["workflow_task"]
+            person = TaskWorker.get_person_from_workflow_task(workflow_task)
+            # If the 'status' arg is defined, that means the request
+            # originated from the front end. We need to check it and
+            # see if the user opted to skip over Synergy creation.
             if "status" in kwargs:
                 status = kwargs["status"]
                 if not status:
-                    update_field(employee, "is_synergy_account_needed", False)
+                    update_field(person, "is_synergy_account_needed", False)
                     return ("True", "Success")
             if kwargs["synergy_username"] == "":
                 return ("False", "No Synergy username entered.")
@@ -640,7 +668,7 @@ class TaskWorker:
                 return (False, "Invalid User")
             if not synergy_username:
                 return (False, "Synergy user not found")
-            did_update = employee.update_synergy_service(synergy_username, user)
+            did_update = person.update_synergy_service(synergy_username, user)
             if did_update:
                 return (True, "Success")
             else:
@@ -648,15 +676,16 @@ class TaskWorker:
 
         def task_create_long_term_ad(**kwargs):
             workflow_task = kwargs["workflow_task"]
+            person = TaskWorker.get_person_from_workflow_task(workflow_task)
             if kwargs["ad_username"] == "":
                 return ("False", "No Active Directory username entered.")
             user = TaskWorker.get_user_or_false(kwargs["username"])
             ad_username = kwargs["ad_username"]
             if not user:
                 return (False, "Invalid User")
-            if not ad_username:
+            if not ldap.is_ad_username_active(ad_username):
                 return (False, "Active Directory user not found")
-            did_update = employee.update_ad_service(ad_username, user)
+            did_update = person.update_ad_service(ad_username, user)
             if did_update:
                 return (True, "Success")
             else:
