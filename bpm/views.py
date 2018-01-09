@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 
@@ -7,9 +8,16 @@ from rest_framework.reverse import reverse
 from rest_framework.response import Response
 from rest_framework import viewsets
 from rest_framework.parsers import JSONParser
+from rest_framework import generics
 
-from bpm.serializers import (UserSerializer,
+from bpm.serializers import (DashboardStatsSerializer,
+                             GraphSerializer,
+                             UserSerializer,
                              ActivitySerializer,
+                             ChildActivitySerializer,
+                             WorkflowWithActivitySerializer,
+                             WorkflowWithActivity,
+                             get_workflow_with_activity_from_workflow,
                              ProcessSerializer,
                              WorkflowSerializer,
                              WorkflowActivitySerializer,
@@ -36,8 +44,53 @@ from bpm.models import (Process,
                         WorkflowTask,
                         Task,
                         )
+from api.models import Employee
 from bpm.visions_helper import VisionsHelper
 from django.contrib.auth.models import User
+
+
+class DashboardStats(object):
+    my_tasks = None
+    hires_this_month = None
+    active_workflows = None
+
+    def __init__(self, username):
+        self.get_my_tasks(username)
+        self.get_hires_this_month()
+        self.active_workflows()
+
+    def get_my_tasks(self, username):
+        wf_activities = WorkflowActivity.objects.filter(status="Active").filter(activity__users__username=username)
+        workflow_list = []
+        for wfa in wf_activities:
+            workflow_list.append(wfa.workflow.id)
+        workflow_dedupped = list(set(workflow_list))
+        self.my_tasks = Workflow.objects.filter(id__in=workflow_dedupped).filter(status="Active").count()
+
+    def get_hires_this_month(self):
+        last_month = datetime.today() - timedelta(days=30)
+        self.hires_this_month = Employee.objects.filter(marked_as_hired__gte=last_month).count()
+
+    def active_workflows(self):
+        self.active_workflows = Workflow.objects.filter(status="Active").count()
+
+
+class GraphDataSet(object):
+    label: None
+    data: None
+
+    def __init__(self, label, data):
+        self.label = label
+        self.data = data
+
+
+class Graph(object):
+    labels: None
+    datasets: None
+
+    def __init__(self, labels, datasets):
+        self.labels = labels
+        self.datasets = datasets
 
 
 @api_view(["GET"])
@@ -45,6 +98,39 @@ def api_root(request, format=None):
     return Response({
         'processes': reverse('process-list', request=request, format=format)
     })
+
+
+class DashboardStatsViewSet(generics.RetrieveAPIView):
+    serializer_class = DashboardStatsSerializer
+
+    def get_queryset(self):
+        username = self.kwargs['username']
+        return [DashboardStats(username)]
+
+    def get_object(self):
+        queryset = self.get_queryset()
+        return queryset[0]
+
+
+class ProcessGraphViewSet(generics.RetrieveAPIView):
+    serializer_class = GraphSerializer
+
+    def get_queryset(self):
+        processes = Process.objects.all()
+        labels = []
+        data = []
+        for process in processes:
+            label = process.name
+            count = Workflow.objects.filter(process=process, status="Active").count()
+            labels.append(label)
+            data.append(count)
+        label = "# Active Workflows"
+        datasets = [GraphDataSet(label, data)]
+        return [Graph(labels, datasets)]
+
+    def get_object(self):
+        queryset = self.get_queryset()
+        return queryset[0]
 
 
 # ModelViewSet does all of the heavy lifting for REST framework.
@@ -67,6 +153,35 @@ class ActivityViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = Activity.objects.all()
         return self.get_serializer_class().setup_eager_loading(queryset)
+
+
+class ChildActivityViewSet(viewsets.ModelViewSet):
+    serializer_class = ChildActivitySerializer
+    # queryset = WorkflowActivity.objects.filter(id=13)
+    queryset = WorkflowActivity.objects.filter(id=86)
+
+
+class WorkflowWithActivityViewSet(viewsets.ViewSet):
+    # Required for the Browsable API renderer to have a nice form.
+    serializer_class = WorkflowWithActivitySerializer
+
+    def list(self, request):
+        workflow_id = 16
+        serializer = WorkflowWithActivitySerializer(
+            instance=get_workflow_with_activity_from_workflow(Workflow.objects.get(id=workflow_id)), many=True, context={'the_workflow_id': workflow_id})
+        return Response(serializer.data)
+
+    def retrieve(self, request, pk=None):
+        workflow_id = self.request.parser_context['kwargs']['pk']
+        serializer = WorkflowWithActivitySerializer(
+            instance=get_workflow_with_activity_from_workflow(Workflow.objects.get(id=workflow_id)), many=True, context={'the_workflow_id': workflow_id})
+        return Response(serializer.data)
+
+    def get_serializer_context(self):
+        workflow_id = self.request.parser_context['kwargs']['pk']
+        context = super(WorkflowWithActivityViewSet, self).get_serializer_context()
+        context.update({"the_workflow_id": workflow_id})
+        return context
 
 
 class ProcessViewSet(viewsets.ModelViewSet):
@@ -176,6 +291,15 @@ class WorkflowCompleteActiveViewSet(viewsets.ModelViewSet):
         return queryset
 
 
+class WorkflowCompleteCanceledViewSet(viewsets.ModelViewSet):
+    serializer_class = WorkflowCompleteSerializer
+
+    def get_queryset(self):
+        queryset = Workflow.objects.filter(status="Canceled")
+        queryset = self.get_serializer_class().setup_eager_loading(queryset)
+        return queryset
+
+
 class TaskViewSet(viewsets.ModelViewSet):
     queryset = Task.objects.all()
     serializer_class = TaskSerializer
@@ -217,6 +341,21 @@ class EparViewSet(viewsets.ViewSet):
 
 
 class VisionsEmployeeViewSet(viewsets.ViewSet):
+    # Required for the Browsable API renderer to have a nice form.
+    serializer_class = VisionsEmployeeSerializer
+
+    def list(self, request):
+        employees = VisionsHelper.get_all_employees()
+        serializer = VisionsEmployeeSerializer(instance=employees, many=True)
+        return Response(serializer.data)
+
+    def retrieve(self, request, pk=None):
+        employee = VisionsHelper.get_employee(pk)
+        serializer = VisionsEmployeeSerializer(instance=employee)
+        return Response(serializer.data)
+
+
+class ActiveDirectoryViewSet(viewsets.ViewSet):
     # Required for the Browsable API renderer to have a nice form.
     serializer_class = VisionsEmployeeSerializer
 

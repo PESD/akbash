@@ -1,0 +1,75 @@
+2017-11-06 16:23:51,301 DEBUG:akjob.akjobd:akjob_logger --- Logger is setup.
+2017-11-06 16:23:51,303 INFO:akjob.akjobd:akjobd --- PID_CHECK_NOFILE
+2017-11-06 16:23:51,303 INFO:akjob.akjobd:akjobd --- Starting the akjob daemon.
+2017-11-06 16:28:11,103 DEBUG:akjob.akjobd:akjob_logger --- Logger is setup.
+2017-11-06 16:28:11,111 INFO:akjob.akjobd:akjobd --- Program already running with pid: 4877
+2017-11-06 16:39:44,454 DEBUG:akjob.akjobd:akjob_logger --- Logger is setup.
+2017-11-06 16:39:44,463 INFO:akjob.akjobd:akjobd --- Program already running with pid: 4877
+2017-11-06 16:39:52,307 DEBUG:akjob.akjobd:akjob_logger --- Logger is setup.
+2017-11-06 16:39:52,309 INFO:akjob.akjobd:akjobd --- Program already running with pid: 4877
+2017-11-06 16:40:00,615 DEBUG:akjob.akjobd:akjob_logger --- Logger is setup.
+2017-11-06 16:40:00,916 INFO:akjob.akjobd:akjobd --- Program already running with pid: 4877
+2017-11-06 16:40:04,410 DEBUG:akjob.akjobd:akjob_logger --- Logger is setup.
+2017-11-06 16:40:04,677 INFO:akjob.akjobd:akjobd --- PID_CHECK_NOFILE
+2017-11-06 16:40:04,677 INFO:akjob.akjobd:akjobd --- Starting the akjob daemon.
+2017-11-06 17:28:07,329 DEBUG:akjob.akjobd:akjob_logger --- Logger is setup.
+2017-11-06 17:28:07,337 INFO:akjob.akjobd:akjobd --- Program already running with pid: 5216
+2017-11-06 17:31:34,589 DEBUG:akjob.akjobd:akjob_logger --- Logger is setup.
+2017-11-06 17:31:34,591 INFO:akjob.akjobd:akjobd --- Program already running with pid: 5216
+2017-11-06 17:48:33,922 DEBUG:akjob.akjobd:akjob_logger --- Logger is setup.
+2017-11-06 17:48:33,930 INFO:akjob.akjobd:akjobd --- Program already running with pid: 5216
+2017-11-06 18:00:26,630 DEBUG:akjob.akjobd:akjob_logger --- Logger is setup.
+2017-11-06 18:00:26,639 INFO:akjob.akjobd:akjobd --- Program already running with pid: 5216
+2017-11-06 20:00:03,188 DEBUG:akjob.akjobd:akjob_logger --- Logger is setup.
+2017-11-06 20:00:03,197 INFO:akjob.akjobd:akjobd --- PID_CHECK_NOFILE
+2017-11-06 20:00:03,197 INFO:akjob.akjobd:akjobd --- Starting the akjob daemon.
+2017-11-06 22:19:03,897 DEBUG:akjob.akjobd:akjob_logger --- Logger is setup.
+2017-11-06 22:19:03,905 INFO:akjob.akjobd:akjobd --- Program already running with pid: 6067
+2017-11-06 22:19:47,738 DEBUG:akjob.akjobd:akjob_logger --- Logger is setup.
+2017-11-06 22:19:47,747 INFO:akjob.akjobd:akjobd --- Program already running with pid: 6067
+2017-11-06 22:22:06,388 DEBUG:akjob.akjobd:akjob_logger --- Logger is setup.
+2017-11-06 22:22:06,390 INFO:akjob.akjobd:akjobd --- Program already running with pid: 6067
+2017-11-06 22:22:27,439 DEBUG:akjob.akjobd:akjob_logger --- Logger is setup.
+2017-11-06 22:22:27,442 INFO:akjob.akjobd:akjobd --- Program already running with pid: 6067
+2017-11-06 22:22:34,434 DEBUG:akjob.akjobd:akjob_logger --- Logger is setup.
+2017-11-06 22:22:34,436 INFO:akjob.akjobd:akjobd --- Program already running with pid: 6067
+2017-11-07 16:42:57,575 DEBUG:akjob.akjobd:akjob_logger --- Logger is setup.
+2017-11-07 16:42:57,577 INFO:akjob.akjobd:akjobd --- PID_CHECK_NOFILE
+2017-11-07 16:42:57,577 INFO:akjob.akjobd:akjobd --- Starting the akjob daemon.
+2017-11-07 16:43:09,408 DEBUG:akjob.akjobd:akjob_logger --- Logger is setup.
+2017-11-07 16:43:09,410 INFO:akjob.akjobd:akjobd --- PID_CHECK_NOFILE
+2017-11-07 16:43:09,410 INFO:akjob.akjobd:akjobd --- Starting the akjob daemon.
+2017-11-07 17:00:51,618 DEBUG:akjob.akjobd:akjob_logger --- Logger is setup.
+2017-11-07 17:00:51,626 INFO:akjob.akjobd:akjobd --- Program already running with pid: 1446
+2017-11-07 19:12:46,058 DEBUG:akjob.akjobd:akjob_logger --- Logger is setup.
+2017-11-07 19:12:46,065 INFO:akjob.akjobd:akjobd --- Program already running with pid: 1446
+2017-11-07 19:14:11,852 DEBUG:akjob.akjobd:akjob_logger --- Logger is setup.
+2017-11-07 19:14:11,860 INFO:akjob.akjobd:akjobd --- Program already running with pid: 1446
+2017-11-07 20:06:57,445 DEBUG:akjob.akjobd:akjob_logger --- Logger is setup.
+2017-11-07 20:06:57,453 INFO:akjob.akjobd:akjobd --- Program already running with pid: 1446
+2017-11-08 17:07:47,444 DEBUG:akjob.akjobd:akjob_logger --- Logger is setup.
+2017-11-08 17:07:47,453 INFO:akjob.akjobd:akjobd --- PID_CHECK_NOTRUNNING
+2017-11-08 17:07:47,453 INFO:akjob.akjobd:akjobd --- Starting the akjob daemon.
+2017-11-08 17:07:54,035 DEBUG:akjob.akjobd:akjob_logger --- Logger is setup.
+2017-11-08 17:07:54,037 INFO:akjob.akjobd:akjobd --- PID_CHECK_NOFILE
+2017-11-08 17:07:54,037 INFO:akjob.akjobd:akjobd --- Starting the akjob daemon.
+2017-11-08 17:08:00,616 DEBUG:akjob.akjobd:akjob_logger --- Logger is setup.
+2017-11-08 17:08:00,619 INFO:akjob.akjobd:akjobd --- Program already running with pid: 1581
+2017-11-08 17:08:11,295 DEBUG:akjob.akjobd:akjob_logger --- Logger is setup.
+2017-11-08 17:08:11,296 INFO:akjob.akjobd:akjobd --- Program already running with pid: 1581
+2017-11-08 20:47:31,655 DEBUG:akjob.akjobd:akjob_logger --- Logger is setup.
+2017-11-08 20:47:31,665 INFO:akjob.akjobd:akjobd --- Program already running with pid: 1581
+2017-11-08 20:49:58,724 DEBUG:akjob.akjobd:akjob_logger --- Logger is setup.
+2017-11-08 20:49:58,726 INFO:akjob.akjobd:akjobd --- Program already running with pid: 1581
+2017-11-08 20:55:31,738 DEBUG:akjob.akjobd:akjob_logger --- Logger is setup.
+2017-11-08 20:55:31,746 INFO:akjob.akjobd:akjobd --- Program already running with pid: 1581
+2017-11-08 20:56:30,681 DEBUG:akjob.akjobd:akjob_logger --- Logger is setup.
+2017-11-08 20:56:30,684 INFO:akjob.akjobd:akjobd --- Program already running with pid: 1581
+2017-11-08 20:57:13,373 DEBUG:akjob.akjobd:akjob_logger --- Logger is setup.
+2017-11-08 20:57:13,376 INFO:akjob.akjobd:akjobd --- Program already running with pid: 1581
+2017-11-08 20:59:42,115 DEBUG:akjob.akjobd:akjob_logger --- Logger is setup.
+2017-11-08 20:59:42,117 INFO:akjob.akjobd:akjobd --- Program already running with pid: 1581
+2017-11-08 20:59:47,419 DEBUG:akjob.akjobd:akjob_logger --- Logger is setup.
+2017-11-08 20:59:47,420 INFO:akjob.akjobd:akjobd --- Program already running with pid: 1581
+2017-11-08 21:51:50,143 DEBUG:akjob.akjobd:akjob_logger --- Logger is setup.
+2017-11-08 21:51:50,151 INFO:akjob.akjobd:akjobd --- Program already running with pid: 1581

@@ -78,6 +78,7 @@ class WorkflowTestCase(TestCase):
                 is_users_jon = True
         self.assertIs(is_users_jon, True)
         current_activity.advance_workflow_activity()
-        new_current_activity = workflow.get_current_workflow_activities()[0]
-        self.assertEqual("Update Employee ID", new_current_activity.activity.name)
+        new_current_activities = workflow.get_current_workflow_activities()
+        for new_current_activity in new_current_activities:
+            self.assertEqual("Update Employee ID", new_current_activity.activity.name)
         self.assertNotEqual(None, ned.badge_number)

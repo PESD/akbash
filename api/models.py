@@ -76,6 +76,8 @@ class Person(models.Model):
     ethnicity = models.CharField(max_length=50, blank=True)
     hqt = models.CharField(max_length=16, blank=True)
     ssn = models.CharField(max_length=9, blank=True)
+    long_term_sub = models.BooleanField(default=False)
+    long_term_sub_replacing = models.IntegerField(null=True)
     tcp_id = models.IntegerField(null=True)
     talented_id = models.IntegerField(null=True)
     is_onboarded = models.BooleanField(default=False)
@@ -113,6 +115,8 @@ class Person(models.Model):
     desk_phone_created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="desk_phone_created_user")
     start_date = models.DateField(null=True, blank=True)
     locations = models.ManyToManyField(Location)
+    current_workflow = models.ForeignKey('bpm.Workflow', on_delete=models.SET_NULL, null=True, related_name="current_workflow")
+    cancel_workflow = models.ForeignKey('bpm.Workflow', on_delete=models.SET_NULL, null=True, related_name="cancel_workflow")
     last_updated_by = models.CharField(max_length=255, blank=True)
     last_updated_date = models.DateTimeField(null=True, blank=True, auto_now=True)
 
