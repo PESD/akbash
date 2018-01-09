@@ -414,34 +414,37 @@ class TaskWorker:
         def task_set_epar_id(**kwargs):
             workflow_task = kwargs["workflow_task"]
             epar_id = kwargs["epar_id"]
+            user = TaskWorker.get_user_or_false(kwargs["username"])
             if not VisionsHelper.verify_epar(epar_id):
                 return (False, "ePAR not found")
             if TaskWorker.is_epar_dup(epar_id):
                 return (False, "ePAR already linked to an Employee")
             employee = TaskWorker.get_employee_from_workflow_task(workflow_task)
-            update_field(employee, "epar_id", epar_id)
+            update_field(employee, "epar_id", epar_id, user)
             return (True, "Success")
 
         def task_set_term_epar_id(**kwargs):
             workflow_task = kwargs["workflow_task"]
             epar_id = kwargs["epar_id"]
+            user = TaskWorker.get_user_or_false(kwargs["username"])
             if not VisionsHelper.verify_epar(epar_id):
                 return (False, "ePAR not found")
             if TaskWorker.is_term_epar_dup(epar_id):
                 return (False, "ePAR already linked to an Employee")
             employee = TaskWorker.get_employee_from_workflow_task(workflow_task)
-            update_field(employee, "termination_epar_id", epar_id)
+            update_field(employee, "termination_epar_id", epar_id, user)
             return (True, "Success")
 
         def task_set_transfer_epar_id(**kwargs):
             workflow_task = kwargs["workflow_task"]
             epar_id = kwargs["epar_id"]
+            user = TaskWorker.get_user_or_false(kwargs["username"])
             if not VisionsHelper.verify_epar(epar_id):
                 return (False, "ePAR not found")
             if TaskWorker.is_transfer_epar_dup(epar_id):
                 return (False, "ePAR already linked to an Employee")
             employee = TaskWorker.get_employee_from_workflow_task(workflow_task)
-            update_field(employee, "transfer_epar_id", epar_id)
+            update_field(employee, "transfer_epar_id", epar_id, user)
             positions = VisionsHelper.get_epar_positions(epar_id)
             if positions:
                 return TaskWorker.update_positions(employee, positions)

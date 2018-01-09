@@ -8017,3 +8017,893 @@
     Attempting to run job <449 - Create Synergy Account>
 2018-01-09 21:39:09,596 DEBUG:akjob.job:models
     Finished running job <449 - Create Synergy Account>
+2018-01-09 21:40:09,619 INFO:akjob.akjobd:akjobd --- Starting job 415, Assign Employee to Visions Position
+2018-01-09 21:40:10,734 DEBUG:akjob.job:models
+    Attempting to run job <415 - Assign Employee to Visions Position>
+2018-01-09 21:40:11,088 DEBUG:akjob.job:models
+    Finished running job <415 - Assign Employee to Visions Position>
+2018-01-09 21:40:11,096 INFO:akjob.akjobd:akjobd --- Starting job 416, Create Active Directory Account
+2018-01-09 21:40:12,070 DEBUG:akjob.job:models
+    Attempting to run job <416 - Create Active Directory Account>
+2018-01-09 21:40:12,549 DEBUG:akjob.job:models
+    Finished running job <416 - Create Active Directory Account>
+2018-01-09 21:40:12,560 INFO:akjob.akjobd:akjobd --- Starting job 420, Create Synergy Account
+2018-01-09 21:40:13,563 DEBUG:akjob.job:models
+    Attempting to run job <420 - Create Synergy Account>
+2018-01-09 21:40:13,603 DEBUG:akjob.job:models
+    Finished running job <420 - Create Synergy Account>
+2018-01-09 21:40:13,612 INFO:akjob.akjobd:akjobd --- Starting job 442, Create Synergy Account
+2018-01-09 21:40:14,518 DEBUG:akjob.job:models
+    Attempting to run job <442 - Create Synergy Account>
+2018-01-09 21:40:14,560 DEBUG:akjob.job:models
+    Finished running job <442 - Create Synergy Account>
+2018-01-09 21:40:14,568 INFO:akjob.akjobd:akjobd --- Starting job 443, Create Synergy Account
+2018-01-09 21:40:15,502 DEBUG:akjob.job:models
+    Job <443 - Create Synergy Account> not running at this time.
+2018-01-09 21:40:15,505 INFO:akjob.akjobd:akjobd --- Starting job 444, Create Active Directory Account
+2018-01-09 21:40:16,603 DEBUG:akjob.job:models
+    Job <444 - Create Active Directory Account> not running at this time.
+2018-01-09 21:40:16,606 INFO:akjob.akjobd:akjobd --- Starting job 445, Assign Employee to Visions Position
+2018-01-09 21:40:17,660 DEBUG:akjob.job:models
+    Job <445 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 21:40:17,663 INFO:akjob.akjobd:akjobd --- Starting job 446, Assign Employee to Visions Position
+2018-01-09 21:40:18,623 DEBUG:akjob.job:models
+    Job <446 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 21:40:18,625 INFO:akjob.akjobd:akjobd --- Starting job 447, Create Synergy Account
+2018-01-09 21:40:19,611 DEBUG:akjob.job:models
+    Job <447 - Create Synergy Account> not running at this time.
+2018-01-09 21:40:19,614 INFO:akjob.akjobd:akjobd --- Starting job 448, Assign Employee to Visions Position
+2018-01-09 21:40:20,664 DEBUG:akjob.job:models
+    Job <448 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 21:40:20,668 INFO:akjob.akjobd:akjobd --- Starting job 449, Create Synergy Account
+2018-01-09 21:40:21,767 DEBUG:akjob.job:models
+    Job <449 - Create Synergy Account> not running at this time.
+2018-01-09 21:41:21,783 INFO:akjob.akjobd:akjobd --- Starting job 415, Assign Employee to Visions Position
+2018-01-09 21:41:22,785 DEBUG:akjob.job:models
+    Job <415 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 21:41:22,788 INFO:akjob.akjobd:akjobd --- Starting job 416, Create Active Directory Account
+2018-01-09 21:41:23,819 DEBUG:akjob.job:models
+    Job <416 - Create Active Directory Account> not running at this time.
+2018-01-09 21:41:23,833 INFO:akjob.akjobd:akjobd --- Starting job 420, Create Synergy Account
+2018-01-09 21:41:24,764 DEBUG:akjob.job:models
+    Job <420 - Create Synergy Account> not running at this time.
+2018-01-09 21:41:24,767 INFO:akjob.akjobd:akjobd --- Starting job 442, Create Synergy Account
+2018-01-09 21:41:25,862 DEBUG:akjob.job:models
+    Job <442 - Create Synergy Account> not running at this time.
+2018-01-09 21:41:25,864 INFO:akjob.akjobd:akjobd --- Starting job 443, Create Synergy Account
+2018-01-09 21:41:27,030 DEBUG:akjob.job:models
+    Job <443 - Create Synergy Account> not running at this time.
+2018-01-09 21:41:27,033 INFO:akjob.akjobd:akjobd --- Starting job 444, Create Active Directory Account
+2018-01-09 21:41:28,157 DEBUG:akjob.job:models
+    Job <444 - Create Active Directory Account> not running at this time.
+2018-01-09 21:41:28,160 INFO:akjob.akjobd:akjobd --- Starting job 445, Assign Employee to Visions Position
+2018-01-09 21:41:29,141 DEBUG:akjob.job:models
+    Job <445 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 21:41:29,143 INFO:akjob.akjobd:akjobd --- Starting job 446, Assign Employee to Visions Position
+2018-01-09 21:41:30,146 DEBUG:akjob.job:models
+    Job <446 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 21:41:30,148 INFO:akjob.akjobd:akjobd --- Starting job 447, Create Synergy Account
+2018-01-09 21:41:31,273 DEBUG:akjob.job:models
+    Job <447 - Create Synergy Account> not running at this time.
+2018-01-09 21:41:31,276 INFO:akjob.akjobd:akjobd --- Starting job 448, Assign Employee to Visions Position
+2018-01-09 21:41:32,352 DEBUG:akjob.job:models
+    Job <448 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 21:41:32,354 INFO:akjob.akjobd:akjobd --- Starting job 449, Create Synergy Account
+2018-01-09 21:41:33,629 DEBUG:akjob.job:models
+    Job <449 - Create Synergy Account> not running at this time.
+2018-01-09 21:42:33,644 INFO:akjob.akjobd:akjobd --- Starting job 415, Assign Employee to Visions Position
+2018-01-09 21:42:34,726 DEBUG:akjob.job:models
+    Job <415 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 21:42:34,729 INFO:akjob.akjobd:akjobd --- Starting job 416, Create Active Directory Account
+2018-01-09 21:42:35,827 DEBUG:akjob.job:models
+    Job <416 - Create Active Directory Account> not running at this time.
+2018-01-09 21:42:35,830 INFO:akjob.akjobd:akjobd --- Starting job 420, Create Synergy Account
+2018-01-09 21:42:36,934 DEBUG:akjob.job:models
+    Job <420 - Create Synergy Account> not running at this time.
+2018-01-09 21:42:36,937 INFO:akjob.akjobd:akjobd --- Starting job 442, Create Synergy Account
+2018-01-09 21:42:38,052 DEBUG:akjob.job:models
+    Job <442 - Create Synergy Account> not running at this time.
+2018-01-09 21:42:38,054 INFO:akjob.akjobd:akjobd --- Starting job 443, Create Synergy Account
+2018-01-09 21:42:39,186 DEBUG:akjob.job:models
+    Job <443 - Create Synergy Account> not running at this time.
+2018-01-09 21:42:39,188 INFO:akjob.akjobd:akjobd --- Starting job 444, Create Active Directory Account
+2018-01-09 21:42:40,243 DEBUG:akjob.job:models
+    Job <444 - Create Active Directory Account> not running at this time.
+2018-01-09 21:42:40,245 INFO:akjob.akjobd:akjobd --- Starting job 445, Assign Employee to Visions Position
+2018-01-09 21:42:41,331 DEBUG:akjob.job:models
+    Job <445 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 21:42:41,334 INFO:akjob.akjobd:akjobd --- Starting job 446, Assign Employee to Visions Position
+2018-01-09 21:42:42,410 DEBUG:akjob.job:models
+    Job <446 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 21:42:42,412 INFO:akjob.akjobd:akjobd --- Starting job 447, Create Synergy Account
+2018-01-09 21:42:43,517 DEBUG:akjob.job:models
+    Job <447 - Create Synergy Account> not running at this time.
+2018-01-09 21:42:43,519 INFO:akjob.akjobd:akjobd --- Starting job 448, Assign Employee to Visions Position
+2018-01-09 21:42:44,618 DEBUG:akjob.job:models
+    Job <448 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 21:42:44,620 INFO:akjob.akjobd:akjobd --- Starting job 449, Create Synergy Account
+2018-01-09 21:42:45,757 DEBUG:akjob.job:models
+    Job <449 - Create Synergy Account> not running at this time.
+2018-01-09 21:43:45,772 INFO:akjob.akjobd:akjobd --- Starting job 415, Assign Employee to Visions Position
+2018-01-09 21:43:46,979 DEBUG:akjob.job:models
+    Job <415 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 21:43:46,982 INFO:akjob.akjobd:akjobd --- Starting job 416, Create Active Directory Account
+2018-01-09 21:43:48,045 DEBUG:akjob.job:models
+    Job <416 - Create Active Directory Account> not running at this time.
+2018-01-09 21:43:48,048 INFO:akjob.akjobd:akjobd --- Starting job 420, Create Synergy Account
+2018-01-09 21:43:48,986 DEBUG:akjob.job:models
+    Job <420 - Create Synergy Account> not running at this time.
+2018-01-09 21:43:48,990 INFO:akjob.akjobd:akjobd --- Starting job 442, Create Synergy Account
+2018-01-09 21:43:50,113 DEBUG:akjob.job:models
+    Job <442 - Create Synergy Account> not running at this time.
+2018-01-09 21:43:50,117 INFO:akjob.akjobd:akjobd --- Starting job 443, Create Synergy Account
+2018-01-09 21:43:51,206 DEBUG:akjob.job:models
+    Job <443 - Create Synergy Account> not running at this time.
+2018-01-09 21:43:51,209 INFO:akjob.akjobd:akjobd --- Starting job 444, Create Active Directory Account
+2018-01-09 21:43:52,275 DEBUG:akjob.job:models
+    Job <444 - Create Active Directory Account> not running at this time.
+2018-01-09 21:43:52,278 INFO:akjob.akjobd:akjobd --- Starting job 445, Assign Employee to Visions Position
+2018-01-09 21:43:53,235 DEBUG:akjob.job:models
+    Job <445 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 21:43:53,248 INFO:akjob.akjobd:akjobd --- Starting job 446, Assign Employee to Visions Position
+2018-01-09 21:43:54,407 DEBUG:akjob.job:models
+    Job <446 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 21:43:54,410 INFO:akjob.akjobd:akjobd --- Starting job 447, Create Synergy Account
+2018-01-09 21:43:55,443 DEBUG:akjob.job:models
+    Job <447 - Create Synergy Account> not running at this time.
+2018-01-09 21:43:55,445 INFO:akjob.akjobd:akjobd --- Starting job 448, Assign Employee to Visions Position
+2018-01-09 21:43:56,505 DEBUG:akjob.job:models
+    Job <448 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 21:43:56,507 INFO:akjob.akjobd:akjobd --- Starting job 449, Create Synergy Account
+2018-01-09 21:43:57,458 DEBUG:akjob.job:models
+    Job <449 - Create Synergy Account> not running at this time.
+2018-01-09 21:44:57,471 INFO:akjob.akjobd:akjobd --- Starting job 415, Assign Employee to Visions Position
+2018-01-09 21:44:58,405 DEBUG:akjob.job:models
+    Job <415 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 21:44:58,407 INFO:akjob.akjobd:akjobd --- Starting job 416, Create Active Directory Account
+2018-01-09 21:44:59,458 DEBUG:akjob.job:models
+    Job <416 - Create Active Directory Account> not running at this time.
+2018-01-09 21:44:59,461 INFO:akjob.akjobd:akjobd --- Starting job 420, Create Synergy Account
+2018-01-09 21:45:00,394 DEBUG:akjob.job:models
+    Job <420 - Create Synergy Account> not running at this time.
+2018-01-09 21:45:00,396 INFO:akjob.akjobd:akjobd --- Starting job 442, Create Synergy Account
+2018-01-09 21:45:01,489 DEBUG:akjob.job:models
+    Attempting to run job <442 - Create Synergy Account>
+2018-01-09 21:45:01,538 DEBUG:akjob.job:models
+    Finished running job <442 - Create Synergy Account>
+2018-01-09 21:45:01,548 INFO:akjob.akjobd:akjobd --- Starting job 443, Create Synergy Account
+2018-01-09 21:45:02,517 DEBUG:akjob.job:models
+    Attempting to run job <443 - Create Synergy Account>
+2018-01-09 21:45:02,560 DEBUG:akjob.job:models
+    Finished running job <443 - Create Synergy Account>
+2018-01-09 21:45:02,569 INFO:akjob.akjobd:akjobd --- Starting job 444, Create Active Directory Account
+2018-01-09 21:45:03,610 DEBUG:akjob.job:models
+    Attempting to run job <444 - Create Active Directory Account>
+2018-01-09 21:45:04,090 DEBUG:akjob.job:models
+    Finished running job <444 - Create Active Directory Account>
+2018-01-09 21:45:04,106 INFO:akjob.akjobd:akjobd --- Starting job 445, Assign Employee to Visions Position
+2018-01-09 21:45:05,249 DEBUG:akjob.job:models
+    Attempting to run job <445 - Assign Employee to Visions Position>
+2018-01-09 21:45:05,613 DEBUG:akjob.job:models
+    Finished running job <445 - Assign Employee to Visions Position>
+2018-01-09 21:45:05,623 INFO:akjob.akjobd:akjobd --- Starting job 446, Assign Employee to Visions Position
+2018-01-09 21:45:06,676 DEBUG:akjob.job:models
+    Attempting to run job <446 - Assign Employee to Visions Position>
+2018-01-09 21:45:07,026 DEBUG:akjob.job:models
+    Finished running job <446 - Assign Employee to Visions Position>
+2018-01-09 21:45:07,038 INFO:akjob.akjobd:akjobd --- Starting job 447, Create Synergy Account
+2018-01-09 21:45:08,109 DEBUG:akjob.job:models
+    Attempting to run job <447 - Create Synergy Account>
+2018-01-09 21:45:08,157 DEBUG:akjob.job:models
+    Finished running job <447 - Create Synergy Account>
+2018-01-09 21:45:08,166 INFO:akjob.akjobd:akjobd --- Starting job 448, Assign Employee to Visions Position
+2018-01-09 21:45:09,186 DEBUG:akjob.job:models
+    Attempting to run job <448 - Assign Employee to Visions Position>
+2018-01-09 21:45:09,529 DEBUG:akjob.job:models
+    Finished running job <448 - Assign Employee to Visions Position>
+2018-01-09 21:45:09,540 INFO:akjob.akjobd:akjobd --- Starting job 449, Create Synergy Account
+2018-01-09 21:45:10,719 DEBUG:akjob.job:models
+    Attempting to run job <449 - Create Synergy Account>
+2018-01-09 21:45:10,764 DEBUG:akjob.job:models
+    Finished running job <449 - Create Synergy Account>
+2018-01-09 21:46:10,784 INFO:akjob.akjobd:akjobd --- Starting job 415, Assign Employee to Visions Position
+2018-01-09 21:46:11,805 DEBUG:akjob.job:models
+    Attempting to run job <415 - Assign Employee to Visions Position>
+2018-01-09 21:46:12,178 DEBUG:akjob.job:models
+    Finished running job <415 - Assign Employee to Visions Position>
+2018-01-09 21:46:12,188 INFO:akjob.akjobd:akjobd --- Starting job 416, Create Active Directory Account
+2018-01-09 21:46:13,282 DEBUG:akjob.job:models
+    Attempting to run job <416 - Create Active Directory Account>
+2018-01-09 21:46:13,812 DEBUG:akjob.job:models
+    Finished running job <416 - Create Active Directory Account>
+2018-01-09 21:46:13,827 INFO:akjob.akjobd:akjobd --- Starting job 420, Create Synergy Account
+2018-01-09 21:46:14,995 DEBUG:akjob.job:models
+    Attempting to run job <420 - Create Synergy Account>
+2018-01-09 21:46:15,039 DEBUG:akjob.job:models
+    Finished running job <420 - Create Synergy Account>
+2018-01-09 21:46:15,048 INFO:akjob.akjobd:akjobd --- Starting job 442, Create Synergy Account
+2018-01-09 21:46:15,922 DEBUG:akjob.job:models
+    Job <442 - Create Synergy Account> not running at this time.
+2018-01-09 21:46:15,925 INFO:akjob.akjobd:akjobd --- Starting job 443, Create Synergy Account
+2018-01-09 21:46:16,762 DEBUG:akjob.job:models
+    Job <443 - Create Synergy Account> not running at this time.
+2018-01-09 21:46:16,765 INFO:akjob.akjobd:akjobd --- Starting job 444, Create Active Directory Account
+2018-01-09 21:46:17,938 DEBUG:akjob.job:models
+    Job <444 - Create Active Directory Account> not running at this time.
+2018-01-09 21:46:17,941 INFO:akjob.akjobd:akjobd --- Starting job 445, Assign Employee to Visions Position
+2018-01-09 21:46:18,958 DEBUG:akjob.job:models
+    Job <445 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 21:46:18,961 INFO:akjob.akjobd:akjobd --- Starting job 446, Assign Employee to Visions Position
+2018-01-09 21:46:20,060 DEBUG:akjob.job:models
+    Job <446 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 21:46:20,063 INFO:akjob.akjobd:akjobd --- Starting job 447, Create Synergy Account
+2018-01-09 21:46:21,183 DEBUG:akjob.job:models
+    Job <447 - Create Synergy Account> not running at this time.
+2018-01-09 21:46:21,186 INFO:akjob.akjobd:akjobd --- Starting job 448, Assign Employee to Visions Position
+2018-01-09 21:46:22,391 DEBUG:akjob.job:models
+    Job <448 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 21:46:22,394 INFO:akjob.akjobd:akjobd --- Starting job 449, Create Synergy Account
+2018-01-09 21:46:23,544 DEBUG:akjob.job:models
+    Job <449 - Create Synergy Account> not running at this time.
+2018-01-09 21:47:23,566 INFO:akjob.akjobd:akjobd --- Starting job 415, Assign Employee to Visions Position
+2018-01-09 21:47:24,473 DEBUG:akjob.job:models
+    Job <415 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 21:47:24,476 INFO:akjob.akjobd:akjobd --- Starting job 416, Create Active Directory Account
+2018-01-09 21:47:25,434 DEBUG:akjob.job:models
+    Job <416 - Create Active Directory Account> not running at this time.
+2018-01-09 21:47:25,436 INFO:akjob.akjobd:akjobd --- Starting job 420, Create Synergy Account
+2018-01-09 21:47:26,474 DEBUG:akjob.job:models
+    Job <420 - Create Synergy Account> not running at this time.
+2018-01-09 21:47:26,476 INFO:akjob.akjobd:akjobd --- Starting job 442, Create Synergy Account
+2018-01-09 21:47:27,396 DEBUG:akjob.job:models
+    Job <442 - Create Synergy Account> not running at this time.
+2018-01-09 21:47:27,398 INFO:akjob.akjobd:akjobd --- Starting job 443, Create Synergy Account
+2018-01-09 21:47:28,377 DEBUG:akjob.job:models
+    Job <443 - Create Synergy Account> not running at this time.
+2018-01-09 21:47:28,380 INFO:akjob.akjobd:akjobd --- Starting job 444, Create Active Directory Account
+2018-01-09 21:47:29,403 DEBUG:akjob.job:models
+    Job <444 - Create Active Directory Account> not running at this time.
+2018-01-09 21:47:29,406 INFO:akjob.akjobd:akjobd --- Starting job 445, Assign Employee to Visions Position
+2018-01-09 21:47:30,493 DEBUG:akjob.job:models
+    Job <445 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 21:47:30,495 INFO:akjob.akjobd:akjobd --- Starting job 446, Assign Employee to Visions Position
+2018-01-09 21:47:31,525 DEBUG:akjob.job:models
+    Job <446 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 21:47:31,528 INFO:akjob.akjobd:akjobd --- Starting job 447, Create Synergy Account
+2018-01-09 21:47:32,506 DEBUG:akjob.job:models
+    Job <447 - Create Synergy Account> not running at this time.
+2018-01-09 21:47:32,509 INFO:akjob.akjobd:akjobd --- Starting job 448, Assign Employee to Visions Position
+2018-01-09 21:47:33,488 DEBUG:akjob.job:models
+    Job <448 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 21:47:33,490 INFO:akjob.akjobd:akjobd --- Starting job 449, Create Synergy Account
+2018-01-09 21:47:34,498 DEBUG:akjob.job:models
+    Job <449 - Create Synergy Account> not running at this time.
+2018-01-09 21:48:34,514 INFO:akjob.akjobd:akjobd --- Starting job 415, Assign Employee to Visions Position
+2018-01-09 21:48:35,513 DEBUG:akjob.job:models
+    Job <415 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 21:48:35,516 INFO:akjob.akjobd:akjobd --- Starting job 416, Create Active Directory Account
+2018-01-09 21:48:36,573 DEBUG:akjob.job:models
+    Job <416 - Create Active Directory Account> not running at this time.
+2018-01-09 21:48:36,576 INFO:akjob.akjobd:akjobd --- Starting job 420, Create Synergy Account
+2018-01-09 21:48:37,492 DEBUG:akjob.job:models
+    Job <420 - Create Synergy Account> not running at this time.
+2018-01-09 21:48:37,495 INFO:akjob.akjobd:akjobd --- Starting job 442, Create Synergy Account
+2018-01-09 21:48:38,405 DEBUG:akjob.job:models
+    Job <442 - Create Synergy Account> not running at this time.
+2018-01-09 21:48:38,407 INFO:akjob.akjobd:akjobd --- Starting job 443, Create Synergy Account
+2018-01-09 21:48:39,279 DEBUG:akjob.job:models
+    Job <443 - Create Synergy Account> not running at this time.
+2018-01-09 21:48:39,281 INFO:akjob.akjobd:akjobd --- Starting job 444, Create Active Directory Account
+2018-01-09 21:48:40,210 DEBUG:akjob.job:models
+    Job <444 - Create Active Directory Account> not running at this time.
+2018-01-09 21:48:40,213 INFO:akjob.akjobd:akjobd --- Starting job 445, Assign Employee to Visions Position
+2018-01-09 21:48:41,323 DEBUG:akjob.job:models
+    Job <445 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 21:48:41,326 INFO:akjob.akjobd:akjobd --- Starting job 446, Assign Employee to Visions Position
+2018-01-09 21:48:42,207 DEBUG:akjob.job:models
+    Job <446 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 21:48:42,210 INFO:akjob.akjobd:akjobd --- Starting job 447, Create Synergy Account
+2018-01-09 21:48:43,157 DEBUG:akjob.job:models
+    Job <447 - Create Synergy Account> not running at this time.
+2018-01-09 21:48:43,159 INFO:akjob.akjobd:akjobd --- Starting job 448, Assign Employee to Visions Position
+2018-01-09 21:48:44,259 DEBUG:akjob.job:models
+    Job <448 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 21:48:44,262 INFO:akjob.akjobd:akjobd --- Starting job 449, Create Synergy Account
+2018-01-09 21:48:45,310 DEBUG:akjob.job:models
+    Job <449 - Create Synergy Account> not running at this time.
+2018-01-09 21:49:45,325 INFO:akjob.akjobd:akjobd --- Starting job 415, Assign Employee to Visions Position
+2018-01-09 21:49:46,239 DEBUG:akjob.job:models
+    Job <415 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 21:49:46,241 INFO:akjob.akjobd:akjobd --- Starting job 416, Create Active Directory Account
+2018-01-09 21:49:47,160 DEBUG:akjob.job:models
+    Job <416 - Create Active Directory Account> not running at this time.
+2018-01-09 21:49:47,162 INFO:akjob.akjobd:akjobd --- Starting job 420, Create Synergy Account
+2018-01-09 21:49:48,187 DEBUG:akjob.job:models
+    Job <420 - Create Synergy Account> not running at this time.
+2018-01-09 21:49:48,190 INFO:akjob.akjobd:akjobd --- Starting job 442, Create Synergy Account
+2018-01-09 21:49:49,256 DEBUG:akjob.job:models
+    Job <442 - Create Synergy Account> not running at this time.
+2018-01-09 21:49:49,259 INFO:akjob.akjobd:akjobd --- Starting job 443, Create Synergy Account
+2018-01-09 21:49:50,230 DEBUG:akjob.job:models
+    Job <443 - Create Synergy Account> not running at this time.
+2018-01-09 21:49:50,232 INFO:akjob.akjobd:akjobd --- Starting job 444, Create Active Directory Account
+2018-01-09 21:49:51,280 DEBUG:akjob.job:models
+    Job <444 - Create Active Directory Account> not running at this time.
+2018-01-09 21:49:51,283 INFO:akjob.akjobd:akjobd --- Starting job 445, Assign Employee to Visions Position
+2018-01-09 21:49:52,243 DEBUG:akjob.job:models
+    Job <445 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 21:49:52,245 INFO:akjob.akjobd:akjobd --- Starting job 446, Assign Employee to Visions Position
+2018-01-09 21:49:53,235 DEBUG:akjob.job:models
+    Job <446 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 21:49:53,247 INFO:akjob.akjobd:akjobd --- Starting job 447, Create Synergy Account
+2018-01-09 21:49:54,318 DEBUG:akjob.job:models
+    Job <447 - Create Synergy Account> not running at this time.
+2018-01-09 21:49:54,321 INFO:akjob.akjobd:akjobd --- Starting job 448, Assign Employee to Visions Position
+2018-01-09 21:49:55,343 DEBUG:akjob.job:models
+    Job <448 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 21:49:55,346 INFO:akjob.akjobd:akjobd --- Starting job 449, Create Synergy Account
+2018-01-09 21:49:56,343 DEBUG:akjob.job:models
+    Job <449 - Create Synergy Account> not running at this time.
+2018-01-09 21:50:56,357 INFO:akjob.akjobd:akjobd --- Starting job 415, Assign Employee to Visions Position
+2018-01-09 21:50:57,443 DEBUG:akjob.job:models
+    Job <415 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 21:50:57,445 INFO:akjob.akjobd:akjobd --- Starting job 416, Create Active Directory Account
+2018-01-09 21:50:58,559 DEBUG:akjob.job:models
+    Job <416 - Create Active Directory Account> not running at this time.
+2018-01-09 21:50:58,562 INFO:akjob.akjobd:akjobd --- Starting job 420, Create Synergy Account
+2018-01-09 21:50:59,667 DEBUG:akjob.job:models
+    Job <420 - Create Synergy Account> not running at this time.
+2018-01-09 21:50:59,670 INFO:akjob.akjobd:akjobd --- Starting job 442, Create Synergy Account
+2018-01-09 21:51:00,841 DEBUG:akjob.job:models
+    Attempting to run job <442 - Create Synergy Account>
+2018-01-09 21:51:00,890 DEBUG:akjob.job:models
+    Finished running job <442 - Create Synergy Account>
+2018-01-09 21:51:00,899 INFO:akjob.akjobd:akjobd --- Starting job 443, Create Synergy Account
+2018-01-09 21:51:01,829 DEBUG:akjob.job:models
+    Attempting to run job <443 - Create Synergy Account>
+2018-01-09 21:51:01,882 DEBUG:akjob.job:models
+    Finished running job <443 - Create Synergy Account>
+2018-01-09 21:51:01,893 INFO:akjob.akjobd:akjobd --- Starting job 444, Create Active Directory Account
+2018-01-09 21:51:02,886 DEBUG:akjob.job:models
+    Attempting to run job <444 - Create Active Directory Account>
+2018-01-09 21:51:03,407 DEBUG:akjob.job:models
+    Finished running job <444 - Create Active Directory Account>
+2018-01-09 21:51:03,421 INFO:akjob.akjobd:akjobd --- Starting job 445, Assign Employee to Visions Position
+2018-01-09 21:51:04,627 DEBUG:akjob.job:models
+    Attempting to run job <445 - Assign Employee to Visions Position>
+2018-01-09 21:51:04,970 DEBUG:akjob.job:models
+    Finished running job <445 - Assign Employee to Visions Position>
+2018-01-09 21:51:04,981 INFO:akjob.akjobd:akjobd --- Starting job 446, Assign Employee to Visions Position
+2018-01-09 21:51:05,968 DEBUG:akjob.job:models
+    Attempting to run job <446 - Assign Employee to Visions Position>
+2018-01-09 21:51:06,318 DEBUG:akjob.job:models
+    Finished running job <446 - Assign Employee to Visions Position>
+2018-01-09 21:51:06,330 INFO:akjob.akjobd:akjobd --- Starting job 447, Create Synergy Account
+2018-01-09 21:51:07,481 DEBUG:akjob.job:models
+    Attempting to run job <447 - Create Synergy Account>
+2018-01-09 21:51:07,530 DEBUG:akjob.job:models
+    Finished running job <447 - Create Synergy Account>
+2018-01-09 21:51:07,539 INFO:akjob.akjobd:akjobd --- Starting job 448, Assign Employee to Visions Position
+2018-01-09 21:51:08,622 DEBUG:akjob.job:models
+    Attempting to run job <448 - Assign Employee to Visions Position>
+2018-01-09 21:51:08,975 DEBUG:akjob.job:models
+    Finished running job <448 - Assign Employee to Visions Position>
+2018-01-09 21:51:08,987 INFO:akjob.akjobd:akjobd --- Starting job 449, Create Synergy Account
+2018-01-09 21:51:10,065 DEBUG:akjob.job:models
+    Attempting to run job <449 - Create Synergy Account>
+2018-01-09 21:51:10,108 DEBUG:akjob.job:models
+    Finished running job <449 - Create Synergy Account>
+2018-01-09 21:52:10,129 INFO:akjob.akjobd:akjobd --- Starting job 415, Assign Employee to Visions Position
+2018-01-09 21:52:11,156 DEBUG:akjob.job:models
+    Attempting to run job <415 - Assign Employee to Visions Position>
+2018-01-09 21:52:11,504 DEBUG:akjob.job:models
+    Finished running job <415 - Assign Employee to Visions Position>
+2018-01-09 21:52:11,514 INFO:akjob.akjobd:akjobd --- Starting job 416, Create Active Directory Account
+2018-01-09 21:52:12,618 DEBUG:akjob.job:models
+    Attempting to run job <416 - Create Active Directory Account>
+2018-01-09 21:52:13,079 DEBUG:akjob.job:models
+    Finished running job <416 - Create Active Directory Account>
+2018-01-09 21:52:13,094 INFO:akjob.akjobd:akjobd --- Starting job 420, Create Synergy Account
+2018-01-09 21:52:14,116 DEBUG:akjob.job:models
+    Attempting to run job <420 - Create Synergy Account>
+2018-01-09 21:52:14,157 DEBUG:akjob.job:models
+    Finished running job <420 - Create Synergy Account>
+2018-01-09 21:52:14,165 INFO:akjob.akjobd:akjobd --- Starting job 442, Create Synergy Account
+2018-01-09 21:52:15,096 DEBUG:akjob.job:models
+    Job <442 - Create Synergy Account> not running at this time.
+2018-01-09 21:52:15,099 INFO:akjob.akjobd:akjobd --- Starting job 443, Create Synergy Account
+2018-01-09 21:52:16,066 DEBUG:akjob.job:models
+    Job <443 - Create Synergy Account> not running at this time.
+2018-01-09 21:52:16,069 INFO:akjob.akjobd:akjobd --- Starting job 444, Create Active Directory Account
+2018-01-09 21:52:17,030 DEBUG:akjob.job:models
+    Job <444 - Create Active Directory Account> not running at this time.
+2018-01-09 21:52:17,033 INFO:akjob.akjobd:akjobd --- Starting job 445, Assign Employee to Visions Position
+2018-01-09 21:52:18,012 DEBUG:akjob.job:models
+    Job <445 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 21:52:18,014 INFO:akjob.akjobd:akjobd --- Starting job 446, Assign Employee to Visions Position
+2018-01-09 21:52:18,919 DEBUG:akjob.job:models
+    Job <446 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 21:52:18,922 INFO:akjob.akjobd:akjobd --- Starting job 447, Create Synergy Account
+2018-01-09 21:52:19,794 DEBUG:akjob.job:models
+    Job <447 - Create Synergy Account> not running at this time.
+2018-01-09 21:52:19,796 INFO:akjob.akjobd:akjobd --- Starting job 448, Assign Employee to Visions Position
+2018-01-09 21:52:20,675 DEBUG:akjob.job:models
+    Job <448 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 21:52:20,677 INFO:akjob.akjobd:akjobd --- Starting job 449, Create Synergy Account
+2018-01-09 21:52:21,611 DEBUG:akjob.job:models
+    Job <449 - Create Synergy Account> not running at this time.
+2018-01-09 21:53:21,624 INFO:akjob.akjobd:akjobd --- Starting job 415, Assign Employee to Visions Position
+2018-01-09 21:53:22,583 DEBUG:akjob.job:models
+    Job <415 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 21:53:22,592 INFO:akjob.akjobd:akjobd --- Starting job 416, Create Active Directory Account
+2018-01-09 21:53:23,561 DEBUG:akjob.job:models
+    Job <416 - Create Active Directory Account> not running at this time.
+2018-01-09 21:53:23,601 INFO:akjob.akjobd:akjobd --- Starting job 420, Create Synergy Account
+2018-01-09 21:53:24,634 DEBUG:akjob.job:models
+    Job <420 - Create Synergy Account> not running at this time.
+2018-01-09 21:53:24,636 INFO:akjob.akjobd:akjobd --- Starting job 442, Create Synergy Account
+2018-01-09 21:53:25,625 DEBUG:akjob.job:models
+    Job <442 - Create Synergy Account> not running at this time.
+2018-01-09 21:53:25,627 INFO:akjob.akjobd:akjobd --- Starting job 443, Create Synergy Account
+2018-01-09 21:53:26,567 DEBUG:akjob.job:models
+    Job <443 - Create Synergy Account> not running at this time.
+2018-01-09 21:53:26,569 INFO:akjob.akjobd:akjobd --- Starting job 444, Create Active Directory Account
+2018-01-09 21:53:27,629 DEBUG:akjob.job:models
+    Job <444 - Create Active Directory Account> not running at this time.
+2018-01-09 21:53:27,632 INFO:akjob.akjobd:akjobd --- Starting job 445, Assign Employee to Visions Position
+2018-01-09 21:53:28,724 DEBUG:akjob.job:models
+    Job <445 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 21:53:28,726 INFO:akjob.akjobd:akjobd --- Starting job 446, Assign Employee to Visions Position
+2018-01-09 21:53:29,765 DEBUG:akjob.job:models
+    Job <446 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 21:53:29,767 INFO:akjob.akjobd:akjobd --- Starting job 447, Create Synergy Account
+2018-01-09 21:53:30,821 DEBUG:akjob.job:models
+    Job <447 - Create Synergy Account> not running at this time.
+2018-01-09 21:53:30,824 INFO:akjob.akjobd:akjobd --- Starting job 448, Assign Employee to Visions Position
+2018-01-09 21:53:31,916 DEBUG:akjob.job:models
+    Job <448 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 21:53:31,920 INFO:akjob.akjobd:akjobd --- Starting job 449, Create Synergy Account
+2018-01-09 21:53:33,040 DEBUG:akjob.job:models
+    Job <449 - Create Synergy Account> not running at this time.
+2018-01-09 21:54:33,055 INFO:akjob.akjobd:akjobd --- Starting job 415, Assign Employee to Visions Position
+2018-01-09 21:54:34,174 DEBUG:akjob.job:models
+    Job <415 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 21:54:34,177 INFO:akjob.akjobd:akjobd --- Starting job 416, Create Active Directory Account
+2018-01-09 21:54:35,338 DEBUG:akjob.job:models
+    Job <416 - Create Active Directory Account> not running at this time.
+2018-01-09 21:54:35,341 INFO:akjob.akjobd:akjobd --- Starting job 420, Create Synergy Account
+2018-01-09 21:54:36,470 DEBUG:akjob.job:models
+    Job <420 - Create Synergy Account> not running at this time.
+2018-01-09 21:54:36,472 INFO:akjob.akjobd:akjobd --- Starting job 442, Create Synergy Account
+2018-01-09 21:54:37,558 DEBUG:akjob.job:models
+    Job <442 - Create Synergy Account> not running at this time.
+2018-01-09 21:54:37,560 INFO:akjob.akjobd:akjobd --- Starting job 443, Create Synergy Account
+2018-01-09 21:54:38,714 DEBUG:akjob.job:models
+    Job <443 - Create Synergy Account> not running at this time.
+2018-01-09 21:54:38,717 INFO:akjob.akjobd:akjobd --- Starting job 444, Create Active Directory Account
+2018-01-09 21:54:39,799 DEBUG:akjob.job:models
+    Job <444 - Create Active Directory Account> not running at this time.
+2018-01-09 21:54:39,802 INFO:akjob.akjobd:akjobd --- Starting job 445, Assign Employee to Visions Position
+2018-01-09 21:54:40,885 DEBUG:akjob.job:models
+    Job <445 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 21:54:40,889 INFO:akjob.akjobd:akjobd --- Starting job 446, Assign Employee to Visions Position
+2018-01-09 21:54:41,964 DEBUG:akjob.job:models
+    Job <446 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 21:54:41,967 INFO:akjob.akjobd:akjobd --- Starting job 447, Create Synergy Account
+2018-01-09 21:54:43,043 DEBUG:akjob.job:models
+    Job <447 - Create Synergy Account> not running at this time.
+2018-01-09 21:54:43,046 INFO:akjob.akjobd:akjobd --- Starting job 448, Assign Employee to Visions Position
+2018-01-09 21:54:44,226 DEBUG:akjob.job:models
+    Job <448 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 21:54:44,229 INFO:akjob.akjobd:akjobd --- Starting job 449, Create Synergy Account
+2018-01-09 21:54:45,383 DEBUG:akjob.job:models
+    Job <449 - Create Synergy Account> not running at this time.
+2018-01-09 21:55:45,397 INFO:akjob.akjobd:akjobd --- Starting job 415, Assign Employee to Visions Position
+2018-01-09 21:55:46,463 DEBUG:akjob.job:models
+    Job <415 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 21:55:46,466 INFO:akjob.akjobd:akjobd --- Starting job 416, Create Active Directory Account
+2018-01-09 21:55:47,585 DEBUG:akjob.job:models
+    Job <416 - Create Active Directory Account> not running at this time.
+2018-01-09 21:55:47,588 INFO:akjob.akjobd:akjobd --- Starting job 420, Create Synergy Account
+2018-01-09 21:55:48,766 DEBUG:akjob.job:models
+    Job <420 - Create Synergy Account> not running at this time.
+2018-01-09 21:55:48,769 INFO:akjob.akjobd:akjobd --- Starting job 442, Create Synergy Account
+2018-01-09 21:55:49,876 DEBUG:akjob.job:models
+    Job <442 - Create Synergy Account> not running at this time.
+2018-01-09 21:55:49,879 INFO:akjob.akjobd:akjobd --- Starting job 443, Create Synergy Account
+2018-01-09 21:55:50,990 DEBUG:akjob.job:models
+    Job <443 - Create Synergy Account> not running at this time.
+2018-01-09 21:55:50,993 INFO:akjob.akjobd:akjobd --- Starting job 444, Create Active Directory Account
+2018-01-09 21:55:52,169 DEBUG:akjob.job:models
+    Job <444 - Create Active Directory Account> not running at this time.
+2018-01-09 21:55:52,172 INFO:akjob.akjobd:akjobd --- Starting job 445, Assign Employee to Visions Position
+2018-01-09 21:55:53,236 DEBUG:akjob.job:models
+    Job <445 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 21:55:53,249 INFO:akjob.akjobd:akjobd --- Starting job 446, Assign Employee to Visions Position
+2018-01-09 21:55:54,442 DEBUG:akjob.job:models
+    Job <446 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 21:55:54,445 INFO:akjob.akjobd:akjobd --- Starting job 447, Create Synergy Account
+2018-01-09 21:55:55,583 DEBUG:akjob.job:models
+    Job <447 - Create Synergy Account> not running at this time.
+2018-01-09 21:55:55,585 INFO:akjob.akjobd:akjobd --- Starting job 448, Assign Employee to Visions Position
+2018-01-09 21:55:56,688 DEBUG:akjob.job:models
+    Job <448 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 21:55:56,690 INFO:akjob.akjobd:akjobd --- Starting job 449, Create Synergy Account
+2018-01-09 21:55:57,706 DEBUG:akjob.job:models
+    Job <449 - Create Synergy Account> not running at this time.
+2018-01-09 21:56:57,721 INFO:akjob.akjobd:akjobd --- Starting job 415, Assign Employee to Visions Position
+2018-01-09 21:56:58,841 DEBUG:akjob.job:models
+    Job <415 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 21:56:58,845 INFO:akjob.akjobd:akjobd --- Starting job 416, Create Active Directory Account
+2018-01-09 21:56:59,974 DEBUG:akjob.job:models
+    Job <416 - Create Active Directory Account> not running at this time.
+2018-01-09 21:56:59,977 INFO:akjob.akjobd:akjobd --- Starting job 420, Create Synergy Account
+2018-01-09 21:57:01,018 DEBUG:akjob.job:models
+    Job <420 - Create Synergy Account> not running at this time.
+2018-01-09 21:57:01,021 INFO:akjob.akjobd:akjobd --- Starting job 442, Create Synergy Account
+2018-01-09 21:57:02,137 DEBUG:akjob.job:models
+    Attempting to run job <442 - Create Synergy Account>
+2018-01-09 21:57:02,191 DEBUG:akjob.job:models
+    Finished running job <442 - Create Synergy Account>
+2018-01-09 21:57:02,200 INFO:akjob.akjobd:akjobd --- Starting job 443, Create Synergy Account
+2018-01-09 21:57:03,101 DEBUG:akjob.job:models
+    Attempting to run job <443 - Create Synergy Account>
+2018-01-09 21:57:03,143 DEBUG:akjob.job:models
+    Finished running job <443 - Create Synergy Account>
+2018-01-09 21:57:03,151 INFO:akjob.akjobd:akjobd --- Starting job 444, Create Active Directory Account
+2018-01-09 21:57:04,095 DEBUG:akjob.job:models
+    Attempting to run job <444 - Create Active Directory Account>
+2018-01-09 21:57:04,537 DEBUG:akjob.job:models
+    Finished running job <444 - Create Active Directory Account>
+2018-01-09 21:57:04,552 INFO:akjob.akjobd:akjobd --- Starting job 445, Assign Employee to Visions Position
+2018-01-09 21:57:05,695 DEBUG:akjob.job:models
+    Attempting to run job <445 - Assign Employee to Visions Position>
+2018-01-09 21:57:06,057 DEBUG:akjob.job:models
+    Finished running job <445 - Assign Employee to Visions Position>
+2018-01-09 21:57:06,066 INFO:akjob.akjobd:akjobd --- Starting job 446, Assign Employee to Visions Position
+2018-01-09 21:57:07,058 DEBUG:akjob.job:models
+    Attempting to run job <446 - Assign Employee to Visions Position>
+2018-01-09 21:57:07,415 DEBUG:akjob.job:models
+    Finished running job <446 - Assign Employee to Visions Position>
+2018-01-09 21:57:07,427 INFO:akjob.akjobd:akjobd --- Starting job 447, Create Synergy Account
+2018-01-09 21:57:08,529 DEBUG:akjob.job:models
+    Attempting to run job <447 - Create Synergy Account>
+2018-01-09 21:57:08,573 DEBUG:akjob.job:models
+    Finished running job <447 - Create Synergy Account>
+2018-01-09 21:57:08,583 INFO:akjob.akjobd:akjobd --- Starting job 448, Assign Employee to Visions Position
+2018-01-09 21:57:09,815 DEBUG:akjob.job:models
+    Attempting to run job <448 - Assign Employee to Visions Position>
+2018-01-09 21:57:10,183 DEBUG:akjob.job:models
+    Finished running job <448 - Assign Employee to Visions Position>
+2018-01-09 21:57:10,200 INFO:akjob.akjobd:akjobd --- Starting job 449, Create Synergy Account
+2018-01-09 21:57:11,456 DEBUG:akjob.job:models
+    Attempting to run job <449 - Create Synergy Account>
+2018-01-09 21:57:11,503 DEBUG:akjob.job:models
+    Finished running job <449 - Create Synergy Account>
+2018-01-09 21:58:11,524 INFO:akjob.akjobd:akjobd --- Starting job 415, Assign Employee to Visions Position
+2018-01-09 21:58:12,505 DEBUG:akjob.job:models
+    Attempting to run job <415 - Assign Employee to Visions Position>
+2018-01-09 21:58:12,858 DEBUG:akjob.job:models
+    Finished running job <415 - Assign Employee to Visions Position>
+2018-01-09 21:58:12,868 INFO:akjob.akjobd:akjobd --- Starting job 416, Create Active Directory Account
+2018-01-09 21:58:13,808 DEBUG:akjob.job:models
+    Attempting to run job <416 - Create Active Directory Account>
+2018-01-09 21:58:14,365 DEBUG:akjob.job:models
+    Finished running job <416 - Create Active Directory Account>
+2018-01-09 21:58:14,376 INFO:akjob.akjobd:akjobd --- Starting job 420, Create Synergy Account
+2018-01-09 21:58:15,352 DEBUG:akjob.job:models
+    Attempting to run job <420 - Create Synergy Account>
+2018-01-09 21:58:15,392 DEBUG:akjob.job:models
+    Finished running job <420 - Create Synergy Account>
+2018-01-09 21:58:15,401 INFO:akjob.akjobd:akjobd --- Starting job 442, Create Synergy Account
+2018-01-09 21:58:16,360 DEBUG:akjob.job:models
+    Job <442 - Create Synergy Account> not running at this time.
+2018-01-09 21:58:16,363 INFO:akjob.akjobd:akjobd --- Starting job 443, Create Synergy Account
+2018-01-09 21:58:17,229 DEBUG:akjob.job:models
+    Job <443 - Create Synergy Account> not running at this time.
+2018-01-09 21:58:17,231 INFO:akjob.akjobd:akjobd --- Starting job 444, Create Active Directory Account
+2018-01-09 21:58:18,164 DEBUG:akjob.job:models
+    Job <444 - Create Active Directory Account> not running at this time.
+2018-01-09 21:58:18,166 INFO:akjob.akjobd:akjobd --- Starting job 445, Assign Employee to Visions Position
+2018-01-09 21:58:19,127 DEBUG:akjob.job:models
+    Job <445 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 21:58:19,129 INFO:akjob.akjobd:akjobd --- Starting job 446, Assign Employee to Visions Position
+2018-01-09 21:58:20,093 DEBUG:akjob.job:models
+    Job <446 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 21:58:20,096 INFO:akjob.akjobd:akjobd --- Starting job 447, Create Synergy Account
+2018-01-09 21:58:21,107 DEBUG:akjob.job:models
+    Job <447 - Create Synergy Account> not running at this time.
+2018-01-09 21:58:21,110 INFO:akjob.akjobd:akjobd --- Starting job 448, Assign Employee to Visions Position
+2018-01-09 21:58:22,089 DEBUG:akjob.job:models
+    Job <448 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 21:58:22,092 INFO:akjob.akjobd:akjobd --- Starting job 449, Create Synergy Account
+2018-01-09 21:58:23,062 DEBUG:akjob.job:models
+    Job <449 - Create Synergy Account> not running at this time.
+2018-01-09 21:59:23,075 INFO:akjob.akjobd:akjobd --- Starting job 415, Assign Employee to Visions Position
+2018-01-09 21:59:24,183 DEBUG:akjob.job:models
+    Job <415 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 21:59:24,187 INFO:akjob.akjobd:akjobd --- Starting job 416, Create Active Directory Account
+2018-01-09 21:59:25,531 DEBUG:akjob.job:models
+    Job <416 - Create Active Directory Account> not running at this time.
+2018-01-09 21:59:25,534 INFO:akjob.akjobd:akjobd --- Starting job 420, Create Synergy Account
+2018-01-09 21:59:26,469 DEBUG:akjob.job:models
+    Job <420 - Create Synergy Account> not running at this time.
+2018-01-09 21:59:26,472 INFO:akjob.akjobd:akjobd --- Starting job 442, Create Synergy Account
+2018-01-09 21:59:27,294 DEBUG:akjob.job:models
+    Job <442 - Create Synergy Account> not running at this time.
+2018-01-09 21:59:27,297 INFO:akjob.akjobd:akjobd --- Starting job 443, Create Synergy Account
+2018-01-09 21:59:28,206 DEBUG:akjob.job:models
+    Job <443 - Create Synergy Account> not running at this time.
+2018-01-09 21:59:28,208 INFO:akjob.akjobd:akjobd --- Starting job 444, Create Active Directory Account
+2018-01-09 21:59:29,205 DEBUG:akjob.job:models
+    Job <444 - Create Active Directory Account> not running at this time.
+2018-01-09 21:59:29,208 INFO:akjob.akjobd:akjobd --- Starting job 445, Assign Employee to Visions Position
+2018-01-09 21:59:30,165 DEBUG:akjob.job:models
+    Job <445 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 21:59:30,168 INFO:akjob.akjobd:akjobd --- Starting job 446, Assign Employee to Visions Position
+2018-01-09 21:59:31,118 DEBUG:akjob.job:models
+    Job <446 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 21:59:31,120 INFO:akjob.akjobd:akjobd --- Starting job 447, Create Synergy Account
+2018-01-09 21:59:31,994 DEBUG:akjob.job:models
+    Job <447 - Create Synergy Account> not running at this time.
+2018-01-09 21:59:31,996 INFO:akjob.akjobd:akjobd --- Starting job 448, Assign Employee to Visions Position
+2018-01-09 21:59:32,913 DEBUG:akjob.job:models
+    Job <448 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 21:59:32,916 INFO:akjob.akjobd:akjobd --- Starting job 449, Create Synergy Account
+2018-01-09 21:59:33,864 DEBUG:akjob.job:models
+    Job <449 - Create Synergy Account> not running at this time.
+2018-01-09 22:00:33,878 INFO:akjob.akjobd:akjobd --- Starting job 415, Assign Employee to Visions Position
+2018-01-09 22:00:35,055 DEBUG:akjob.job:models
+    Job <415 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 22:00:35,058 INFO:akjob.akjobd:akjobd --- Starting job 416, Create Active Directory Account
+2018-01-09 22:00:36,039 DEBUG:akjob.job:models
+    Job <416 - Create Active Directory Account> not running at this time.
+2018-01-09 22:00:36,041 INFO:akjob.akjobd:akjobd --- Starting job 420, Create Synergy Account
+2018-01-09 22:00:36,982 DEBUG:akjob.job:models
+    Job <420 - Create Synergy Account> not running at this time.
+2018-01-09 22:00:36,984 INFO:akjob.akjobd:akjobd --- Starting job 442, Create Synergy Account
+2018-01-09 22:00:38,103 DEBUG:akjob.job:models
+    Job <442 - Create Synergy Account> not running at this time.
+2018-01-09 22:00:38,106 INFO:akjob.akjobd:akjobd --- Starting job 443, Create Synergy Account
+2018-01-09 22:00:39,123 DEBUG:akjob.job:models
+    Job <443 - Create Synergy Account> not running at this time.
+2018-01-09 22:00:39,126 INFO:akjob.akjobd:akjobd --- Starting job 444, Create Active Directory Account
+2018-01-09 22:00:40,295 DEBUG:akjob.job:models
+    Job <444 - Create Active Directory Account> not running at this time.
+2018-01-09 22:00:40,298 INFO:akjob.akjobd:akjobd --- Starting job 445, Assign Employee to Visions Position
+2018-01-09 22:00:41,309 DEBUG:akjob.job:models
+    Job <445 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 22:00:41,311 INFO:akjob.akjobd:akjobd --- Starting job 446, Assign Employee to Visions Position
+2018-01-09 22:00:42,213 DEBUG:akjob.job:models
+    Job <446 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 22:00:42,215 INFO:akjob.akjobd:akjobd --- Starting job 447, Create Synergy Account
+2018-01-09 22:00:43,206 DEBUG:akjob.job:models
+    Job <447 - Create Synergy Account> not running at this time.
+2018-01-09 22:00:43,208 INFO:akjob.akjobd:akjobd --- Starting job 448, Assign Employee to Visions Position
+2018-01-09 22:00:44,073 DEBUG:akjob.job:models
+    Job <448 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 22:00:44,075 INFO:akjob.akjobd:akjobd --- Starting job 449, Create Synergy Account
+2018-01-09 22:00:44,954 DEBUG:akjob.job:models
+    Job <449 - Create Synergy Account> not running at this time.
+2018-01-09 22:01:44,968 INFO:akjob.akjobd:akjobd --- Starting job 415, Assign Employee to Visions Position
+2018-01-09 22:01:45,952 DEBUG:akjob.job:models
+    Job <415 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 22:01:45,961 INFO:akjob.akjobd:akjobd --- Starting job 416, Create Active Directory Account
+2018-01-09 22:01:46,842 DEBUG:akjob.job:models
+    Job <416 - Create Active Directory Account> not running at this time.
+2018-01-09 22:01:46,845 INFO:akjob.akjobd:akjobd --- Starting job 420, Create Synergy Account
+2018-01-09 22:01:47,745 DEBUG:akjob.job:models
+    Job <420 - Create Synergy Account> not running at this time.
+2018-01-09 22:01:47,748 INFO:akjob.akjobd:akjobd --- Starting job 442, Create Synergy Account
+2018-01-09 22:01:48,960 DEBUG:akjob.job:models
+    Job <442 - Create Synergy Account> not running at this time.
+2018-01-09 22:01:48,963 INFO:akjob.akjobd:akjobd --- Starting job 443, Create Synergy Account
+2018-01-09 22:01:50,006 DEBUG:akjob.job:models
+    Job <443 - Create Synergy Account> not running at this time.
+2018-01-09 22:01:50,009 INFO:akjob.akjobd:akjobd --- Starting job 444, Create Active Directory Account
+2018-01-09 22:01:50,922 DEBUG:akjob.job:models
+    Job <444 - Create Active Directory Account> not running at this time.
+2018-01-09 22:01:50,924 INFO:akjob.akjobd:akjobd --- Starting job 445, Assign Employee to Visions Position
+2018-01-09 22:01:51,858 DEBUG:akjob.job:models
+    Job <445 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 22:01:51,861 INFO:akjob.akjobd:akjobd --- Starting job 446, Assign Employee to Visions Position
+2018-01-09 22:01:52,867 DEBUG:akjob.job:models
+    Job <446 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 22:01:52,869 INFO:akjob.akjobd:akjobd --- Starting job 447, Create Synergy Account
+2018-01-09 22:01:53,822 DEBUG:akjob.job:models
+    Job <447 - Create Synergy Account> not running at this time.
+2018-01-09 22:01:53,825 INFO:akjob.akjobd:akjobd --- Starting job 448, Assign Employee to Visions Position
+2018-01-09 22:01:54,817 DEBUG:akjob.job:models
+    Job <448 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 22:01:54,819 INFO:akjob.akjobd:akjobd --- Starting job 449, Create Synergy Account
+2018-01-09 22:01:55,758 DEBUG:akjob.job:models
+    Job <449 - Create Synergy Account> not running at this time.
+2018-01-09 22:02:55,770 INFO:akjob.akjobd:akjobd --- Starting job 415, Assign Employee to Visions Position
+2018-01-09 22:02:56,782 DEBUG:akjob.job:models
+    Job <415 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 22:02:56,790 INFO:akjob.akjobd:akjobd --- Starting job 416, Create Active Directory Account
+2018-01-09 22:02:57,756 DEBUG:akjob.job:models
+    Job <416 - Create Active Directory Account> not running at this time.
+2018-01-09 22:02:57,759 INFO:akjob.akjobd:akjobd --- Starting job 420, Create Synergy Account
+2018-01-09 22:02:58,727 DEBUG:akjob.job:models
+    Job <420 - Create Synergy Account> not running at this time.
+2018-01-09 22:02:58,730 INFO:akjob.akjobd:akjobd --- Starting job 442, Create Synergy Account
+2018-01-09 22:02:59,661 DEBUG:akjob.job:models
+    Attempting to run job <442 - Create Synergy Account>
+2018-01-09 22:02:59,710 DEBUG:akjob.job:models
+    Finished running job <442 - Create Synergy Account>
+2018-01-09 22:02:59,719 INFO:akjob.akjobd:akjobd --- Starting job 443, Create Synergy Account
+2018-01-09 22:03:00,681 DEBUG:akjob.job:models
+    Attempting to run job <443 - Create Synergy Account>
+2018-01-09 22:03:00,722 DEBUG:akjob.job:models
+    Finished running job <443 - Create Synergy Account>
+2018-01-09 22:03:00,732 INFO:akjob.akjobd:akjobd --- Starting job 444, Create Active Directory Account
+2018-01-09 22:03:01,746 DEBUG:akjob.job:models
+    Attempting to run job <444 - Create Active Directory Account>
+2018-01-09 22:03:02,217 DEBUG:akjob.job:models
+    Finished running job <444 - Create Active Directory Account>
+2018-01-09 22:03:02,229 INFO:akjob.akjobd:akjobd --- Starting job 445, Assign Employee to Visions Position
+2018-01-09 22:03:03,158 DEBUG:akjob.job:models
+    Attempting to run job <445 - Assign Employee to Visions Position>
+2018-01-09 22:03:03,508 DEBUG:akjob.job:models
+    Finished running job <445 - Assign Employee to Visions Position>
+2018-01-09 22:03:03,520 INFO:akjob.akjobd:akjobd --- Starting job 446, Assign Employee to Visions Position
+2018-01-09 22:03:04,596 DEBUG:akjob.job:models
+    Attempting to run job <446 - Assign Employee to Visions Position>
+2018-01-09 22:03:04,951 DEBUG:akjob.job:models
+    Finished running job <446 - Assign Employee to Visions Position>
+2018-01-09 22:03:04,964 INFO:akjob.akjobd:akjobd --- Starting job 447, Create Synergy Account
+2018-01-09 22:03:05,969 DEBUG:akjob.job:models
+    Attempting to run job <447 - Create Synergy Account>
+2018-01-09 22:03:06,015 DEBUG:akjob.job:models
+    Finished running job <447 - Create Synergy Account>
+2018-01-09 22:03:06,024 INFO:akjob.akjobd:akjobd --- Starting job 448, Assign Employee to Visions Position
+2018-01-09 22:03:07,115 DEBUG:akjob.job:models
+    Attempting to run job <448 - Assign Employee to Visions Position>
+2018-01-09 22:03:07,475 DEBUG:akjob.job:models
+    Finished running job <448 - Assign Employee to Visions Position>
+2018-01-09 22:03:07,485 INFO:akjob.akjobd:akjobd --- Starting job 449, Create Synergy Account
+2018-01-09 22:03:08,534 DEBUG:akjob.job:models
+    Attempting to run job <449 - Create Synergy Account>
+2018-01-09 22:03:08,577 DEBUG:akjob.job:models
+    Finished running job <449 - Create Synergy Account>
+2018-01-09 22:04:08,598 INFO:akjob.akjobd:akjobd --- Starting job 415, Assign Employee to Visions Position
+2018-01-09 22:04:09,683 DEBUG:akjob.job:models
+    Attempting to run job <415 - Assign Employee to Visions Position>
+2018-01-09 22:04:10,036 DEBUG:akjob.job:models
+    Finished running job <415 - Assign Employee to Visions Position>
+2018-01-09 22:04:10,047 INFO:akjob.akjobd:akjobd --- Starting job 416, Create Active Directory Account
+2018-01-09 22:04:11,070 DEBUG:akjob.job:models
+    Attempting to run job <416 - Create Active Directory Account>
+2018-01-09 22:04:11,507 DEBUG:akjob.job:models
+    Finished running job <416 - Create Active Directory Account>
+2018-01-09 22:04:11,523 INFO:akjob.akjobd:akjobd --- Starting job 420, Create Synergy Account
+2018-01-09 22:04:12,514 DEBUG:akjob.job:models
+    Attempting to run job <420 - Create Synergy Account>
+2018-01-09 22:04:12,555 DEBUG:akjob.job:models
+    Finished running job <420 - Create Synergy Account>
+2018-01-09 22:04:12,564 INFO:akjob.akjobd:akjobd --- Starting job 442, Create Synergy Account
+2018-01-09 22:04:13,654 DEBUG:akjob.job:models
+    Job <442 - Create Synergy Account> not running at this time.
+2018-01-09 22:04:13,657 INFO:akjob.akjobd:akjobd --- Starting job 443, Create Synergy Account
+2018-01-09 22:04:14,673 DEBUG:akjob.job:models
+    Job <443 - Create Synergy Account> not running at this time.
+2018-01-09 22:04:14,676 INFO:akjob.akjobd:akjobd --- Starting job 444, Create Active Directory Account
+2018-01-09 22:04:15,624 DEBUG:akjob.job:models
+    Job <444 - Create Active Directory Account> not running at this time.
+2018-01-09 22:04:15,626 INFO:akjob.akjobd:akjobd --- Starting job 445, Assign Employee to Visions Position
+2018-01-09 22:04:16,716 DEBUG:akjob.job:models
+    Job <445 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 22:04:16,718 INFO:akjob.akjobd:akjobd --- Starting job 446, Assign Employee to Visions Position
+2018-01-09 22:04:17,758 DEBUG:akjob.job:models
+    Job <446 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 22:04:17,761 INFO:akjob.akjobd:akjobd --- Starting job 447, Create Synergy Account
+2018-01-09 22:04:18,817 DEBUG:akjob.job:models
+    Job <447 - Create Synergy Account> not running at this time.
+2018-01-09 22:04:18,820 INFO:akjob.akjobd:akjobd --- Starting job 448, Assign Employee to Visions Position
+2018-01-09 22:04:19,909 DEBUG:akjob.job:models
+    Job <448 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 22:04:19,913 INFO:akjob.akjobd:akjobd --- Starting job 449, Create Synergy Account
+2018-01-09 22:04:21,022 DEBUG:akjob.job:models
+    Job <449 - Create Synergy Account> not running at this time.
+2018-01-09 22:05:21,037 INFO:akjob.akjobd:akjobd --- Starting job 415, Assign Employee to Visions Position
+2018-01-09 22:05:21,989 DEBUG:akjob.job:models
+    Job <415 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 22:05:21,991 INFO:akjob.akjobd:akjobd --- Starting job 416, Create Active Directory Account
+2018-01-09 22:05:22,922 DEBUG:akjob.job:models
+    Job <416 - Create Active Directory Account> not running at this time.
+2018-01-09 22:05:22,932 INFO:akjob.akjobd:akjobd --- Starting job 420, Create Synergy Account
+2018-01-09 22:05:23,852 DEBUG:akjob.job:models
+    Job <420 - Create Synergy Account> not running at this time.
+2018-01-09 22:05:23,855 INFO:akjob.akjobd:akjobd --- Starting job 442, Create Synergy Account
+2018-01-09 22:05:24,785 DEBUG:akjob.job:models
+    Job <442 - Create Synergy Account> not running at this time.
+2018-01-09 22:05:24,788 INFO:akjob.akjobd:akjobd --- Starting job 443, Create Synergy Account
+2018-01-09 22:05:25,701 DEBUG:akjob.job:models
+    Job <443 - Create Synergy Account> not running at this time.
+2018-01-09 22:05:25,703 INFO:akjob.akjobd:akjobd --- Starting job 444, Create Active Directory Account
+2018-01-09 22:05:26,648 DEBUG:akjob.job:models
+    Job <444 - Create Active Directory Account> not running at this time.
+2018-01-09 22:05:26,651 INFO:akjob.akjobd:akjobd --- Starting job 445, Assign Employee to Visions Position
+2018-01-09 22:05:27,553 DEBUG:akjob.job:models
+    Job <445 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 22:05:27,556 INFO:akjob.akjobd:akjobd --- Starting job 446, Assign Employee to Visions Position
+2018-01-09 22:05:28,432 DEBUG:akjob.job:models
+    Job <446 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 22:05:28,434 INFO:akjob.akjobd:akjobd --- Starting job 447, Create Synergy Account
+2018-01-09 22:05:29,377 DEBUG:akjob.job:models
+    Job <447 - Create Synergy Account> not running at this time.
+2018-01-09 22:05:29,380 INFO:akjob.akjobd:akjobd --- Starting job 448, Assign Employee to Visions Position
+2018-01-09 22:05:30,360 DEBUG:akjob.job:models
+    Job <448 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 22:05:30,362 INFO:akjob.akjobd:akjobd --- Starting job 449, Create Synergy Account
+2018-01-09 22:05:31,253 DEBUG:akjob.job:models
+    Job <449 - Create Synergy Account> not running at this time.
+2018-01-09 22:06:31,265 INFO:akjob.akjobd:akjobd --- Starting job 415, Assign Employee to Visions Position
+2018-01-09 22:06:32,240 DEBUG:akjob.job:models
+    Job <415 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 22:06:32,243 INFO:akjob.akjobd:akjobd --- Starting job 416, Create Active Directory Account
+2018-01-09 22:06:33,166 DEBUG:akjob.job:models
+    Job <416 - Create Active Directory Account> not running at this time.
+2018-01-09 22:06:33,169 INFO:akjob.akjobd:akjobd --- Starting job 420, Create Synergy Account
+2018-01-09 22:06:34,042 DEBUG:akjob.job:models
+    Job <420 - Create Synergy Account> not running at this time.
+2018-01-09 22:06:34,045 INFO:akjob.akjobd:akjobd --- Starting job 442, Create Synergy Account
+2018-01-09 22:06:35,005 DEBUG:akjob.job:models
+    Job <442 - Create Synergy Account> not running at this time.
+2018-01-09 22:06:35,007 INFO:akjob.akjobd:akjobd --- Starting job 443, Create Synergy Account
+2018-01-09 22:06:35,894 DEBUG:akjob.job:models
+    Job <443 - Create Synergy Account> not running at this time.
+2018-01-09 22:06:35,896 INFO:akjob.akjobd:akjobd --- Starting job 444, Create Active Directory Account
+2018-01-09 22:06:36,923 DEBUG:akjob.job:models
+    Job <444 - Create Active Directory Account> not running at this time.
+2018-01-09 22:06:36,926 INFO:akjob.akjobd:akjobd --- Starting job 445, Assign Employee to Visions Position
+2018-01-09 22:06:37,869 DEBUG:akjob.job:models
+    Job <445 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 22:06:37,871 INFO:akjob.akjobd:akjobd --- Starting job 446, Assign Employee to Visions Position
+2018-01-09 22:06:38,769 DEBUG:akjob.job:models
+    Job <446 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 22:06:38,771 INFO:akjob.akjobd:akjobd --- Starting job 447, Create Synergy Account
+2018-01-09 22:06:39,742 DEBUG:akjob.job:models
+    Job <447 - Create Synergy Account> not running at this time.
+2018-01-09 22:06:39,745 INFO:akjob.akjobd:akjobd --- Starting job 448, Assign Employee to Visions Position
+2018-01-09 22:06:40,784 DEBUG:akjob.job:models
+    Job <448 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 22:06:40,787 INFO:akjob.akjobd:akjobd --- Starting job 449, Create Synergy Account
+2018-01-09 22:06:41,779 DEBUG:akjob.job:models
+    Job <449 - Create Synergy Account> not running at this time.
+2018-01-09 22:07:41,791 INFO:akjob.akjobd:akjobd --- Starting job 415, Assign Employee to Visions Position
+2018-01-09 22:07:42,864 DEBUG:akjob.job:models
+    Job <415 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 22:07:42,873 INFO:akjob.akjobd:akjobd --- Starting job 416, Create Active Directory Account
+2018-01-09 22:07:43,855 DEBUG:akjob.job:models
+    Job <416 - Create Active Directory Account> not running at this time.
+2018-01-09 22:07:43,858 INFO:akjob.akjobd:akjobd --- Starting job 420, Create Synergy Account
+2018-01-09 22:07:44,774 DEBUG:akjob.job:models
+    Job <420 - Create Synergy Account> not running at this time.
+2018-01-09 22:07:44,777 INFO:akjob.akjobd:akjobd --- Starting job 442, Create Synergy Account
+2018-01-09 22:07:45,806 DEBUG:akjob.job:models
+    Attempting to run job <442 - Create Synergy Account>
+2018-01-09 22:07:45,856 DEBUG:akjob.job:models
+    Finished running job <442 - Create Synergy Account>
+2018-01-09 22:07:45,866 INFO:akjob.akjobd:akjobd --- Starting job 443, Create Synergy Account
+2018-01-09 22:07:46,785 DEBUG:akjob.job:models
+    Job <443 - Create Synergy Account> not running at this time.
+2018-01-09 22:07:46,789 INFO:akjob.akjobd:akjobd --- Starting job 444, Create Active Directory Account
+2018-01-09 22:07:47,895 DEBUG:akjob.job:models
+    Job <444 - Create Active Directory Account> not running at this time.
+2018-01-09 22:07:47,897 INFO:akjob.akjobd:akjobd --- Starting job 445, Assign Employee to Visions Position
+2018-01-09 22:07:48,754 DEBUG:akjob.job:models
+    Job <445 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 22:07:48,757 INFO:akjob.akjobd:akjobd --- Starting job 446, Assign Employee to Visions Position
+2018-01-09 22:07:49,723 DEBUG:akjob.job:models
+    Job <446 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 22:07:49,725 INFO:akjob.akjobd:akjobd --- Starting job 447, Create Synergy Account
+2018-01-09 22:07:50,723 DEBUG:akjob.job:models
+    Job <447 - Create Synergy Account> not running at this time.
+2018-01-09 22:07:50,727 INFO:akjob.akjobd:akjobd --- Starting job 448, Assign Employee to Visions Position
+2018-01-09 22:07:51,855 DEBUG:akjob.job:models
+    Job <448 - Assign Employee to Visions Position> not running at this time.
+2018-01-09 22:07:51,858 INFO:akjob.akjobd:akjobd --- Starting job 449, Create Synergy Account
+2018-01-09 22:07:52,813 DEBUG:akjob.job:models
+    Job <449 - Create Synergy Account> not running at this time.
