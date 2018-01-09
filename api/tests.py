@@ -47,8 +47,9 @@ class PersonTestCase(TestCase):
     def test_parse_hires(self):
         # Can we parse through the TalentEd New Hire XML file?
         # If running on Circle CI, we must also pull down the file.
-        if os.environ.get("CIRCLECI") == "true":
-            get_talented_xml()
+        # if os.environ.get("CIRCLECI") == "true":
+        #    get_talented_xml()
+        get_talented_xml()
         parse_hires()
         emp = Employee.objects.get(talented_id=13345)
         self.assertEqual(emp.first_name, "Yenni")
