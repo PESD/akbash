@@ -5,6 +5,8 @@ Some things to test:
     *   Jobs with deleteme flag are deleted
     *   Disabled jobs are not ran
     *   Errors are logged
+    *   test if run count limit works
+    *   test if delete_on_run_count_limit works
 
 Do we want to test the contents of logs or logging?
 https://docs.python.org/3/library/unittest.html#unittest.TestCase.assertLogs
@@ -16,7 +18,7 @@ import datetime
 from django.test import TestCase
 from unittest import skipIf
 from django.conf import settings
-from akjob.models import Job
+from akjob.models import Job, JobCallable
 # from akjob.models import load_DayOfMonth, load_DayOfWeek, load_Months
 # from akjob.models import JobCallable
 # from django.db import IntegrityError
@@ -31,10 +33,12 @@ from subprocess import run, DEVNULL
 def setUpModule():
     # Assign global variables defining pidfile name and directory where logs
     # and pidfile are stored.
-    global testdir, pidname, pidfile
+    global testdir, pidname, pidfile, testfiles
     testdir = os.path.join(settings.BASE_DIR, "akjob", "unittest")
     pidname = "akjobd-unittest.pid"
     pidfile = os.path.join(testdir, pidname)
+    # testfiles - A list of files to cleanup after testing
+    testfiles = ["akjob.job.log", "akjobd.log", "akjobd.out"]
 
     # create test directory where log and pid files will be placed.
     os.makedirs(testdir)
@@ -58,8 +62,8 @@ def tearDownModule():
     if os.path.isfile(pidfile):
         raise Exception("Unittest akjobd PID file still exists.")
 
-    # delete the log files
-    for logfilename in ["akjob.job.log", "akjobd.log", "akjobd.out"]:
+    # delete the log files. delete test files.
+    for logfilename in testfiles:
         try:
             os.remove(os.path.join(testdir, logfilename))
         except FileNotFoundError:
@@ -76,6 +80,39 @@ def start_daemon():
     run(["python", os.path.join(settings.BASE_DIR, "manage.py"), "akjobd",
          "start", "-pd", testdir, "-pn", pidname, "-ld",
          testdir])
+
+
+""" A function that can be used with JobCallable.
+    Creates a file in the testdir named "name" and writes "text" into it.
+"""
+def file_print(name, text):
+    with open(os.path.join(testdir, name), 'w') as f:
+        f.write(text)
+
+
+""" A custom job code object
+"""
+class CustomJCO:
+    def __init__(self, action, filename=None, testname=None, text=None):
+        self.action = action
+        self.filename = filename
+        self.testname = testname
+        self.text = text
+
+
+    def run(self, ownjob=None):
+
+        text = ("Job " + str(ownjob.id) + " " + ownjob.name + " : " +
+                self.testname + " : " + self.text + "\n")
+
+        if self.action == "file_print":
+            with open(os.path.join(testdir, self.filename), 'w') as f:
+                f.write(text)
+        elif self.action == "print":
+            print(text)
+        else:
+            raise Exception("No action provided.")
+
 
 
 """ Test for the pidfile. akjobd start and stop. Log files.
@@ -184,7 +221,51 @@ class CustomModelFieldTestCase(TestCase):
         self.assertEqual(result, 181500)
 
 
+""" Test job code object execution
+"""
+class JobCodeObjectTestCase(TestCase):
 
+    def test_JobCallable(self):
+        testfilename = "test_JobCallable"
+        testtext = ("Created by method test_JobCallable in test case"
+                    " JobCodeObjectTestCase.\n")
+        testfiles.append(testfilename)
+        j1 = Job.objects.create(name="JobCallable Test")
+        idnum = j1.id
+        jco = JobCallable(file_print, testfilename, testtext)
+        j1.job_code_object = jco
+        j1.save()
+        # refresh from db to make sure jco works after pickel and unpickel
+        # process.
+        del j1
+        j1 = Job.objects.get(id=idnum)
+        j1.job_code_object.run()
+        with open(os.path.join(testdir, testfilename), 'r') as f:
+            result = f.readline()
+        self.assertEqual(result, testtext)
+
+
+    def test_CustomJCO(self):
+        testfilename = "test_CustomJCO"
+        testfiles.append(testfilename)
+        j2 = Job.objects.create(name="CustomJCO Test")
+        idnum = j2.id
+        jco = CustomJCO("file_print",
+                        filename=testfilename,
+                        testname="Custom JCO Test",
+                        text="FDSA")
+        testtext = ("Job " + str(idnum) + " " +
+                    "CustomJCO Test : Custom JCO Test : FDSA\n")
+        j2.job_code_object = jco
+        j2.save()
+        # refresh from db to make sure jco works after pickel and unpickel
+        # process.
+        del j2
+        j2 = Job.objects.get(id=idnum)
+        j2.job_code_object.run(ownjob=j2)
+        with open(os.path.join(testdir, testfilename), 'r') as f:
+            result = f.readline()
+        self.assertEqual(result, testtext)
 
 
 

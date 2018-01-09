@@ -47,7 +47,7 @@ The class **akjob.models.JobCallable** is provided to easily create job code obj
 ```akjob.models.JobCallable(callable, *args, **kwargs)```
 When creating an instance of JobCallable, provide a callable object and any arguments the callable requires. The JobCallable instance contains a run() method that will call the callable using the provided arguments.
 
-You may create your own containers with `run(self, ownjob)` methods that contain your code to be executed. Akjob passes a referance to the job instance so code in the job code object may modify it's own job. The Job attribue deleteme is also provided so custom job code objects may schedule their own job to be delete. Set `ownjob.deleteme = True` and the job will be deleted during akjobd's next loop through all the jobs. These work arounds are provided because code in a custom job code object is unable to modify or delete it's own job in the normal way. You are able to manipulate other jobs in the normal way.
+You may create your own containers with `run(self, ownjob)` methods that contain your code to be executed. Akjob passes a referance to the job instance so code in the job code object may modify it's own job. The Job attribue deleteme is also provided so custom job code objects may schedule their own job to be delete. Set `ownjob.deleteme = True` and the job will be deleted during akjobd's next loop through all the jobs. These work arounds are provided because code in a custom job code object is unable to modify or delete it's own job in the normal way. You are able to manipulate other jobs in the normal way. (I wonder if [F() objects](https://docs.djangoproject.com/en/1.11/ref/models/expressions/#django.db.models.F) could have been used to avoid these problems.)
 
 The job code object will be pickeled and stored in the database. Make sure everything within may be pickeled ([What can be pickled](http://docs.python.org/3/library/pickle.html#what-can-be-pickled-and-unpickled)). When working with pickled objects it's easy to accidently make a copy of an instance object instead of referancing the actual instance object. **Be very careful to not accidently work with a copy of the job instance.** 
 
@@ -244,16 +244,49 @@ When a new run_every (interval) job is created with limits specified, if created
 
 The _job_running attribute is set to True before the job code is executed and is set back to false after the execution. Akjobd will not execute the job if _job_running is True. If for some reason things crash before _job_running is set back to False, the job will no longer be executed. The log file will show "Job didn't run because job running flag is True."
 
+If the akjob daemon is running, be careful changing values in existing jobs when the daemon is running or when job code is running. These processes may change values of that job. The job instance in memory can desync with what's in the database and you could accidently revert changes if care is not taken. Keep in mind that house keeping Job attributes such as _next_run and _run_count change often.
+
 ## Spaghetti Code
-*Some messy notes about how this spaghetti code works.*
+It can be hard to understand how akjob works. It's some spaghetti code. I'm hoping writing this out will help to create a cleaner new version. Side-note: Another goal the redesign should be to kill the bug where jobs created with run limits may not have next execution datetime figured out plus other related issues.
 * In akjobd.py the daemon loops through all jobs in the database.
-* Job.run() in each Job instance is executed. Don't confuse this with Job.job_code_object.run(). 
+* Job.run() in each Job instance is executed. Don't confuse this with Job.job_code_object.run(). This does not execute the job code.
 * Job.run() calls Job.isruntime().
 * Job.isruntime()
     * determines if the job code should be executed right now and returns True or False. 
-    * If job is disabled, returns False and sets Job._next_run to None. This part might be broken because the daemon loop no longer runs disabled jobs.
-    * Check Job._run_count is greater than or equal to the Job.run_count_limit. Return False if the limit is reached. Sets Job._next_run to None if run limit reached.
-
-
-
+    * If job is disabled, returns False and sets Job._next_run to None. The daemon loop also performs this task so this only happens if ran from outside akjobd.
+    * Check Job._run_count is greater than or equal to the Job.run_count_limit. Return False if the limit is reached. Sets Job._next_run to None if run limit reached. The daemon loop also performs this task so this only happens if ran from outside akjobd.
+    * Call Job.next_run(). next_run() returns a datetime which is the next time the job should be executed or it will return nothing.
+        * If job is **disabled**, set Job._next_run to None. The daemon loop also performs this task so this only happens if ran from outside akjobd.
+        * A list of possible job execution datetimes (**jtimes**) is started. It starts out empty.
+        * If an **interval** is set using run_every, add _last_interval + run_every to jtimes. If _last_interval is not set then it is set to datetime.now and saved. now + interval time is added to jtimes. set self._runnow_set_by = "re" so that when the job code is executed, the code will know to also update _last_interval. About 300 extra interval datetimes are added to jtimes as a bad workaround.
+        * Datetimes in dates (akjob.models.JobDates.job_datetime) are added to jtimes.
+        * datetimes are created from monthly_days and added to jtimes.
+        * datetimes are created from weekly_days and added to jtimes. Up to 7 datetimes are created (1 week).
+        * Now that jtimes has been populated, datetimes within the list are removed if they fall within a limiting period.
+            * remove datetimes with times outside of active_time_begin and active_time_end
+            * remove datetimes on days not in active_weekly_days
+            * remove datetimes on days not in active_monthly_days
+            * remove datetimes in months not in active_months
+            * remove datetimes not between active_date_begin and active_date_end
+        * If no jtimes, set _next_run to None, next_run() returns None
+        * sort the job datetimes in jtimes using jtimes.sort()
+        * remove datetimes in jtimes if they're before datetime.now.
+        * truncate the datetimes in jtimes to the minute.
+        * If no jtimes, set _next_run to None, next_run() returns None
+        * set self._run_datetimes to a shallow copy of jtimes. (jtimes.copy())
+        * set self._next_run = jtimes[0] and return jtimes[0]. jtimes[0] is the earliest datetime in jtimes since it was sorted.
+    * If next_run() doesn't return a value, False is returned by isruntime().
+    * If now is less than next_run() then False is returned by isruntime().
+    * If now is greater than or equal to next_run() then True is returned if _last_run is None or _last_run is less than next_run(). I think checking _last_run is done to prevent job_code executing after it has already been executed?
+* If isruntime() returns true
+    * Check _job_running. If true, do nothing.
+    * Check for job_code_object. If exists, execute()
+* execute()
+    * check for self._run_now_set_by so we know wether or not to update self._last_interval. Set self._run_now_set_by to None.
+    * Set self._job_running to True
+    * execute job_code_object, call it's run method.
+    * set self._job_running to False
+    * Add 1 to self._run_count
+    * set self._last_run to datetime.now
+    * If needed, updated self._last_interval
 
