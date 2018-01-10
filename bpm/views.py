@@ -76,8 +76,8 @@ class DashboardStats(object):
 
 
 class GraphDataSet(object):
-    label: None
-    data: None
+    label = None
+    data = None
 
     def __init__(self, label, data):
         self.label = label
@@ -85,8 +85,8 @@ class GraphDataSet(object):
 
 
 class Graph(object):
-    labels: None
-    datasets: None
+    labels = None
+    datasets = None
 
     def __init__(self, labels, datasets):
         self.labels = labels
