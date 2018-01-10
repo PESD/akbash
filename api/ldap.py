@@ -55,3 +55,19 @@ def get_ad_username_from_visions_id(visions_id):
     if conn.entries:
         return conn.entries[0]["sAMAccountName"][0]
     return False
+
+
+def is_ad_username_active(ad_username):
+    server = Server(LDAP_SERVER, get_info=ALL)
+    conn = Connection(server, user=LDAP_DOMAIN_USER, password=LDAP_PASSWORD, authentication=NTLM)
+    conn.bind()
+    conn.search(
+        LDAP_SEARCH_BASE,
+        '(&(objectclass=person)(samaccountname={})(|(userAccountControl=512)(userAccountControl=66048)))'.format(ad_username),
+        attributes=[
+            'samaccountname',
+        ]
+    )
+    if conn.entries:
+        return True
+    return False

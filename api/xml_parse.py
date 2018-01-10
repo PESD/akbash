@@ -121,9 +121,10 @@ def parse_hires():
         # SSN
         legal_info = desc_info.find("LegalIdentifiers")
         id_tag = legal_info.find(".//PersonLegalId[@documentType='Social Security Card']")
-        ssn = get_xml_text(id_tag.find("IdValue"))
-        ssn_clean = format_ssn(ssn)
-        update_field(hire, "ssn", ssn_clean, talented_user)
+        if id_tag:
+            ssn = get_xml_text(id_tag.find("IdValue"))
+            ssn_clean = format_ssn(ssn)
+            update_field(hire, "ssn", ssn_clean, talented_user)
 
         # Marked as Hired DateOfBirth
         pos_info = newhire.find("PositionInfo")

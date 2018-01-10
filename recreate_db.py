@@ -1,18 +1,21 @@
 """
 Drop all tables in the default database and remove migration files.
-This is a SQL Server specific. This won't work with sqlite.
+This is a MS SQL Server specific. This won't work with sqlite.
 
 The SQL code was grabbed from here:
 http://stackoverflow.com/questions/8439650/how-to-drop-all-tables-in-a-sql-server-database
 
-I didn't know about the "flush" management command when I created this script.
+I didn't know about management commands like, syncdata, reset_db, and flush,
+when I created this script. They don't work with MS SQL Server so this script
+is still useful.
 """
 
 import os
 import sys
+import textwrap
 from django.conf import settings
 from django.db import connection
-from subprocess import call
+from subprocess import run
 from django.core.management import execute_from_command_line
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "akbash.settings")
@@ -73,10 +76,22 @@ cmd1 = 'find {} -path "*/migrations/*.py" -not -name "__init__.py" -delete -prin
 cmd2 = 'find {} -path "*/migrations/*.pyc"  -delete -print'.format(BASE_DIR)
 
 if prompt("\nDelete migration files?"):
-    call(cmd1, shell=True)
-    call(cmd2, shell=True)
+    run(cmd1, shell=True)
+    run(cmd2, shell=True)
 
 # rerun migrations
 if prompt("\nMake migrations and migrate?"):
     execute_from_command_line(['', 'makemigrations'])
     execute_from_command_line(['', 'migrate'])
+
+# Load fixtures
+fixtures = [
+    "akjob_dayofweek.json",
+    "akjob_dayofmonth.json",
+    "akjob_months.json",
+]
+
+print(textwrap.TextWrapper(subsequent_indent=" " * 11).fill(
+    "\nFixtures: " + str(fixtures)))
+if prompt("Load fixtures?"):
+    execute_from_command_line(['', 'loaddata'] + fixtures)
