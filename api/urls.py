@@ -14,6 +14,7 @@ router.register(r'location-not-from-person/(?P<person_id>[0-9]+)', views.Locatio
 router.register(r'department', views.DepartmentViewSet)
 router.register(r'position-type', views.PositionTypeViewSet)
 router.register(r'employee-no-workflow', views.EmployeeNoWorkflowViewSet, 'employee-no-workflow')
+router.register(r'employee-new-hire-no-workflow', views.EmployeeNewHireNoWorkflowViewSet, 'employee-new-hire-no-workflow')
 router.register(r'person', views.PersonViewSet, 'person')
 router.register(r'person-missed-start-date', views.PersonMissedStartDateViewSet, 'person-missed-start-date')
 router.register(r'person-all-contractors', views.PersonAllContractorsViewSet, 'person-all-contractors')

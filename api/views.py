@@ -114,6 +114,23 @@ class EmployeeNoWorkflowViewSet(viewsets.ModelViewSet):
         return self.get_serializer_class().setup_eager_loading(queryset)
 
 
+class EmployeeNewHireNoWorkflowViewSet(viewsets.ModelViewSet):
+    queryset = Employee.objects.exclude(
+        id__in=Workflow.objects.all().values_list('person')
+    ).filter(
+        status="newhire"
+    )
+    serializer_class = EmployeeSerializer
+
+    def get_queryset(self):
+        queryset = Employee.objects.exclude(
+            id__in=Workflow.objects.all().values_list('person')
+        ).filter(
+            status="newhire"
+        )
+        return self.get_serializer_class().setup_eager_loading(queryset)
+
+
 class VendorViewSet(viewsets.ModelViewSet):
     serializer_class = VendorSerializer
 
