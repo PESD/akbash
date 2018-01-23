@@ -10,6 +10,7 @@ AKJOB_PID_FILE enviroment variables to over ride.
 This script is assuming that akbash is started from the BASE_DIR. Hopefully
 that's an okay assumption.
 """
+import sys
 import os
 from subprocess import run
 from django.conf import settings
@@ -33,7 +34,8 @@ AKJOB_LOG_DIR = os.environ.get(
     "AKJOB_LOG_DIR",
     os.path.join(BASE_DIR, "akjob", "logs"))
 
-AKJOB_USER = os.environ.get("AKJOB_USER", "www-data")
+AKJOB_PYTHON = os.environ.get("AKJOB_PYTHON",
+                              os.path.join(sys.prefix, "bin", "python"))
 
 
 class AkjobConfig(AppConfig):
@@ -49,19 +51,11 @@ class AkjobConfig(AppConfig):
             # start akjobd using it's own process and instance of python so
             # that it will detach when it daemonizes and this process may
             # continue on as normal and uneffected.
-
-            # check real id is 0
-            # su -m www-data -c
-            command_list = []
-            if os.getuid() == 0:
-                command_list = ["su", "-m", AKJOB_USER, "-c"]
-            command_list += [
-                "python", "akjob/akjobd.py",
-                "start",
-                "-pd", AKJOB_PID_DIR,
-                "-pn", AKJOB_PID_FILE,
-                "-ld", AKJOB_LOG_DIR,
-                "-bd", BASE_DIR,
-            ]
-            run(command_list)
+            run([AKJOB_PYTHON, "akjob/akjobd.py",
+                 "start",
+                 "-pd", AKJOB_PID_DIR,
+                 "-pn", AKJOB_PID_FILE,
+                 "-ld", AKJOB_LOG_DIR,
+                 "-bd", BASE_DIR,
+                 ])
             os.environ['AKJOB_START_DAEMON'] = 'False'

@@ -32,7 +32,8 @@ loop in a better way.
 # Check if running as root.
 def check_for_root():
     if os.geteuid() == 0:
-        pass
+        logger.warn("akjobd running as root user.")
+
 
 # setup piddir and pidname from command line arguments.
 def parse_args():
@@ -49,9 +50,6 @@ def parse_args():
                         help="The directory used to store the log file.")
     parser.add_argument("-bd", "--basedir",
                         help="The base directory of the akbash django site.")
-    parser.add_argument("-u", "--user",
-                        help="The user name akjobd should run under. Only used"
-                             " if akjobd is ran by root. Not yet implemented.")
     args = parser.parse_args()
 
 
@@ -361,6 +359,7 @@ if __name__ == '__main__':
     set_pid_file_name()
     set_pid_location()
     setup_logging()
+    check_for_root()
     do_action(args.action)
 
 
