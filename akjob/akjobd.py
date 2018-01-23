@@ -29,6 +29,11 @@ loop in a better way.
 """
 
 
+# Check if running as root.
+def check_for_root():
+    if os.geteuid() == 0:
+        pass
+
 # setup piddir and pidname from command line arguments.
 def parse_args():
     global args
@@ -44,6 +49,9 @@ def parse_args():
                         help="The directory used to store the log file.")
     parser.add_argument("-bd", "--basedir",
                         help="The base directory of the akbash django site.")
+    parser.add_argument("-u", "--user",
+                        help="The user name akjobd should run under. Only used"
+                             " if akjobd is ran by root. Not yet implemented.")
     args = parser.parse_args()
 
 

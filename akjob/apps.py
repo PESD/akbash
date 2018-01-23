@@ -18,9 +18,6 @@ from django.apps import AppConfig
 
 BASE_DIR = settings.BASE_DIR
 
-# PYTHONPATH = os.environ.get(
-#     "PYTHONPATH", None)
-
 AKJOB_START_DAEMON = os.environ.get(
     "AKJOB_START_DAEMON", True)
 
@@ -36,6 +33,8 @@ AKJOB_LOG_DIR = os.environ.get(
     "AKJOB_LOG_DIR",
     os.path.join(BASE_DIR, "akjob", "logs"))
 
+AKJOB_USER = os.environ.get("AKJOB_USER", "www-data")
+
 
 class AkjobConfig(AppConfig):
     name = "akjob"
@@ -46,18 +45,23 @@ class AkjobConfig(AppConfig):
                                   'Y', 'Yes', 'yes', 'YES', '1', 1]:
             # Run akjobd.py from the BASE_DIR instead of from the akjob dir.
             os.chdir(BASE_DIR)
-            # os.putenv('PYTHONPATH', BASE_DIR)
-            # os.putenv('PYTHONPATH', BASE_DIR + os.pathsep +
-            #           os.path.join(BASE_DIR, "akbash"))
 
             # start akjobd using it's own process and instance of python so
             # that it will detach when it daemonizes and this process may
             # continue on as normal and uneffected.
-            run(["python", "akjob/akjobd.py",
+
+            # check real id is 0
+            # su -m www-data -c
+            command_list = []
+            if os.getuid() == 0:
+                command_list = ["su", "-m", AKJOB_USER, "-c"]
+            command_list += [
+                "python", "akjob/akjobd.py",
                 "start",
-                 "-pd", AKJOB_PID_DIR,
-                 "-pn", AKJOB_PID_FILE,
-                 "-ld", AKJOB_LOG_DIR,
-                 "-bd", BASE_DIR,
-                 ])
+                "-pd", AKJOB_PID_DIR,
+                "-pn", AKJOB_PID_FILE,
+                "-ld", AKJOB_LOG_DIR,
+                "-bd", BASE_DIR,
+            ]
+            run(command_list)
             os.environ['AKJOB_START_DAEMON'] = 'False'
