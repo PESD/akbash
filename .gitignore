@@ -104,6 +104,7 @@ dbauth.py
 api_keys.py
 akjobd.pid
 create_users.py
+akjob/logs
 
 # Test XML files
 RetrieveHiresXML.xml

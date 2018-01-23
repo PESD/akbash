@@ -36,6 +36,12 @@ You may want to examine the log files written by akjob to confirm your job is ru
 Akjob logging is a mess. Here are some ideas to improve logging in future versions. Use a more standard python logging setup that uses propogation. Figure out a better way to handle logging before and after akjobd has daemonized. The logging documentation says you should not log to the same file from different processes (from different modules is fine if they're ran in the same process). The akjobd daemon runs from a different process then django so multiple files need to be used.
 
 TODO: Documentation on using akjob's logging in custom job code objects.
+### Akjobd Enviroment Variables
+AKJOB_START_DAEMON - If "True" akjobd will start automatically
+AKJOB_PID_DIR - Path to the directory where the pid file is written
+AKJOB_PID_FILE - Name of the pidfile. Default is akjobd.pid
+AKJOB_LOG_DIR - Path to the directory where logs files are written
+AKJOB_PYTHON - The python executable akjobd should use.
 
 ## Creating and Scheduling Jobs
 ### Overview

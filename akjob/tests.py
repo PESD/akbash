@@ -14,17 +14,15 @@ https://docs.python.org/3/library/unittest.html#unittest.TestCase.assertLogs
 
 
 import os
-import datetime
 from django.test import TestCase
 from unittest import skipIf
 from django.conf import settings
 from akjob.models import Job, JobCallable
-# from akjob.models import load_DayOfMonth, load_DayOfWeek, load_Months
-# from akjob.models import JobCallable
-# from django.db import IntegrityError
 from akjob import akjobd
 from time import sleep
 from subprocess import run, DEVNULL
+from datetime import datetime, timezone, timedelta, time
+# from django.db import IntegrityError
 
 
 """ Setup the module so that a separate instance of akjobd is spawned that does
@@ -203,13 +201,13 @@ class CustomModelFieldTestCase(TestCase):
     def test_TimeZoneOffsetField(self):
         from django.db import connection
         jx = Job.objects.create(name="Test TimeZoneOffsetField")
-        jx.active_time_tz_offset_timedelta = datetime.timedelta(
+        jx.active_time_tz_offset_timedelta = timedelta(
             days=2, hours=2, minutes=25)  # stored as 181500 in the DB
         jx.save()
         # refresh the field from the DB
         del jx.active_time_tz_offset_timedelta
         self.assertEqual(jx.active_time_tz_offset_timedelta,
-                         datetime.timedelta(days=2, hours=2, minutes=25))
+                         timedelta(days=2, hours=2, minutes=25))
 
         # Checking the value stored in the DB
         with connection.cursor() as cursor:
@@ -268,15 +266,35 @@ class JobCodeObjectTestCase(TestCase):
         self.assertEqual(result, testtext)
 
 
-
-
-
-
-
 """ Test scheduled jobs
 """
+@skipIf(os.environ.get("CIRCLECI") == "true",
+        "Akjobd not tested under CircleCI.")
+class JobSchedulingTestCase(TestCase):
+    "Test that job scheduling works."
 
-"""
+
+    # date and time variables. designed to be called inside a test method.
+    def setDateTimeVars(self):
+        self.utc = timezone.utc
+        self.mst = timezone(timedelta(hours=-7))
+        self.now = datetime.now(tz=self.utc)
+        self.future = self.now + timedelta(minutes=30)
+        self.past = self.now - timedelta(minutes=30)
+        self.pastday = self.now - timedelta(days=1)
+        self.tomorrow = self.now + timedelta(days=1)
+
+
+    def setUp(self):
+        self.setDateTimeVars()
+
+
+    def test_dates(self):
+        # job = Job.objects.create(name="test_dates")
+        pass
+
+
+""" old code left as an example but will be deleted.
 class JobsToRunTestCase(TestCase):
     "Test that akjob can figure out which jobs to run"
 
@@ -295,13 +313,6 @@ class JobsToRunTestCase(TestCase):
     # already loaded and you hit a primary key constraint. Should I do a
     # refresh instead?
     def setUp(self):
-        try:
-            load_DayOfMonth()
-            load_DayOfWeek()
-            load_Months()
-        except IntegrityError:
-            pass
-
 
 
         ra1 = Job.objects.create(name="Job dates")

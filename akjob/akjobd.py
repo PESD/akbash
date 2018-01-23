@@ -29,6 +29,12 @@ loop in a better way.
 """
 
 
+# Check if running as root.
+def check_for_root():
+    if os.geteuid() == 0:
+        logger.warn("akjobd running as root user.")
+
+
 # setup piddir and pidname from command line arguments.
 def parse_args():
     global args
@@ -353,6 +359,7 @@ if __name__ == '__main__':
     set_pid_file_name()
     set_pid_location()
     setup_logging()
+    check_for_root()
     do_action(args.action)
 
 
