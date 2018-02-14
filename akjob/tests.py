@@ -14,6 +14,7 @@ https://docs.python.org/3/library/unittest.html#unittest.TestCase.assertLogs
 
 
 import os
+import sys
 from django.test import TestCase
 from unittest import skipIf
 from django.conf import settings
@@ -21,7 +22,7 @@ from akjob.models import Job, JobCallable
 from akjob import akjobd
 from time import sleep
 from subprocess import run, DEVNULL
-from datetime import datetime, timezone, timedelta, time
+from datetime import datetime, timezone, timedelta  # , time
 # from django.db import IntegrityError
 
 
@@ -52,11 +53,15 @@ def setUpModule():
     akjobd.logdir = testdir
     akjobd.setup()
 
+    # Path to the python executable
+    global akjob_python
+    akjob_python = os.path.join(sys.prefix, "bin", "python")
+
 
 def tearDownModule():
     # Make sure the unittest akjobd isn't running
     akjobd.do_action("stop")
-    sleep(1)
+    sleep(2)
     if os.path.isfile(pidfile):
         raise Exception("Unittest akjobd PID file still exists.")
 
@@ -75,9 +80,11 @@ def tearDownModule():
     to deamonize and detach from everything which would mess up testing.
 """
 def start_daemon():
-    run(["python", os.path.join(settings.BASE_DIR, "manage.py"), "akjobd",
-         "start", "-pd", testdir, "-pn", pidname, "-ld",
-         testdir])
+    base = settings.BASE_DIR
+    run([akjob_python, os.path.join(base, "akjob", "akjobd.py"),
+         "start",
+         "-pd", testdir, "-pn", pidname, "-ld", testdir,
+         "-bd", base])
 
 
 """ A function that can be used with JobCallable.
@@ -123,57 +130,57 @@ class AkjobdTestCase(TestCase):
     def test_1_daemon_auto_start(self):
         # First stop the daemon if it's running.
         akjobd.do_action("stop")
-        sleep(1)
+        sleep(2)
         self.assertFalse(os.path.isfile(pidfile))
         # Environment variable so the daemon doesn't auto-start.
         os.putenv('AKJOB_START_DAEMON', "False")
         # Just running the management script should auto-start akjob.
-        run(["python", os.path.join(settings.BASE_DIR, "manage.py")],
+        run([akjob_python, os.path.join(settings.BASE_DIR, "manage.py")],
             stdout=DEVNULL)
         # check that the daemon didn't auto-start.
         self.assertFalse(os.path.isfile(pidfile))
         # Environment variable so the daemon does auto-start.
         os.putenv('AKJOB_START_DAEMON', "True")
         # Just running the management script should auto-start akjob.
-        run(["python", os.path.join(settings.BASE_DIR, "manage.py")],
+        run([akjob_python, os.path.join(settings.BASE_DIR, "manage.py")],
             stdout=DEVNULL)
-        sleep(1)
+        sleep(2)
         # check that the daemon did auto-start.
         self.assertTrue(os.path.isfile(pidfile))
 
 
     def test_2_stop_daemon(self):
         start_daemon()
-        sleep(1)
+        sleep(2)
         akjobd.do_action("stop")
-        sleep(1)
+        sleep(2)
         self.assertFalse(os.path.isfile(pidfile))
 
 
     def test_3_start_daemon(self):
         akjobd.do_action("stop")
-        sleep(1)
+        sleep(2)
         start_daemon()
-        sleep(1)
+        sleep(2)
         self.assertTrue(os.path.isfile(pidfile))
 
     # I can't think of a good way to test that akjobd will only run once. I
     # could read the pid in the pid file then start akjobd again then check if
     # the pid has changed. But is that really a good test?
     def test_4_daemon_run_once_only(self):
-        akjobd.do_action("start")
-        sleep(1)
+        start_daemon()
+        sleep(2)
         pid1 = akjobd.get_pid_from_pidfile()
-        akjobd.do_action("start")
-        sleep(1)
+        start_daemon()
+        sleep(2)
         pid2 = akjobd.get_pid_from_pidfile()
         self.assertEqual(pid1, pid2)
 
 
     # Check if log files exist and are not empty.
     def test_5_log_files_exist(self):
-        akjobd.do_action("start")
-        sleep(1)
+        start_daemon()
+        sleep(2)
         # there should be akjobd.log and akjobd.out but there may not be a
         # akjob.job.log since no jobs are scheduled.
         if (os.path.isfile(os.path.join(
