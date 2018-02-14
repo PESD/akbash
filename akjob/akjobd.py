@@ -309,10 +309,11 @@ def pid_precheck():
             logger.info(pidstatus)
         if pidstatus == "PID_CHECK_NOFILE":
             return pidstatus
+    # pid.PidFileAlreadyLockedError might also need to be handled.
     except pid.PidFileAlreadyRunningError as err:
         logger.info(err)
         return "AlreadyRunning"
-    except:
+    except:  # noqa: E722
         logger.error('Unknown pid related error: ' + str(sys.exc_info()[1:2]))
         raise SystemExit
 
@@ -327,7 +328,7 @@ def do_action(action):
             stop_daemon(get_pid_from_pidfile())
         elif action == "restart":
             stop_daemon(get_pid_from_pidfile())
-            sleep(1)
+            sleep(2)
             start_daemon()
         if __name__ == '__main__':
             raise SystemExit
