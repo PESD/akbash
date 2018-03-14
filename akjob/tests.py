@@ -200,20 +200,17 @@ class AkjobdTestCase(TestCase):
         self.assertTrue(os.path.isfile(pidfile))
 
 
-    def test_2_stop_daemon(self):
+    def test_2_start_stop_daemon(self):
+        akjobd.do_action("stop")
+        psleep(2)
+        self.assertFalse(os.path.isfile(pidfile))
         start_daemon()
         psleep(2)
+        self.assertTrue(os.path.isfile(pidfile))
         akjobd.do_action("stop")
         psleep(2)
         self.assertFalse(os.path.isfile(pidfile))
 
-
-    def test_3_start_daemon(self):
-        akjobd.do_action("stop")
-        psleep(2)
-        start_daemon()
-        psleep(2)
-        self.assertTrue(os.path.isfile(pidfile))
 
     # I can't think of a good way to test that akjobd will only run once. I
     # could read the pid in the pid file then start akjobd again then check if
