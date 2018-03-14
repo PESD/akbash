@@ -257,8 +257,12 @@ def loop_through_jobs():
         worker(j.id)
 
 
+# Ideas for future version:
 # maybe learn how to catch the termination signal so daemon shutdown can be
-# logged.
+#   logged.
+# On linux the buffering makes it so you can't see the output of
+#   akjobd.out right away. If debug is turned on, turn off the buffer or
+#   greatly reduce the buffer.
 def daemonize():
     with open(os.path.join(logdir, "akjobd.out"), "w+") as outfile:
         with daemon.DaemonContext(
@@ -272,8 +276,10 @@ def daemonize():
             while True:
                 # print(" " * 5, "=" * 21, str(datetime.now()), "=" * 21)
                 print(" " * 5, "=" * 70)
+                sys.stdout.flush()
                 loop_through_jobs()
                 print(" " * 5, "_" * 70)
+                sys.stdout.flush()
                 sleep(60)
 
 

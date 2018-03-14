@@ -61,7 +61,7 @@ def setUpModule():
 def tearDownModule():
     # Make sure the unittest akjobd isn't running
     akjobd.do_action("stop")
-    sleep(2)
+    psleep(2)
     if os.path.isfile(pidfile):
         raise Exception("Unittest akjobd PID file still exists.")
 
@@ -119,6 +119,57 @@ class CustomJCO:
             raise Exception("No action provided.")
 
 
+""" A function that calls sleep() and outputs how long the sleep is
+    with a text progress bar. We're going to have some long sleeps so it's nice
+    to see the system is sleeping instead of being broke.  Not exact times.
+"""
+def psleep(seconds):
+    """ A function that calls time.sleep() and provides text feedback. """
+
+    if not isinstance(seconds, int):
+        raise Exception("psleep requires an integer argument.")
+
+    secondMark = "-"  # Actually doing 2 second marks.
+    tenSecMark = '='
+    minuteMark = "+"  # what's better? Plus(+) or carrot(^)
+
+    m, s = divmod(seconds, 60)
+    if seconds < 60:
+        print("\nSleeping " + str(s) + " seconds", end="")
+    elif s == 0:
+        print("\nSleeping " + str(m) + " minutes", end="")
+    else:
+        print("\nSleeping " + str(m) + " minutes", str(s) + " seconds", end="")
+
+    if seconds < 11:
+        sleep(seconds)
+        print()
+        return
+    elif seconds < 61:
+        print(" [", end="")
+        for sec in range(1, seconds + 1):
+            sleep(1)
+            if sec % 10 == 0:
+                print(tenSecMark, end="")
+                sys.stdout.flush()
+            elif sec % 2 == 0:
+                print(secondMark, end="")
+                sys.stdout.flush()
+        print("]")
+        return
+    else:
+        print(" [", end="")
+        for sec in range(1, seconds + 1):
+            sleep(1)
+            if sec % 60 == 0:
+                print(minuteMark, end="")
+                sys.stdout.flush()
+            elif sec % 10 == 0:
+                print(tenSecMark, end="")
+                sys.stdout.flush()
+        print("]")
+        return
+
 
 """ Test for the pidfile. akjobd start and stop. Log files.
 """
@@ -130,7 +181,7 @@ class AkjobdTestCase(TestCase):
     def test_1_daemon_auto_start(self):
         # First stop the daemon if it's running.
         akjobd.do_action("stop")
-        sleep(2)
+        psleep(2)
         self.assertFalse(os.path.isfile(pidfile))
         # Environment variable so the daemon doesn't auto-start.
         os.putenv('AKJOB_START_DAEMON', "False")
@@ -144,24 +195,24 @@ class AkjobdTestCase(TestCase):
         # Just running the management script should auto-start akjob.
         run([akjob_python, os.path.join(settings.BASE_DIR, "manage.py")],
             stdout=DEVNULL)
-        sleep(2)
+        psleep(2)
         # check that the daemon did auto-start.
         self.assertTrue(os.path.isfile(pidfile))
 
 
     def test_2_stop_daemon(self):
         start_daemon()
-        sleep(2)
+        psleep(2)
         akjobd.do_action("stop")
-        sleep(2)
+        psleep(2)
         self.assertFalse(os.path.isfile(pidfile))
 
 
     def test_3_start_daemon(self):
         akjobd.do_action("stop")
-        sleep(2)
+        psleep(2)
         start_daemon()
-        sleep(2)
+        psleep(2)
         self.assertTrue(os.path.isfile(pidfile))
 
     # I can't think of a good way to test that akjobd will only run once. I
@@ -169,10 +220,10 @@ class AkjobdTestCase(TestCase):
     # the pid has changed. But is that really a good test?
     def test_4_daemon_run_once_only(self):
         start_daemon()
-        sleep(2)
+        psleep(2)
         pid1 = akjobd.get_pid_from_pidfile()
         start_daemon()
-        sleep(2)
+        psleep(2)
         pid2 = akjobd.get_pid_from_pidfile()
         self.assertEqual(pid1, pid2)
 
@@ -180,7 +231,7 @@ class AkjobdTestCase(TestCase):
     # Check if log files exist and are not empty.
     def test_5_log_files_exist(self):
         start_daemon()
-        sleep(2)
+        psleep(2)
         # there should be akjobd.log and akjobd.out but there may not be a
         # akjob.job.log since no jobs are scheduled.
         if (os.path.isfile(os.path.join(
@@ -274,6 +325,9 @@ class JobCodeObjectTestCase(TestCase):
 
 
 """ Test scheduled jobs
+I have to write these in a non-standard. Create all the jobs 1st then go and
+check if they ran as expected. Otherwise we'd be spending a lot of time waiting
+for jobs to run.
 """
 @skipIf(os.environ.get("CIRCLECI") == "true",
         "Akjobd not tested under CircleCI.")
@@ -292,13 +346,98 @@ class JobSchedulingTestCase(TestCase):
         self.tomorrow = self.now + timedelta(days=1)
 
 
+    @staticmethod
+    def create_job(name):
+        job = Job.objects.create(name=name)
+        jco = JobCallable(file_print, job.name, job.name)
+        job.job_code_object = jco
+        job.save()
+        return job
+
+
+    def create_job_test(self, job):
+        job = job
+        name = job.name
+        del job
+        job = Job.objects.get(name=name)
+        self.assertEqual(job.name, name)
+
+
     def setUp(self):
         self.setDateTimeVars()
 
 
-    def test_dates(self):
-        # job = Job.objects.create(name="test_dates")
-        pass
+    def test_schedule_JobDates_past(self):
+        name = "test_JobDates_past"
+        job = self.create_job(name)
+        job.dates.create(job_datetime=self.past)
+        job.save()
+        self.create_job_test(job)
+
+
+    def test_schedule_dates_list_past(self):
+        name = "test_dates_list_past"
+        job = self.create_job(name)
+        dates_list = [self.past]
+        job.save()
+        self.create_job_test(job)
+
+
+    def test_schedule_JobDates_now(self):
+        name = "test_JobDates_now"
+        job = self.create_job(name)
+        job.dates.create(job_datetime=self.now)
+        job.save()
+        self.create_job_test(job)
+
+
+    def test_schedule_dates_list_now(self):
+        name = "test_dates_list_now"
+        job = self.create_job(name)
+        dates_list = [self.now]
+        job.save()
+        self.create_job_test(job)
+
+
+    def test_schedule_JobDates_future(self):
+        name = "test_JobDates_future"
+        job = self.create_job(name)
+        job.dates.create(job_datetime=self.future)
+        job.save()
+        self.create_job_test(job)
+
+
+    def test_schedule_dates_list_future(self):
+        name = "test_dates_list_future"
+        job = self.create_job(name)
+        dates_list = [self.future]
+        job.save()
+        self.create_job_test(job)
+
+
+""" scheduling things to test:
+Past, future, now, timezone
+    *   jobs with past scheduled run times still run when akjobd is back up.
+    *   scheduled runtime now() runs. test because the 1st loops schedules the
+        job when then runs on the 2nd loop.
+    *   Jobs in the future haven't run yet.
+    *   Jobs in the future run in the future.
+    *   timezone stuff works
+Scheduling with each job model scheduling attribute
+    *   JobDates: single and multiple
+    *   dates_list: single and multiple
+    *   run_every / reoccuring jobs
+    *   monthly_days
+    *   monthly_days_list
+    *   weekly_days
+    *   weekly_days_list
+
+I thinking limiting options should be in their own test case.
+Limiting options with each job model limiting attributes.
+    *   job_enabled: enabled, disabled
+    *   run_count_limit
+    *
+"""
 
 
 """ old code left as an example but will be deleted.
