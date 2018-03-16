@@ -23,7 +23,7 @@ Akjobd uses a pid file to determine wether the daemon is already running or not.
 
 When akjobd is launched via django startup, via akjob.apps, it is ran in a separate process so that the parent django process may continue on as normal.
 
-There is an akjobd management command available. Using the start, stop, and restart options allows you to start, stop, and restart the akjobd daemon.
+There is an akjobd management command available. Using the start, stop, and restart options allows you to start, stop, and restart the akjobd daemon. To avoid permission problems, when starting or stopping akjobd, it's strongly recommended to run the management command as the same user that akjobd normally runs under.
 
 This is not normal but there is a small possibility that when you make a change to a job, the akjobd daemon might be reading from a cache and not see that change. You may need to restart the daemon so the change is picked up. Again, this is not typical.
 ### Logging
@@ -226,7 +226,7 @@ myjob1.save()
 The first argument, after "akjobd", is the action the command should perform.
 Example: ```python manage.py akjobd stop```
 #### stop, start, restart
-Stop, start, or restart the akjobd daemon. The options -pd / --piddir, and -pn / --pidname may be used to specify the pid file to use. The option -ld / --logdir my be used to set the directory where log files are stored.
+Stop, start, or restart the akjobd daemon. The options -pd / --piddir, and -pn / --pidname may be used to specify the pid file to use. The option -ld / --logdir my be used to set the directory where log files are stored. It's strongly recommended this command be ran as the same user that akjobd normally runs under.
 #### reloadfixture
 Clears out the DayOfMonth, DayofWeek, and Months tables then reloads them. This is useful if you accidently insert extra data into these tables or accidently delete needed records.
 #### joblist

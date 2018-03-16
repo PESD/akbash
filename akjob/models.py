@@ -559,6 +559,7 @@ class Job(models.Model):
     """
     def save(self, *args, **kwargs):
         self.full_clean()
+        # Consider calling self.next_run() here.
         super(Job, self).save(*args, **kwargs)
 
 
@@ -761,6 +762,13 @@ class Job(models.Model):
         self._next_run = jtimes[0]
         self.save()
         return jtimes[0]
+
+
+    # Because new jobs are not scheduled when created the user may want to
+    # want to manually get the job scheduled right away by calling the next_run
+    # method. I'm creating this alias as schedule_run is easier to remember and
+    # makes more sense to the user.
+    schedule_run = next_run
 
 
     # TODO: This needs testing.
