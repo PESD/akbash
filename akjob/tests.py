@@ -51,6 +51,7 @@ def setUpModule():
     akjobd.piddir = testdir
     akjobd.pidfile = pidname
     akjobd.logdir = testdir
+    akjobd.testmode = True
     akjobd.setup()
 
     # Path to the python executable
@@ -79,12 +80,14 @@ def tearDownModule():
 """ The akjob daemon needs to be ran in a separate process because it's going
     to deamonize and detach from everything which would mess up testing.
 """
+# FIXME: The new process is not using the testing database.
 def start_daemon():
     base = settings.BASE_DIR
     run([akjob_python, os.path.join(base, "akjob", "akjobd.py"),
          "start",
          "-pd", testdir, "-pn", pidname, "-ld", testdir,
-         "-bd", base])
+         "-bd", base,
+         "-t"])
 
 
 """ A function that can be used with JobCallable.
@@ -333,11 +336,18 @@ class JobSchedulingTestCase(TestCase):
 
 
     # date and time variables. designed to be called inside a test method.
+    #
+    # Changed self.now to really be now + 1 minute. It's not realistic to
+    # schedule something for now. Akjob won't catch it in time and it will end
+    # up not running because it's scheduled for the past.  That's okay because
+    # there is no reason to schedule a job for now since you could just run the
+    # code now without making a job. It would be useful for testing jobs
+    # though.
     def setDateTimeVars(self):
         self.utc = timezone.utc
         self.mst = timezone(timedelta(hours=-7))
-        self.now = datetime.now(tz=self.utc)
-        self.future = self.now + timedelta(minutes=30)
+        self.now = datetime.now(tz=self.utc) + timedelta(minutes=2)
+        self.future = self.now + timedelta(minutes=1)
         self.past = self.now - timedelta(minutes=30)
         self.pastday = self.now - timedelta(days=1)
         self.tomorrow = self.now + timedelta(days=1)
@@ -349,12 +359,13 @@ class JobSchedulingTestCase(TestCase):
         jco = JobCallable(file_print, job.name, job.name)
         job.job_code_object = jco
         job.save()
+        testfiles.append(job.name)
         return job
 
 
     def create_job_test(self, job):
         job = job
-        name = job.name
+        name = str(job.name)
         del job
         job = Job.objects.get(name=name)
         self.assertEqual(job.name, name)
@@ -364,7 +375,8 @@ class JobSchedulingTestCase(TestCase):
         self.setDateTimeVars()
 
 
-    def test_schedule_JobDates_past(self):
+    # scheduling a job in that past won't run
+    def test_1_schedule_JobDates_past(self):
         name = "test_JobDates_past"
         job = self.create_job(name)
         job.dates.create(job_datetime=self.past)
@@ -372,31 +384,34 @@ class JobSchedulingTestCase(TestCase):
         self.create_job_test(job)
 
 
-    def test_schedule_dates_list_past(self):
+    # scheduling a job in that past won't run
+    def test_1_schedule_dates_list_past(self):
         name = "test_dates_list_past"
         job = self.create_job(name)
-        dates_list = [self.past]
+        job.dates_list = [self.past]
         job.save()
         self.create_job_test(job)
 
 
-    def test_schedule_JobDates_now(self):
+    def test_1_schedule_JobDates_now(self):
         name = "test_JobDates_now"
         job = self.create_job(name)
         job.dates.create(job_datetime=self.now)
+        job.next_run()  # Right now jobs need to be scheduled right away
         job.save()
         self.create_job_test(job)
 
 
-    def test_schedule_dates_list_now(self):
+    def test_1_schedule_dates_list_now(self):
         name = "test_dates_list_now"
         job = self.create_job(name)
-        dates_list = [self.now]
+        job.dates_list = [self.now]
+        job.schedule_run()  # alias of next_run()
         job.save()
         self.create_job_test(job)
 
 
-    def test_schedule_JobDates_future(self):
+    def test_1_schedule_JobDates_future(self):
         name = "test_JobDates_future"
         job = self.create_job(name)
         job.dates.create(job_datetime=self.future)
@@ -404,12 +419,38 @@ class JobSchedulingTestCase(TestCase):
         self.create_job_test(job)
 
 
-    def test_schedule_dates_list_future(self):
+    def test_1_schedule_dates_list_future(self):
         name = "test_dates_list_future"
         job = self.create_job(name)
-        dates_list = [self.future]
+        job.dates_list = [self.future]
         job.save()
         self.create_job_test(job)
+
+
+    def test_2_wait(self):
+        """ Not really a test. Start akjobd and sleep for 3 minutes while we
+            wait for jobs to run. """
+        start_daemon()
+        psleep(250)
+
+
+    def test_3_job_results(self):
+        names = ["test_JobDates_now",
+                 "test_dates_list_now",
+                 "test_JobDates_future",
+                 "test_dates_list_future"]
+        for name in names:
+            with self.subTest(name):
+                if os.path.isfile(os.path.join(testdir, name)):
+                    with open(os.path.join(testdir, name), 'r') as f:
+                        result = f.readline()
+                    self.assertEqual(result, name)
+                else:
+                    self.assertTrue(os.path.isfile(os.path.join(testdir, name)))
+        names = ["test_JobDates_past",
+                 "test_dates_list_past"]
+        for name in names:
+            self.assertFalse(os.path.isfile(os.path.join(testdir, name)))
 
 
 """ scheduling things to test:

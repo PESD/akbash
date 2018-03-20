@@ -29,6 +29,46 @@ loop in a better way.
 """
 
 
+""" Unittest testing database
+Since the akjob daemon is ran in it's own process, we have to handle switching
+to the testing db our self when running unit tests. Default testmode to false.
+Set testmode to True if running unittest so the right database is used.  It's
+assumed test db is named "test_" + default db so this will fail if that default
+isn't used.
+
+Using test mode running akjob from the command line or when spawned in it own
+process through subprocess.run:
+  The arguments -t or --testdb are used. args.testdb is set to True.
+  In setup_django(), is_test_mode() returns True.
+    switch_to_unittest_db() is ran.
+
+Using test mode when import akjobd:
+  After importing akjobd, set akjobd.testmode = True.
+  When akjobd.setup() is ran, setup_django() is ran which will call
+  switch_to_unittest_db().
+"""
+testmode = False
+def is_test_mode():
+    global testmode
+    try:
+        if args.testdb is True:
+            testmode = True
+    except NameError:
+        pass
+    if testmode is True:
+        return True
+    else:
+        return False
+
+# This will fail if called before setup_django()
+def switch_to_unittest_db():
+    """ Switch db connection to unittest db. test_ + default db assumed. """
+    # db = django.conf.settings.DATABASES["default"]["NAME"]
+    # django.conf.settings.DATABASES["default"]["NAME"] = 'test_' + db
+    django.db.connections.close_all()
+    # django.db.close_old_connections()
+
+
 # Check if running as root.
 def check_for_root():
     if os.geteuid() == 0:
@@ -38,7 +78,7 @@ def check_for_root():
 # setup piddir and pidname from command line arguments.
 def parse_args():
     global args
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description="The Akjob Daemon")
     parser.add_argument("action",
                         choices=["start", "stop", "restart"],
                         help="Action to perform.")
@@ -50,6 +90,8 @@ def parse_args():
                         help="The directory used to store the log file.")
     parser.add_argument("-bd", "--basedir",
                         help="The base directory of the akbash django site.")
+    parser.add_argument("-t", "--testdb", action='store_true',
+                        help="Use the unittest test database.")
     args = parser.parse_args()
 
 
@@ -88,12 +130,15 @@ def set_pre_setup_base_dir():
 # Django has to be setup separately to disable the running of akjobd on django
 # startup thereby causing an infinite loop.
 def setup_django():
+
     # Set akjob to not auto start to avoid an infinate loop.
     os.environ['AKJOB_START_DAEMON'] = 'False'
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "akbash.settings")
+
     global django, F, Q  # not sure if django in global is needed.
     import django
     from django.db.models import F, Q
+
     if __name__ == '__main__':
         # make sure the BASE_DIR is in sys.path so the akbash.settings module
         # and the app packages can be found by django.setup().
@@ -101,6 +146,14 @@ def setup_django():
         if pre_setup_base_dir not in sys.path:
             sys.path.insert(0, pre_setup_base_dir)
         django.setup()
+
+    # switch to unittest test db if in test mode.
+    if is_test_mode() is True:
+        switch_to_unittest_db()
+    # For debug
+    print("Using database: " +
+          django.conf.settings.DATABASES["default"]["NAME"])  # For debug
+
     global BASE_DIR
     BASE_DIR = django.conf.settings.BASE_DIR
     # print(BASE_DIR)  # for debug
