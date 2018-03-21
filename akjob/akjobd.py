@@ -8,6 +8,13 @@ import daemon
 from datetime import datetime
 from time import sleep
 # from contextlib import redirect_stderr, redirect_stdout
+import inspect  # for debugging.
+
+
+# For debug
+print("akjobd module inspect:")
+print(inspect.stack())
+print("AKJOB_START_DAEMON = " + os.environ['AKJOB_START_DAEMON'])
 
 
 """ Notes:
@@ -26,12 +33,11 @@ while a job is running, the _job_running flag doesn't get turned off and the
 job will no longer run.
 Look into catching termination signals and how they could be used to end the
 loop in a better way.
-"""
 
 
-""" Unittest testing database
-Since the akjob daemon is ran in it's own process, we have to handle switching
-to the testing db our self when running unit tests. Default testmode to false.
+Unittest testing database:
+When the akjob daemon is ran in it's own process, we need to handle switching
+to the testing db when running unit tests. Default testmode to false.
 Set testmode to True if running unittest so the right database is used.  It's
 assumed test db is named "test_" + default db so this will fail if that default
 isn't used.
@@ -42,7 +48,8 @@ process through subprocess.run:
   In setup_django(), is_test_mode() returns True.
     switch_to_unittest_db() is ran.
 
-Using test mode when import akjobd:
+Using test mode when importing akjobd:
+  This should only be needed when using the management command inside a test.
   After importing akjobd, set akjobd.testmode = True.
   When akjobd.setup() is ran, setup_django() is ran which will call
   switch_to_unittest_db().
@@ -63,8 +70,8 @@ def is_test_mode():
 # This will fail if called before setup_django()
 def switch_to_unittest_db():
     """ Switch db connection to unittest db. test_ + default db assumed. """
-    # db = django.conf.settings.DATABASES["default"]["NAME"]
-    # django.conf.settings.DATABASES["default"]["NAME"] = 'test_' + db
+    db = django.conf.settings.DATABASES["default"]["NAME"]
+    django.conf.settings.DATABASES["default"]["NAME"] = 'test_' + db
     django.db.connections.close_all()
     # django.db.close_old_connections()
 
@@ -152,7 +159,9 @@ def setup_django():
         switch_to_unittest_db()
     # For debug
     print("Using database: " +
-          django.conf.settings.DATABASES["default"]["NAME"])  # For debug
+          django.conf.settings.DATABASES["default"]["NAME"] +
+          " | called by: " + inspect.stack()[1][3] +
+          " in " + inspect.stack()[1][1])
 
     global BASE_DIR
     BASE_DIR = django.conf.settings.BASE_DIR

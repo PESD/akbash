@@ -30,6 +30,7 @@ from datetime import datetime, timezone, timedelta  # , time
     not effect the default akjobd instance.
 """
 def setUpModule():
+    print("setUpModule")  # for debug
     # Assign global variables defining pidfile name and directory where logs
     # and pidfile are stored.
     global testdir, pidname, pidfile, testfiles
@@ -48,10 +49,9 @@ def setUpModule():
     os.environ["AKJOB_PID_DIR"] = testdir
     os.environ["AKJOB_PID_FILE"] = pidname
     os.environ["AKJOB_LOG_DIR"] = testdir
-    akjobd.piddir = testdir
+    os.environ["AKJOB_UNITTEST"] = "True"
     akjobd.pidfile = pidname
     akjobd.logdir = testdir
-    akjobd.testmode = True
     akjobd.setup()
 
     # Path to the python executable
@@ -60,6 +60,7 @@ def setUpModule():
 
 
 def tearDownModule():
+    print("tearDownModule")  # for debug
     # Make sure the unittest akjobd isn't running
     akjobd.do_action("stop")
     psleep(2)
@@ -182,6 +183,8 @@ class AkjobdTestCase(TestCase):
 
 
     def test_1_daemon_auto_start(self):
+        print("test_1_daemon_auto_start")  # for debug
+
         # First stop the daemon if it's running.
         akjobd.do_action("stop")
         psleep(2)
@@ -189,21 +192,25 @@ class AkjobdTestCase(TestCase):
         # Environment variable so the daemon doesn't auto-start.
         os.putenv('AKJOB_START_DAEMON', "False")
         # Just running the management script should auto-start akjob.
-        run([akjob_python, os.path.join(settings.BASE_DIR, "manage.py")],
-            stdout=DEVNULL)
+        run([akjob_python, os.path.join(settings.BASE_DIR, "manage.py"),
+             "akjobd", "unittest"], stdout=DEVNULL)
         # check that the daemon didn't auto-start.
         self.assertFalse(os.path.isfile(pidfile))
         # Environment variable so the daemon does auto-start.
         os.putenv('AKJOB_START_DAEMON', "True")
         # Just running the management script should auto-start akjob.
-        run([akjob_python, os.path.join(settings.BASE_DIR, "manage.py")],
-            stdout=DEVNULL)
+        run([akjob_python, os.path.join(settings.BASE_DIR, "manage.py"),
+             "akjobd", "unittest"], stdout=DEVNULL)
         psleep(2)
         # check that the daemon did auto-start.
         self.assertTrue(os.path.isfile(pidfile))
+        # set autostart to false to not confuse things with other tests.
+        os.putenv('AKJOB_START_DAEMON', "False")
 
 
     def test_2_start_stop_daemon(self):
+        print("test_2_start_stop_daemon")  # for debug
+
         akjobd.do_action("stop")
         psleep(2)
         self.assertFalse(os.path.isfile(pidfile))
@@ -219,6 +226,8 @@ class AkjobdTestCase(TestCase):
     # could read the pid in the pid file then start akjobd again then check if
     # the pid has changed. But is that really a good test?
     def test_4_daemon_run_once_only(self):
+        print("test_4_daemon_run_once_only")  # for debug
+
         start_daemon()
         psleep(2)
         pid1 = akjobd.get_pid_from_pidfile()
@@ -230,6 +239,7 @@ class AkjobdTestCase(TestCase):
 
     # Check if log files exist and are not empty.
     def test_5_log_files_exist(self):
+        print("test_5_log_files_exist")  # for debug
         start_daemon()
         psleep(2)
         # there should be akjobd.log and akjobd.out but there may not be a
@@ -257,6 +267,7 @@ class AkjobdTestCase(TestCase):
 class CustomModelFieldTestCase(TestCase):
 
     def test_TimeZoneOffsetField(self):
+        print("test_TimeZoneOffsetField")  # for debug
         from django.db import connection
         jx = Job.objects.create(name="Test TimeZoneOffsetField")
         jx.active_time_tz_offset_timedelta = timedelta(

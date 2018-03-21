@@ -37,6 +37,8 @@ AKJOB_LOG_DIR = os.environ.get(
 AKJOB_PYTHON = os.environ.get("AKJOB_PYTHON",
                               os.path.join(sys.prefix, "bin", "python"))
 
+AKJOB_UNITTEST = os.environ.get("AKJOB_UNITTEST", False)
+
 
 class AkjobConfig(AppConfig):
     name = "akjob"
@@ -51,11 +53,15 @@ class AkjobConfig(AppConfig):
             # start akjobd using it's own process and instance of python so
             # that it will detach when it daemonizes and this process may
             # continue on as normal and uneffected.
-            run([AKJOB_PYTHON, "akjob/akjobd.py",
-                 "start",
-                 "-pd", AKJOB_PID_DIR,
-                 "-pn", AKJOB_PID_FILE,
-                 "-ld", AKJOB_LOG_DIR,
-                 "-bd", BASE_DIR,
-                 ])
+            command = [AKJOB_PYTHON, "akjob/akjobd.py",
+                       "start",
+                       "-pd", AKJOB_PID_DIR,
+                       "-pn", AKJOB_PID_FILE,
+                       "-ld", AKJOB_LOG_DIR,
+                       "-bd", BASE_DIR,
+                       ]
+            if AKJOB_UNITTEST in [True, 'True', 'true', 'TRUE', 't', 'T', 'y',
+                                  'Y', 'Yes', 'yes', 'YES', '1', 1]:
+                command.append("-t")
+            run(command)
             os.environ['AKJOB_START_DAEMON'] = 'False'
