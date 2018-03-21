@@ -10,8 +10,7 @@ class Command(BaseCommand):
         parser.add_argument("action",
                             choices=["start", "stop", "restart",
                                      "reloadfixture", "joblist", "enablejob",
-                                     "disablejob", "deletejob", "showinfo",
-                                     "unittest"],
+                                     "disablejob", "deletejob", "showinfo"],
                             help="""
 Action to perform.
 
@@ -26,9 +25,6 @@ enablejob, disablejob, deletejob will enable, disble, or delete the job
 specified by -id.
 
 showinfo will display information about the job specified by -id.
-
-unittest is used with unittesting and is used to tell akjobd to switch to the
-unittest database using defaults.
 """)
         parser.add_argument("-pd", "--piddir",
                             help="The directory used to store the pid file. "
@@ -42,8 +38,6 @@ unittest database using defaults.
         parser.add_argument("-id",
                             help='ID number of job to enable, disable, '
                                  'delete or showinfo')
-        # parser.add_argument("-t", dest="testdb", action="store_true",
-        #                     help="Use unittest database using defaults.")
 
 
     def handle(self, *args, **options):
@@ -57,9 +51,6 @@ unittest database using defaults.
 
         if options["logdir"] is not None:
             akjobd.logdir = options["logdir"]
-
-        if options["action"] == "unittest":
-            akjobd.testmode = True
 
         akjobd.setup()
 

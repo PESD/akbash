@@ -8,13 +8,13 @@ import daemon
 from datetime import datetime
 from time import sleep
 # from contextlib import redirect_stderr, redirect_stdout
-import inspect  # for debugging.
 
 
 # For debug
-print("akjobd module inspect:")
-print(inspect.stack())
-print("AKJOB_START_DAEMON = " + os.environ['AKJOB_START_DAEMON'])
+# import inspect
+# print("akjobd module inspect:")
+# print(inspect.stack())
+# print("AKJOB_START_DAEMON = " + os.environ['AKJOB_START_DAEMON'])
 
 
 """ Notes:
@@ -49,10 +49,15 @@ process through subprocess.run:
     switch_to_unittest_db() is ran.
 
 Using test mode when importing akjobd:
-  This should only be needed when using the management command inside a test.
-  After importing akjobd, set akjobd.testmode = True.
-  When akjobd.setup() is ran, setup_django() is ran which will call
-  switch_to_unittest_db().
+  Set the environment variable AKJOB_UNITTEST = "True". That should be it since
+  you're probably already setup on the unittest database. If you're not already
+  connected to your unittest db, you can set akjobd.testmode = True. Don't set
+  that unless you're sure you need to because most likely you'll end up with
+  akjobd trying to connect to a db called something like test_test_default.
+  Maybe I should remove that code.
+    After importing akjobd, set akjobd.testmode = True.
+    When akjobd.setup() is ran, setup_django() is ran which will call
+        switch_to_unittest_db().
 """
 testmode = False
 def is_test_mode():
@@ -74,6 +79,7 @@ def switch_to_unittest_db():
     django.conf.settings.DATABASES["default"]["NAME"] = 'test_' + db
     django.db.connections.close_all()
     # django.db.close_old_connections()
+    os.environ['AKJOB_UNITTEST'] = 'True'
 
 
 # Check if running as root.
@@ -157,11 +163,14 @@ def setup_django():
     # switch to unittest test db if in test mode.
     if is_test_mode() is True:
         switch_to_unittest_db()
+
     # For debug
     print("Using database: " +
-          django.conf.settings.DATABASES["default"]["NAME"] +
-          " | called by: " + inspect.stack()[1][3] +
-          " in " + inspect.stack()[1][1])
+          django.conf.settings.DATABASES["default"]["NAME"])
+    # print("Using database: " +
+    #       django.conf.settings.DATABASES["default"]["NAME"] +
+    #       " | called by: " + inspect.stack()[1][3] +
+    #       " in " + inspect.stack()[1][1])
 
     global BASE_DIR
     BASE_DIR = django.conf.settings.BASE_DIR
