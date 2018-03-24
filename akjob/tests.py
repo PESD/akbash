@@ -16,6 +16,7 @@ https://docs.python.org/3/library/unittest.html#unittest.TestCase.assertLogs
 import os
 import sys
 from django.test import TestCase
+from unittest import TestCase as uTestCase
 from unittest import skipIf
 from django.conf import settings
 from akjob.models import Job, JobCallable
@@ -23,6 +24,7 @@ from akjob import akjobd
 from time import sleep
 from subprocess import run, DEVNULL
 from datetime import datetime, timezone, timedelta  # , time
+from django.db import connection
 # from django.db import IntegrityError
 
 
@@ -30,7 +32,7 @@ from datetime import datetime, timezone, timedelta  # , time
     not effect the default akjobd instance.
 """
 def setUpModule():
-    print("setUpModule")  # for debug
+    # print("setUpModule")  # for debug
     # Assign global variables defining pidfile name and directory where logs
     # and pidfile are stored.
     global testdir, pidname, pidfile, testfiles
@@ -50,6 +52,7 @@ def setUpModule():
     os.environ["AKJOB_PID_FILE"] = pidname
     os.environ["AKJOB_LOG_DIR"] = testdir
     os.environ["AKJOB_UNITTEST"] = "True"
+    akjobd.piddir = testdir
     akjobd.pidfile = pidname
     akjobd.logdir = testdir
     akjobd.setup()
@@ -60,7 +63,7 @@ def setUpModule():
 
 
 def tearDownModule():
-    print("tearDownModule")  # for debug
+    # print("tearDownModule")  # for debug
     # Make sure the unittest akjobd isn't running
     akjobd.do_action("stop")
     psleep(2)
@@ -81,7 +84,6 @@ def tearDownModule():
 """ The akjob daemon needs to be ran in a separate process because it's going
     to deamonize and detach from everything which would mess up testing.
 """
-# FIXME: The new process is not using the testing database.
 def start_daemon():
     base = settings.BASE_DIR
     run([akjob_python, os.path.join(base, "akjob", "akjobd.py"),
@@ -94,8 +96,8 @@ def start_daemon():
 """ A function that can be used with JobCallable.
     Creates a file in the testdir named "name" and writes "text" into it.
 """
-def file_print(name, text):
-    with open(os.path.join(testdir, name), 'w') as f:
+def file_print(directory, name, text):
+    with open(os.path.join(directory, name), 'w') as f:
         f.write(text)
 
 
@@ -183,24 +185,26 @@ class AkjobdTestCase(TestCase):
 
 
     def test_1_daemon_auto_start(self):
-        print("test_1_daemon_auto_start")  # for debug
 
         # First stop the daemon if it's running.
+        # print("test_1_daemon_auto_start: stop")  # for debug
         akjobd.do_action("stop")
         psleep(2)
         self.assertFalse(os.path.isfile(pidfile))
+        # print("test_1_daemon_auto_start: auto-start off")  # for debug
         # Environment variable so the daemon doesn't auto-start.
         os.putenv('AKJOB_START_DAEMON', "False")
         # Just running the management script should auto-start akjob.
-        run([akjob_python, os.path.join(settings.BASE_DIR, "manage.py"),
-             "akjobd", "unittest"], stdout=DEVNULL)
+        run([akjob_python, os.path.join(settings.BASE_DIR, "manage.py")],
+            stdout=DEVNULL)
         # check that the daemon didn't auto-start.
         self.assertFalse(os.path.isfile(pidfile))
+        # print("test_1_daemon_auto_start: auto-start on")  # for debug
         # Environment variable so the daemon does auto-start.
         os.putenv('AKJOB_START_DAEMON', "True")
         # Just running the management script should auto-start akjob.
-        run([akjob_python, os.path.join(settings.BASE_DIR, "manage.py"),
-             "akjobd", "unittest"], stdout=DEVNULL)
+        run([akjob_python, os.path.join(settings.BASE_DIR, "manage.py")],
+            stdout=DEVNULL)
         psleep(2)
         # check that the daemon did auto-start.
         self.assertTrue(os.path.isfile(pidfile))
@@ -209,14 +213,16 @@ class AkjobdTestCase(TestCase):
 
 
     def test_2_start_stop_daemon(self):
-        print("test_2_start_stop_daemon")  # for debug
 
+        # print("test_2_start_stop_daemon: stop")  # for debug
         akjobd.do_action("stop")
         psleep(2)
         self.assertFalse(os.path.isfile(pidfile))
+        # print("test_2_start_stop_daemon: start")  # for debug
         start_daemon()
         psleep(2)
         self.assertTrue(os.path.isfile(pidfile))
+        # print("test_2_start_stop_daemon: stop")  # for debug
         akjobd.do_action("stop")
         psleep(2)
         self.assertFalse(os.path.isfile(pidfile))
@@ -226,11 +232,12 @@ class AkjobdTestCase(TestCase):
     # could read the pid in the pid file then start akjobd again then check if
     # the pid has changed. But is that really a good test?
     def test_4_daemon_run_once_only(self):
-        print("test_4_daemon_run_once_only")  # for debug
 
+        # print("test_4_daemon_run_once_only: start 1")  # for debug
         start_daemon()
         psleep(2)
         pid1 = akjobd.get_pid_from_pidfile()
+        # print("test_4_daemon_run_once_only: start 2")  # for debug
         start_daemon()
         psleep(2)
         pid2 = akjobd.get_pid_from_pidfile()
@@ -239,7 +246,7 @@ class AkjobdTestCase(TestCase):
 
     # Check if log files exist and are not empty.
     def test_5_log_files_exist(self):
-        print("test_5_log_files_exist")  # for debug
+        # print("test_5_log_files_exist")  # for debug
         start_daemon()
         psleep(2)
         # there should be akjobd.log and akjobd.out but there may not be a
@@ -261,14 +268,10 @@ class AkjobdTestCase(TestCase):
 
 """ Test the custom model fields
 """
-# I think this might work in circleci
-# @skipIf(os.environ.get("CIRCLECI") == "true",
-#         "Akjobd not tested under CircleCI.")
 class CustomModelFieldTestCase(TestCase):
 
     def test_TimeZoneOffsetField(self):
-        print("test_TimeZoneOffsetField")  # for debug
-        from django.db import connection
+        # print("test_TimeZoneOffsetField")  # for debug
         jx = Job.objects.create(name="Test TimeZoneOffsetField")
         jx.active_time_tz_offset_timedelta = timedelta(
             days=2, hours=2, minutes=25)  # stored as 181500 in the DB
@@ -299,7 +302,7 @@ class JobCodeObjectTestCase(TestCase):
         testfiles.append(testfilename)
         j1 = Job.objects.create(name="JobCallable Test")
         idnum = j1.id
-        jco = JobCallable(file_print, testfilename, testtext)
+        jco = JobCallable(file_print, testdir, testfilename, testtext)
         j1.job_code_object = jco
         j1.save()
         # refresh from db to make sure jco works after pickel and unpickel
@@ -338,11 +341,12 @@ class JobCodeObjectTestCase(TestCase):
 """ Test scheduled jobs
 I have to write these in a non-standard. Create all the jobs 1st then go and
 check if they ran as expected. Otherwise we'd be spending a lot of time waiting
-for jobs to run.
+for jobs to run. Also I can't use django testcases since they're wrapped in
+transactions that are rolledback so the daemon would never see the jobs.
 """
 @skipIf(os.environ.get("CIRCLECI") == "true",
         "Akjobd not tested under CircleCI.")
-class JobSchedulingTestCase(TestCase):
+class JobSchedulingTestCase(uTestCase):
     "Test that job scheduling works."
 
 
@@ -357,7 +361,7 @@ class JobSchedulingTestCase(TestCase):
     def setDateTimeVars(self):
         self.utc = timezone.utc
         self.mst = timezone(timedelta(hours=-7))
-        self.now = datetime.now(tz=self.utc) + timedelta(minutes=2)
+        self.now = datetime.now(tz=self.utc)  # + timedelta(minutes=2)
         self.future = self.now + timedelta(minutes=1)
         self.past = self.now - timedelta(minutes=30)
         self.pastday = self.now - timedelta(days=1)
@@ -365,21 +369,21 @@ class JobSchedulingTestCase(TestCase):
 
 
     @staticmethod
-    def create_job(name):
-        job = Job.objects.create(name=name)
-        jco = JobCallable(file_print, job.name, job.name)
-        job.job_code_object = jco
-        job.save()
-        testfiles.append(job.name)
-        return job
+    def create_job(jobname):
+        j = Job.objects.create(name=jobname)
+        jco = JobCallable(file_print, testdir, j.name, j.name)
+        j.job_code_object = jco
+        j.save()
+        testfiles.append(j.name)
+        return j
 
 
-    def create_job_test(self, job):
-        job = job
-        name = str(job.name)
-        del job
-        job = Job.objects.get(name=name)
-        self.assertEqual(job.name, name)
+    def create_job_test(self, jobobj):
+        j = jobobj
+        jobname = str(j.name)
+        del j
+        j2 = Job.objects.get(name=jobname)
+        self.assertEqual(j2.name, jobname)
 
 
     def setUp(self):
@@ -441,11 +445,16 @@ class JobSchedulingTestCase(TestCase):
     def test_2_wait(self):
         """ Not really a test. Start akjobd and sleep for 3 minutes while we
             wait for jobs to run. """
+        # for debug
+        # print("test_2 Using database: " + settings.DATABASES["default"]["NAME"])
         start_daemon()
-        psleep(250)
+        # psleep(250)
+        psleep(130)
 
 
     def test_3_job_results(self):
+        # for debug
+        # print("test_3 Using database: " + settings.DATABASES["default"]["NAME"])
         names = ["test_JobDates_now",
                  "test_dates_list_now",
                  "test_JobDates_future",

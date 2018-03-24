@@ -47,39 +47,7 @@ process through subprocess.run:
   The arguments -t or --testdb are used. args.testdb is set to True.
   In setup_django(), is_test_mode() returns True.
     switch_to_unittest_db() is ran.
-
-Using test mode when importing akjobd:
-  Set the environment variable AKJOB_UNITTEST = "True". That should be it since
-  you're probably already setup on the unittest database. If you're not already
-  connected to your unittest db, you can set akjobd.testmode = True. Don't set
-  that unless you're sure you need to because most likely you'll end up with
-  akjobd trying to connect to a db called something like test_test_default.
-  Maybe I should remove that code.
-    After importing akjobd, set akjobd.testmode = True.
-    When akjobd.setup() is ran, setup_django() is ran which will call
-        switch_to_unittest_db().
 """
-testmode = False
-def is_test_mode():
-    global testmode
-    try:
-        if args.testdb is True:
-            testmode = True
-    except NameError:
-        pass
-    if testmode is True:
-        return True
-    else:
-        return False
-
-# This will fail if called before setup_django()
-def switch_to_unittest_db():
-    """ Switch db connection to unittest db. test_ + default db assumed. """
-    db = django.conf.settings.DATABASES["default"]["NAME"]
-    django.conf.settings.DATABASES["default"]["NAME"] = 'test_' + db
-    django.db.connections.close_all()
-    # django.db.close_old_connections()
-    os.environ['AKJOB_UNITTEST'] = 'True'
 
 
 # Check if running as root.
@@ -158,15 +126,19 @@ def setup_django():
         set_pre_setup_base_dir()
         if pre_setup_base_dir not in sys.path:
             sys.path.insert(0, pre_setup_base_dir)
+        # switch to unittest test db if -t/--testdb args.
+        if args.testdb is True:
+            db = django.conf.settings.DATABASES["default"]["NAME"]
+            django.conf.settings.DATABASES["default"]["NAME"] = 'test_' + db
+            django.db.connections.close_all()
+            # django.db.close_old_connections()
+            os.environ['AKJOB_UNITTEST'] = 'True'
         django.setup()
 
-    # switch to unittest test db if in test mode.
-    if is_test_mode() is True:
-        switch_to_unittest_db()
 
     # For debug
-    print("Using database: " +
-          django.conf.settings.DATABASES["default"]["NAME"])
+    # print("setup_dkango Using database: " +
+    #       django.conf.settings.DATABASES["default"]["NAME"])
     # print("Using database: " +
     #       django.conf.settings.DATABASES["default"]["NAME"] +
     #       " | called by: " + inspect.stack()[1][3] +
