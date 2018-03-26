@@ -27,12 +27,15 @@ setup_django(). Also something is going wrong when importing from akjob_logger.
 I'm going to leave it alone for now and use the management command instead.
 
 Ideas for future versions:
-Would using signals to control things be helpful?
-Is there someway better to track if a job is running or not. If things stop
-while a job is running, the _job_running flag doesn't get turned off and the
-job will no longer run.
-Look into catching termination signals and how they could be used to end the
-loop in a better way.
+*   Would using signals to control things be helpful?
+*   Is there someway better to track if a job is running or not. If things stop
+    while a job is running, the _job_running flag doesn't get turned off and
+    the job will no longer run.
+*   Look into catching termination signals and how they could be used to end the
+    loop in a better way.
+*   Query jobs that probably need to be deleted. Jobs with scheduled dates in
+    the past or any job that won't run anymore. Maybe make function or
+    something to delete them.
 
 
 Unittest testing database:

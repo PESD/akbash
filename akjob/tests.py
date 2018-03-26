@@ -361,7 +361,7 @@ class JobSchedulingTestCase(uTestCase):
     def setDateTimeVars(self):
         self.utc = timezone.utc
         self.mst = timezone(timedelta(hours=-7))
-        self.now = datetime.now(tz=self.utc)  # + timedelta(minutes=2)
+        self.now = datetime.now(tz=self.utc) + timedelta(minutes=1)
         self.future = self.now + timedelta(minutes=1)
         self.past = self.now - timedelta(minutes=30)
         self.pastday = self.now - timedelta(days=1)
@@ -445,19 +445,37 @@ class JobSchedulingTestCase(uTestCase):
     def test_2_wait(self):
         """ Not really a test. Start akjobd and sleep for 3 minutes while we
             wait for jobs to run. """
-        # for debug
-        # print("test_2 Using database: " + settings.DATABASES["default"]["NAME"])
         start_daemon()
-        # psleep(250)
-        psleep(130)
+        psleep(70)
 
 
-    def test_3_job_results(self):
-        # for debug
-        # print("test_3 Using database: " + settings.DATABASES["default"]["NAME"])
+    def test_3_job_results_1(self):
         names = ["test_JobDates_now",
-                 "test_dates_list_now",
+                 "test_dates_list_now"]
+        for name in names:
+            with self.subTest(name):
+                if os.path.isfile(os.path.join(testdir, name)):
+                    with open(os.path.join(testdir, name), 'r') as f:
+                        result = f.readline()
+                    self.assertEqual(result, name)
+                else:
+                    # fail the test.
+                    self.assertTrue(os.path.isfile(os.path.join(testdir, name)))
+        names = ["test_JobDates_past",
+                 "test_dates_list_past",
                  "test_JobDates_future",
+                 "test_dates_list_future"]
+        for name in names:
+            with self.subTest(name):
+                self.assertFalse(os.path.isfile(os.path.join(testdir, name)))
+
+
+    def test_4_wait(self):
+        psleep(60)
+
+
+    def test_5_job_results_1(self):
+        names = ["test_JobDates_future",
                  "test_dates_list_future"]
         for name in names:
             with self.subTest(name):
@@ -466,18 +484,21 @@ class JobSchedulingTestCase(uTestCase):
                         result = f.readline()
                     self.assertEqual(result, name)
                 else:
+                    # fail the test.
                     self.assertTrue(os.path.isfile(os.path.join(testdir, name)))
         names = ["test_JobDates_past",
                  "test_dates_list_past"]
         for name in names:
-            self.assertFalse(os.path.isfile(os.path.join(testdir, name)))
+            with self.subTest(name):
+                self.assertFalse(os.path.isfile(os.path.join(testdir, name)))
 
 
 """ scheduling things to test:
 Past, future, now, timezone
-    *   jobs with past scheduled run times still run when akjobd is back up.
-    *   scheduled runtime now() runs. test because the 1st loops schedules the
-        job when then runs on the 2nd loop.
+    *   jobs that get scheduled but didn't run because akjobd was off should
+        still run when akjobd is back up.
+    *   --scheduled runtime now() runs. test because the 1st loops schedules the
+        job when then runs on the 2nd loop.--
     *   Jobs in the future haven't run yet.
     *   Jobs in the future run in the future.
     *   timezone stuff works
