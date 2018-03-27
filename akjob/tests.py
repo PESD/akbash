@@ -151,7 +151,7 @@ def psleep(seconds):
         sleep(seconds)
         print()
         return
-    elif seconds < 61:
+    elif seconds < 71:
         print(" [", end="")
         for sec in range(1, seconds + 1):
             sleep(1)
@@ -339,10 +339,33 @@ class JobCodeObjectTestCase(TestCase):
 
 
 """ Test scheduled jobs
-I have to write these in a non-standard. Create all the jobs 1st then go and
-check if they ran as expected. Otherwise we'd be spending a lot of time waiting
-for jobs to run. Also I can't use django testcases since they're wrapped in
-transactions that are rolledback so the daemon would never see the jobs.
+I have to write these in a non-standard way. The test methods are not stand
+alone. They are named so they will run in a specific order. The jobs are
+created 1st then are checked if they ran as expected. Otherwise, if we made the
+tests stand alone, we'd be spending a lot of time waiting for jobs to run. Also
+I can't use django testcases since they're wrapped in transactions that are
+rolled back so the daemon would never see the jobs.
+
+Akjob doesn't run jobs at exact times or even attempt to run jobs in real time.
+It floors datetimes down to the minute.  If you're trying to schedule a job
+down to the minute, this rounding can cause the job to be schedule on an
+unexpected side of the rounding. Add to this behavior that sometimes akjob
+needs to go through 1 job loop to schedule the job. (Ideally this should be
+improved in future versions.) So you don't know when jobs will really run.
+That's the reason the test jobs are spread out over 6 minutes. Some leeway is
+required.
+
+About the datetime.now() tests:
+Changed self.now to really be now + 1 minute. It's not realistic to schedule
+something for now. Akjob won't catch it in time and it will end up not running
+because it's scheduled for the past.  That's okay because there is no reason to
+schedule a job for now since you could just run the code now without making a
+job. It would be useful for testing jobs though. Scheduling a job for now (not
+now +1) then running Job.next_run() should work and should pass most of the
+time but there is a chance the timing will make the test fail. Also I find that
+when testing remotely with a vpn connection to the database will cause the test
+to fail. Again, no reason, other than testing, to schedule a test for now, so
+no big deal.
 """
 @skipIf(os.environ.get("CIRCLECI") == "true",
         "Akjobd not tested under CircleCI.")
@@ -351,21 +374,15 @@ class JobSchedulingTestCase(uTestCase):
 
 
     # date and time variables. designed to be called inside a test method.
-    #
-    # Changed self.now to really be now + 1 minute. It's not realistic to
-    # schedule something for now. Akjob won't catch it in time and it will end
-    # up not running because it's scheduled for the past.  That's okay because
-    # there is no reason to schedule a job for now since you could just run the
-    # code now without making a job. It would be useful for testing jobs
-    # though.
     def setDateTimeVars(self):
         self.utc = timezone.utc
         self.mst = timezone(timedelta(hours=-7))
         self.now = datetime.now(tz=self.utc) + timedelta(minutes=1)
-        self.future = self.now + timedelta(minutes=1)
+        self.future = self.now + timedelta(minutes=5)
+        self.future2 = self.now + timedelta(minutes=3)
         self.past = self.now - timedelta(minutes=30)
-        self.pastday = self.now - timedelta(days=1)
-        self.tomorrow = self.now + timedelta(days=1)
+        # self.pastday = self.now - timedelta(days=1)
+        # self.tomorrow = self.now + timedelta(days=1)
 
 
     @staticmethod
@@ -390,7 +407,7 @@ class JobSchedulingTestCase(uTestCase):
         self.setDateTimeVars()
 
 
-    # scheduling a job in that past won't run
+    # scheduling a job in the past that won't run
     def test_1_schedule_JobDates_past(self):
         name = "test_JobDates_past"
         job = self.create_job(name)
@@ -399,7 +416,7 @@ class JobSchedulingTestCase(uTestCase):
         self.create_job_test(job)
 
 
-    # scheduling a job in that past won't run
+    # scheduling a job in the past won't run
     def test_1_schedule_dates_list_past(self):
         name = "test_dates_list_past"
         job = self.create_job(name)
@@ -408,6 +425,7 @@ class JobSchedulingTestCase(uTestCase):
         self.create_job_test(job)
 
 
+    # scheduling a job to run in around 1 minute.
     def test_1_schedule_JobDates_now(self):
         name = "test_JobDates_now"
         job = self.create_job(name)
@@ -417,6 +435,7 @@ class JobSchedulingTestCase(uTestCase):
         self.create_job_test(job)
 
 
+    # scheduling a job to run in around 1 minute.
     def test_1_schedule_dates_list_now(self):
         name = "test_dates_list_now"
         job = self.create_job(name)
@@ -426,6 +445,7 @@ class JobSchedulingTestCase(uTestCase):
         self.create_job_test(job)
 
 
+    # scheduling a job to run in around 5 minute.
     def test_1_schedule_JobDates_future(self):
         name = "test_JobDates_future"
         job = self.create_job(name)
@@ -434,6 +454,7 @@ class JobSchedulingTestCase(uTestCase):
         self.create_job_test(job)
 
 
+    # scheduling a job to run in around 5 minute.
     def test_1_schedule_dates_list_future(self):
         name = "test_dates_list_future"
         job = self.create_job(name)
@@ -442,14 +463,25 @@ class JobSchedulingTestCase(uTestCase):
         self.create_job_test(job)
 
 
+    # scheduling a job to run in around 3 minute when akjobd is down.
+    def test_1_schedule_job_run_after_downtime(self):
+        name = "test_job_run_after_downtime"
+        job = self.create_job(name)
+        job.dates.create(job_datetime=self.future2)
+        job.save()
+        self.create_job_test(job)
+
+
     def test_2_wait(self):
-        """ Not really a test. Start akjobd and sleep for 3 minutes while we
+        """ Not really a test. Start akjobd and sleep for over 1 minute while we
             wait for jobs to run. """
         start_daemon()
-        psleep(70)
+        psleep(130)
 
 
-    def test_3_job_results_1(self):
+    # Test that Dates job schedules for now()+1min run and past and future jobs
+    # haven't run.
+    def test_3_job_results(self):
         names = ["test_JobDates_now",
                  "test_dates_list_now"]
         for name in names:
@@ -470,12 +502,21 @@ class JobSchedulingTestCase(uTestCase):
                 self.assertFalse(os.path.isfile(os.path.join(testdir, name)))
 
 
+    # shutdown akjobd for a minute so we can test jobs scheduled to run while
+    # it's down will still run.
     def test_4_wait(self):
+        akjobd.do_action("stop")
         psleep(60)
+        start_daemon()
+        # sleep so jobs have time to run.
+        psleep(190)
 
 
-    def test_5_job_results_1(self):
-        names = ["test_JobDates_future",
+    # Test that Dates job "future" scheduling works and "past" jobs still
+    # haven't run.
+    def test_5_job_results(self):
+        names = ["test_job_run_after_downtime",
+                 "test_JobDates_future",
                  "test_dates_list_future"]
         for name in names:
             with self.subTest(name):
