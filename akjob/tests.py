@@ -114,7 +114,7 @@ class CustomJCO:
     def run(self, ownjob=None):
 
         text = ("Job " + str(ownjob.id) + " " + ownjob.name + " : " +
-                self.testname + " : " + self.text + "\n")
+                self.testname + " : " + str(self.text) + "\n")
 
         if self.action == "file_print":
             with open(os.path.join(testdir, self.filename), 'w') as f:
@@ -123,6 +123,20 @@ class CustomJCO:
             print(text)
         else:
             raise Exception("No action provided.")
+
+
+""" A job code object for testing multiple dt jobs.
+"""
+class MultiDTJCO:
+    def __init__(self, directory, jobname):
+        self.directory = directory
+        self.name = jobname
+        self.iteration = 0
+
+    def run(self, ownjob=None):
+        self.iteration += 1
+        file_print(self.directory, ownjob.name +
+                   str(self.iteration), str(self.iteration))
 
 
 """ A function that calls sleep() and outputs how long the sleep is
@@ -347,13 +361,13 @@ I can't use django testcases since they're wrapped in transactions that are
 rolled back so the daemon would never see the jobs.
 
 Akjob doesn't run jobs at exact times or even attempt to run jobs in real time.
-It floors datetimes down to the minute.  If you're trying to schedule a job
-down to the minute, this rounding can cause the job to be schedule on an
-unexpected side of the rounding. Add to this behavior that sometimes akjob
-needs to go through 1 job loop to schedule the job. (Ideally this should be
-improved in future versions.) So you don't know when jobs will really run.
-That's the reason the test jobs are spread out over 6 minutes. Some leeway is
-required.
+It runs the job loop which takes time, sleep(60) than repeats. It floors
+datetimes down to the minute. If you're trying to schedule a job down to the
+minute, this rounding can cause the job to be schedule on an unexpected side of
+the rounding. Add to this behavior that sometimes akjob needs to go through 1
+job loop to schedule the job. (Ideally this should be improved in future
+versions.) So you don't know when jobs will really run.  That's the reason the
+test jobs are spread out over 6 minutes. Some leeway is required.
 
 About the datetime.now() tests:
 Changed self.now to really be now + 1 minute. It's not realistic to schedule
@@ -376,7 +390,6 @@ class JobSchedulingTestCase(uTestCase):
     # date and time variables. designed to be called inside a test method.
     def setDateTimeVars(self):
         self.utc = timezone.utc
-        self.mst = timezone(timedelta(hours=-7))
         self.now = datetime.now(tz=self.utc) + timedelta(minutes=1)
         self.future = self.now + timedelta(minutes=5)
         self.future2 = self.now + timedelta(minutes=3)
@@ -472,6 +485,66 @@ class JobSchedulingTestCase(uTestCase):
         self.create_job_test(job)
 
 
+    # scheduling a job to run in around 5 minute using a timezone
+    def test_1_schedule_using_timezone(self):
+        name = "test_schedule_using_timezone"
+        mst = timezone(timedelta(hours=-7))
+        future = datetime.now(tz=mst) + timedelta(minutes=5)
+        job = self.create_job(name)
+        job.dates.create(job_datetime=future)
+        job.save()
+        self.create_job_test(job)
+
+
+    # schedule a job to run at around 1 minute, 3 minutes, and 5 minutes.
+    def test_1_schedule_JobDates_multiple(self):
+        name = "test_JobDates_multiple"
+        jco = MultiDTJCO(testdir, name)
+        job = Job.objects.create(name=name)
+        job.dates.create(job_datetime=self.now)
+        job.dates.create(job_datetime=self.future2)
+        job.dates.create(job_datetime=self.future)
+        job.job_code_object = jco
+        job.next_run()
+        job.save()
+        global testfiles
+        testfiles += ["test_JobDates_multiple1",
+                      "test_JobDates_multiple2",
+                      "test_JobDates_multiple3"]
+
+
+    # schedule a job to run at around 1 minute, 3 minutes, and 5 minutes.
+    def test_1_schedule_dates_list_multiple(self):
+        name = "test_dates_list_multiple"
+        jco = MultiDTJCO(testdir, name)
+        job = Job.objects.create(name=name)
+        job.dates_list = [self.now, self.future2, self.future]
+        job.job_code_object = jco
+        job.next_run()
+        job.save()
+        global testfiles
+        testfiles += ["test_dates_list_multiple1",
+                      "test_dates_list_multiple2",
+                      "test_dates_list_multiple3"]
+
+
+    def test_1_schedule_run_every(self):
+        name = "test_run_every"
+        jco = MultiDTJCO(testdir, name)
+        job = Job.objects.create(name=name)
+        job.run_every = timedelta(minutes=1)
+        job.job_code_object = jco
+        # job.next_run()
+        job.save()
+        global testfiles
+        testfiles += ["test_run_every1",
+                      "test_run_every2",
+                      "test_run_every3",
+                      "test_run_every4",
+                      "test_run_every5",
+                      "test_run_every6"]
+
+
     def test_2_wait(self):
         """ Not really a test. Start akjobd and sleep for over 1 minute while we
             wait for jobs to run. """
@@ -479,7 +552,7 @@ class JobSchedulingTestCase(uTestCase):
         psleep(130)
 
 
-    # Test that Dates job schedules for now()+1min run and past and future jobs
+    # Test that Dates job scheduled for now()+1min run and past and future jobs
     # haven't run.
     def test_3_job_results(self):
         names = ["test_JobDates_now",
@@ -496,7 +569,8 @@ class JobSchedulingTestCase(uTestCase):
         names = ["test_JobDates_past",
                  "test_dates_list_past",
                  "test_JobDates_future",
-                 "test_dates_list_future"]
+                 "test_dates_list_future",
+                 "test_schedule_using_timezone"]
         for name in names:
             with self.subTest(name):
                 self.assertFalse(os.path.isfile(os.path.join(testdir, name)))
@@ -517,7 +591,8 @@ class JobSchedulingTestCase(uTestCase):
     def test_5_job_results(self):
         names = ["test_job_run_after_downtime",
                  "test_JobDates_future",
-                 "test_dates_list_future"]
+                 "test_dates_list_future",
+                 "test_schedule_using_timezone"]
         for name in names:
             with self.subTest(name):
                 if os.path.isfile(os.path.join(testdir, name)):
@@ -534,15 +609,32 @@ class JobSchedulingTestCase(uTestCase):
                 self.assertFalse(os.path.isfile(os.path.join(testdir, name)))
 
 
+    # Test that the multi-date jobs ran.
+    def test_5_multidate_results(self):
+        for i in range(1, 4):
+            for n in ("test_JobDates_multiple",
+                      "test_dates_list_multiple",
+                      "test_run_every"):
+                with self.subTest(n + str(i)):
+                    name = n + str(i)
+                    if os.path.isfile(os.path.join(testdir, name)):
+                        with open(os.path.join(testdir, name), 'r') as f:
+                            result = f.readline()
+                        self.assertEqual(result, str(i))
+                    else:
+                        # fail the test.
+                        self.assertTrue(os.path.isfile(os.path.join(testdir, name)))
+
+
 """ scheduling things to test:
 Past, future, now, timezone
-    *   jobs that get scheduled but didn't run because akjobd was off should
-        still run when akjobd is back up.
+    *   --jobs that get scheduled but didn't run because akjobd was off should
+        still run when akjobd is back up.--
     *   --scheduled runtime now() runs. test because the 1st loops schedules the
         job when then runs on the 2nd loop.--
-    *   Jobs in the future haven't run yet.
-    *   Jobs in the future run in the future.
-    *   timezone stuff works
+    *   --Jobs in the future haven't run yet.--
+    *   --Jobs in the future run in the future.--
+    *   --timezone stuff works--
 Scheduling with each job model scheduling attribute
     *   JobDates: single and multiple
     *   dates_list: single and multiple

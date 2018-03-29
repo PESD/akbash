@@ -26,6 +26,14 @@ think maybe I need to import django into the global namespace from
 setup_django(). Also something is going wrong when importing from akjob_logger.
 I'm going to leave it alone for now and use the management command instead.
 
+Bugs:
+I don't understand why the job loop doesn't always run when the akjobd daemon
+starts up. It works but it would be nice for it to run right away so unit
+testing could be easier and quicker but also the user can see their new job
+updated and scheduled right away. If the job loop does run right away,
+sometimes it doesn't do anything like schedule jobs. Again don't understand
+why.
+
 Ideas for future versions:
 *   Would using signals to control things be helpful?
 *   Is there someway better to track if a job is running or not. If things stop
@@ -245,7 +253,7 @@ def setup_logging():
 
 def worker(idnum):
     job = Job.objects.get(id=idnum)
-    dlog.info("Starting job " + str(job.id) + ", " + job.name)
+    dlog.info("Checking job " + str(job.id) + ", " + job.name)
     try:
         job.run()
     except Exception as inst:
