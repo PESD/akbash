@@ -20,7 +20,7 @@ from unittest import TestCase as uTestCase
 from unittest import skipIf
 from django.conf import settings
 from akjob.models import Job, JobCallable
-from akjob import akjobd
+from akjob import akjobd, models
 from time import sleep
 from subprocess import run, DEVNULL
 from datetime import datetime, timezone, timedelta  # , time
@@ -60,6 +60,19 @@ def setUpModule():
     # Path to the python executable
     global akjob_python
     akjob_python = os.path.join(sys.prefix, "bin", "python")
+
+    # Load akjob fixtures
+    # When all tests are ran, sometimes the module is loaded multiple times so
+    # I'm setting refresh to True to avoid hitting key constraints.
+    if not models.DayOfMonth.objects.all():
+        print("Loading fixture for DayOfMonth")
+        models.load_DayOfMonth()
+    if not models.DayOfWeek.objects.all():
+        print("Loading fixture for DayOfWeek")
+        models.load_DayOfWeek()
+    if not models.Months.objects.all():
+        print("Loading fixture for Months")
+        models.load_Months()
 
 
 def tearDownModule():
@@ -545,6 +558,46 @@ class JobSchedulingTestCase(uTestCase):
                       "test_run_every6"]
 
 
+    # schedule a monthly job
+    def test_1_schedule_monthly(self):
+        name = "test_monthly"
+        job = self.create_job(name)
+        job.monthly_days.set([self.now.day])
+        job.monthly_time = self.future.time()
+        job.save()
+        self.create_job_test(job)
+
+    def test_1_schedule_monthly_days_list(self):
+        name = "test_monthly_days_list"
+        job = self.create_job(name)
+        job.monthly_days_list = [self.now.day]
+        job.monthly_time = self.future.time()
+        job.save()
+        self.create_job_test(job)
+        # TODO: I'm HERE
+
+
+    # Schedule a weekly job
+    # TODO: I'm HERE
+    """
+    def test_1_schedule_weekly(self):
+        name = "test_weekly"
+        job = self.create_job(name)
+        job.weekly_days.set([self.now.day])
+        job.weekly_time = self.future.time()
+        job.save()
+        self.create_job_test(job)
+
+    def test_1_schedule_weekly_days_list(self):
+        name = "test_weekly_days_list"
+        job = self.create_job(name)
+        job.weekly_days_list = [self.now.day]
+        job.weekly_time = self.future.time()
+        job.save()
+        self.create_job_test(job)
+    """
+
+
     def test_2_wait(self):
         """ Not really a test. Start akjobd and sleep for over 1 minute while we
             wait for jobs to run. """
@@ -570,7 +623,9 @@ class JobSchedulingTestCase(uTestCase):
                  "test_dates_list_past",
                  "test_JobDates_future",
                  "test_dates_list_future",
-                 "test_schedule_using_timezone"]
+                 "test_schedule_using_timezone",
+                 "test_monthly",
+                 "test_monthly_days_list"]
         for name in names:
             with self.subTest(name):
                 self.assertFalse(os.path.isfile(os.path.join(testdir, name)))
@@ -592,7 +647,9 @@ class JobSchedulingTestCase(uTestCase):
         names = ["test_job_run_after_downtime",
                  "test_JobDates_future",
                  "test_dates_list_future",
-                 "test_schedule_using_timezone"]
+                 "test_schedule_using_timezone",
+                 "test_monthly",
+                 "test_monthly_days_list"]
         for name in names:
             with self.subTest(name):
                 if os.path.isfile(os.path.join(testdir, name)):
@@ -636,9 +693,9 @@ Past, future, now, timezone
     *   --Jobs in the future run in the future.--
     *   --timezone stuff works--
 Scheduling with each job model scheduling attribute
-    *   JobDates: single and multiple
-    *   dates_list: single and multiple
-    *   run_every / reoccuring jobs
+    *   --JobDates: single and multiple--
+    *   --dates_list: single and multiple--
+    *   --run_every / reoccuring jobs--
     *   monthly_days
     *   monthly_days_list
     *   weekly_days
