@@ -41,6 +41,9 @@ scheduling.
 
 Create a logging object that can be used by job code objects that won't be
 detached when akjobd daemonizes.
+
+Look into optimizing the interval/run_every jobs. They take a long time to
+check each loop. Need to find a better way then adding 300 future datetimes.
 """
 
 
@@ -559,8 +562,9 @@ class Job(models.Model):
     """
     def save(self, *args, **kwargs):
         self.full_clean()
-        # Consider calling self.next_run() here.
         super(Job, self).save(*args, **kwargs)
+        # Consider calling self.next_run() here except next_run calls save() so
+        # will that make a loop. So it's more complicated.
 
 
     """ More Field validations
@@ -635,7 +639,11 @@ class Job(models.Model):
     # solution to fix and it seems like a minor problem I might ignore?
     # Maybe create new method that will tell if a dt should not be included
     # because of set limits. Then you could iterate until the next dt if found.
-    def next_run(self):
+    #
+    # I'm thinking this should be split apart. A schedule_run method should be
+    # created to schedule jobs then next_run will only return the dt of the
+    # next run.
+    def next_run(self, now=None):
         "Find the next run time."
 
         # Don't do anything if job is disabled, except set _next_run to None.
@@ -645,7 +653,8 @@ class Job(models.Model):
                 self.save()
             return
 
-        now = self.dtfloormin(datetime.now(tz=timezone.utc))
+        if now is None:
+            now = self.dtfloormin(datetime.now(tz=timezone.utc))
 
         # ### Build a dt list of run times. ###
         # a list to hold multiple times when jobs might run.
@@ -775,6 +784,8 @@ class Job(models.Model):
     def isruntime(self):
         "Determine if this job should be ran now. Return True or False."
 
+        now = self.dtfloormin(datetime.now(tz=timezone.utc))
+
         # akjobd filters out disabled jobs so this block isn't used often.
         # Return False if job is disabled.
         if self.job_enabled is False:
@@ -797,13 +808,12 @@ class Job(models.Model):
                 return False
 
         # Run next_run() and return false if it doesn't return a value.
-        next_run = self.next_run()
+        next_run = self.next_run(now=now)
         if next_run is None:
             return False
 
-        now = self.dtfloormin(datetime.now(tz=timezone.utc))
-
         # check if the job should run now.
+        now = self.dtfloormin(datetime.now(tz=timezone.utc))
         if now >= next_run:
             if self._last_run is None:
                 return True
