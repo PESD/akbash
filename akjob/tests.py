@@ -407,8 +407,9 @@ class JobSchedulingTestCase(uTestCase):
         self.future = self.now + timedelta(minutes=5)
         self.future2 = self.now + timedelta(minutes=3)
         self.past = self.now - timedelta(minutes=30)
-        # self.pastday = self.now - timedelta(days=1)
-        # self.tomorrow = self.now + timedelta(days=1)
+        # map datetime.weekday() to days used by weekly_days.
+        weekday = {6: 1, 0: 2, 1: 3, 2: 4, 3: 5, 4: 6, 5: 7}
+        self.day = weekday[self.now.weekday()]
 
 
     @staticmethod
@@ -541,6 +542,7 @@ class JobSchedulingTestCase(uTestCase):
                       "test_dates_list_multiple3"]
 
 
+    # Schedule a job to run every 1 minute.
     def test_1_schedule_run_every(self):
         name = "test_run_every"
         jco = MultiDTJCO(testdir, name)
@@ -555,7 +557,8 @@ class JobSchedulingTestCase(uTestCase):
                       "test_run_every3",
                       "test_run_every4",
                       "test_run_every5",
-                      "test_run_every6"]
+                      "test_run_every6",
+                      "test_run_every7"]
 
 
     # schedule a monthly job
@@ -574,16 +577,13 @@ class JobSchedulingTestCase(uTestCase):
         job.monthly_time = self.future.time()
         job.save()
         self.create_job_test(job)
-        # TODO: I'm HERE
 
 
     # Schedule a weekly job
-    # TODO: I'm HERE
-    """
     def test_1_schedule_weekly(self):
         name = "test_weekly"
         job = self.create_job(name)
-        job.weekly_days.set([self.now.day])
+        job.weekly_days.set([self.day])
         job.weekly_time = self.future.time()
         job.save()
         self.create_job_test(job)
@@ -591,11 +591,39 @@ class JobSchedulingTestCase(uTestCase):
     def test_1_schedule_weekly_days_list(self):
         name = "test_weekly_days_list"
         job = self.create_job(name)
-        job.weekly_days_list = [self.now.day]
+        job.weekly_days_list = [self.day]
         job.weekly_time = self.future.time()
         job.save()
         self.create_job_test(job)
-    """
+
+    # schedule a disabled job. Test that disabled jobs don't run.
+    def test_1_schedule_disabled(self):
+        name = "test_disabled"
+        job = self.create_job(name)
+        job.run_every = timedelta(minutes=1)
+        job.job_enabled = False
+        job.save()
+        self.create_job_test(job)
+
+
+    # Schedule a job to run every 1 minute but limit the job runs.
+    def test_1_schedule_run_count_limit(self):
+        name = "test_run_count_limit"
+        jco = MultiDTJCO(testdir, name)
+        job = Job.objects.create(name=name)
+        job.run_every = timedelta(minutes=1)
+        job.job_code_object = jco
+        job.run_count_limit = 3
+        job.next_run()
+        job.save()
+        global testfiles
+        testfiles += ["test_run_count_limit1",
+                      "test_run_count_limit2",
+                      "test_run_count_limit3",
+                      "test_run_count_limit4",
+                      "test_run_count_limit5",
+                      "test_run_count_limit6",
+                      "test_run_count_limit7"]
 
 
     def test_2_wait(self):
@@ -625,7 +653,10 @@ class JobSchedulingTestCase(uTestCase):
                  "test_dates_list_future",
                  "test_schedule_using_timezone",
                  "test_monthly",
-                 "test_monthly_days_list"]
+                 "test_monthly_days_list",
+                 "test_weekly",
+                 "test_weekly_days_list",
+                 "test_disabled"]
         for name in names:
             with self.subTest(name):
                 self.assertFalse(os.path.isfile(os.path.join(testdir, name)))
@@ -649,7 +680,9 @@ class JobSchedulingTestCase(uTestCase):
                  "test_dates_list_future",
                  "test_schedule_using_timezone",
                  "test_monthly",
-                 "test_monthly_days_list"]
+                 "test_monthly_days_list",
+                 "test_weekly_days_list",
+                 "test_weekly"]
         for name in names:
             with self.subTest(name):
                 if os.path.isfile(os.path.join(testdir, name)):
@@ -660,7 +693,9 @@ class JobSchedulingTestCase(uTestCase):
                     # fail the test.
                     self.assertTrue(os.path.isfile(os.path.join(testdir, name)))
         names = ["test_JobDates_past",
-                 "test_dates_list_past"]
+                 "test_dates_list_past",
+                 "test_disabled",
+                 "test_run_count_limit4"]
         for name in names:
             with self.subTest(name):
                 self.assertFalse(os.path.isfile(os.path.join(testdir, name)))
@@ -671,7 +706,8 @@ class JobSchedulingTestCase(uTestCase):
         for i in range(1, 4):
             for n in ("test_JobDates_multiple",
                       "test_dates_list_multiple",
-                      "test_run_every"):
+                      "test_run_every",
+                      "test_run_count_limit"):
                 with self.subTest(n + str(i)):
                     name = n + str(i)
                     if os.path.isfile(os.path.join(testdir, name)):
@@ -681,6 +717,17 @@ class JobSchedulingTestCase(uTestCase):
                     else:
                         # fail the test.
                         self.assertTrue(os.path.isfile(os.path.join(testdir, name)))
+
+
+    # Test that the run count limit job still exists. run count limit is also
+    # tested with test_5_multidate_results.
+    def test_5_run_count_limit(self):
+        try:
+            job = Job.objects.get(name="test_run_count_limit")
+        except Job.DoesNotExist:
+            self.assertTrue(False)
+        else:
+            self.assertTrue(True)
 
 
 """ scheduling things to test:
@@ -696,96 +743,15 @@ Scheduling with each job model scheduling attribute
     *   --JobDates: single and multiple--
     *   --dates_list: single and multiple--
     *   --run_every / reoccuring jobs--
-    *   monthly_days
-    *   monthly_days_list
-    *   weekly_days
-    *   weekly_days_list
+    *   --monthly_days--
+    *   --monthly_days_list--
+    *   --weekly_days--
+    *   --weekly_days_list--
+
 
 I thinking limiting options should be in their own test case.
 Limiting options with each job model limiting attributes.
     *   job_enabled: enabled, disabled
     *   run_count_limit
-    *
-"""
-
-
-""" old code left as an example but will be deleted.
-class JobsToRunTestCase(TestCase):
-    "Test that akjob can figure out which jobs to run"
-
-    # date and time variables
-    def setDateTimeVars(self):
-        self.utc = timezone.utc
-        self.mst = timezone(timedelta(hours=-7))
-        self.now = datetime.now(tz=self.utc)
-        self.future = datetime.now(tz=self.utc) + timedelta(minutes=30)
-        self.past = datetime.now(tz=self.utc) - timedelta(minutes=30)
-        self.pastday = datetime.now(tz=self.utc) - timedelta(days=1)
-        self.tomorrow = datetime.now(tz=self.utc) + timedelta(days=1)
-
-
-    # Ignoring IntegrityError because that's what you get when the data is
-    # already loaded and you hit a primary key constraint. Should I do a
-    # refresh instead?
-    def setUp(self):
-
-
-        ra1 = Job.objects.create(name="Job dates")
-        ra1.dates_list = [self.past, self.now, self.future, self.pastday,
-                          self.tomorrow]
-        ra2 = Job.objects.create(name="Job dates - future")
-        ra2.dates.create(job_datetime=self.future)
-        ra2.dates.create(job_datetime=self.tomorrow)
-        ra3 = Job.objects.create(name="Job dates - past")
-        ra3.dates_list = [self.past, self.pastday]
-
-        Job.objects.create(name="Reoccuring / Run every job",
-                           run_every=timedelta(minutes=5))
-
-        rmj1 = Job.objects.create(name="Run Monthly job 1",
-                                  monthly_time=time(00, 30))
-        rmj1.monthly_days.add(1, 15)
-        rmj2 = Job.objects.create(name="Run Monthly job 2",
-                                  monthly_time=time(12, 1))
-        rmj2.monthly_days_list = [7, 28]
-        rmj3 = Job.objects.create(name="Run Monthly no time fail")
-        rmj3.monthly_days.add(7)
-
-        rwj1 = Job.objects.create(name="Run Weekly job 1",
-                                  weekly_time=time(00, 30))
-        rwj1.weekly_days.add(2, 4, 6)
-        rwj2 = Job.objects.create(name="Run Weekly job 2",
-                                  weekly_time=time(12, 1))
-        rwj2.weekly_days_list = [1, 7]
-        rwj3 = Job.objects.create(name="Run Weekly no time fail")
-        rwj3.weekly_days.add(3)
-
-        lat1 = Job.objects.create(
-            name="Limit active time",
-            run_every=timedelta(minutes=45),
-            active_time_begin=time(2, 0),
-            active_time_end=time(4, 0))
-        # this will be in it's own test to test for the exception.
-        # lat2 = Job.objects.create(
-        #     name="Limit active time",
-        #     run_every=timedelta(minutes=45),
-        #     active_time_begin=time(2, 0))
-
-        rcl1 = Job.objects.create(
-            name="Run count limit 1",
-            run_count_limit=10,
-            _run_count=9)
-        rcl2 = Job.objects.create(
-            name="Run count limit 2",
-            run_count_limit=10,
-            _run_count=11)
-
-        at1 = Job.objects.create(
-            name="Active time limit 1",
-            active_time_begin=time(12, 0),
-            active_time_end=time(14, 0))
-
-
-    def test_find_jobs(self):
-        pass
+    *   Delete after run count limit jobs
 """
