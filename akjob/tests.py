@@ -626,11 +626,54 @@ class JobSchedulingTestCase(uTestCase):
                       "test_run_count_limit7"]
 
 
+    # Schedule a job to run every 1 minute but limit the job runs to 3 then
+    # delete self.
+    def test_1_schedule_run_count_limit_delete(self):
+        name = "test_run_count_limit_delete"
+        jco = MultiDTJCO(testdir, name)
+        job = Job.objects.create(name=name)
+        job.run_every = timedelta(minutes=1)
+        job.job_code_object = jco
+        job.run_count_limit = 3
+        job.delete_on_run_count_limit = True
+        job.next_run()
+        job.save()
+        global testfiles
+        testfiles += ["test_run_count_limit_delete1",
+                      "test_run_count_limit_delete2",
+                      "test_run_count_limit_delete3",
+                      "test_run_count_limit_delete4",
+                      "test_run_count_limit_delete5",
+                      "test_run_count_limit_delete6",
+                      "test_run_count_limit_delete7"]
+
+
+    # schedule a job using active time limits.
+    def test_1_schedule_active_time(self):
+        name = "test_active_time"
+        jco = MultiDTJCO(testdir, name)
+        job = Job.objects.create(name=name)
+        job.run_every = timedelta(minutes=1)
+        job.active_time_begin = datetime.now(tz=self.utc) + timedelta(minutes=4)
+        job.active_time_end = datetime.now(tz=self.utc) + timedelta(minutes=5)
+        job.job_code_object = jco
+        job.next_run()
+        job.save()
+        global testfiles
+        testfiles += ["test_active_time1",
+                      "test_active_time2",
+                      "test_active_time3",
+                      "test_active_time4",
+                      "test_active_time5",
+                      "test_active_time6",
+                      "test_active_time7"]
+
+
     def test_2_wait(self):
         """ Not really a test. Start akjobd and sleep for over 1 minute while we
             wait for jobs to run. """
         start_daemon()
-        psleep(130)
+        psleep(120)
 
 
     # Test that Dates job scheduled for now()+1min run and past and future jobs
@@ -656,7 +699,8 @@ class JobSchedulingTestCase(uTestCase):
                  "test_monthly_days_list",
                  "test_weekly",
                  "test_weekly_days_list",
-                 "test_disabled"]
+                 "test_disabled",
+                 "test_active_time1"]
         for name in names:
             with self.subTest(name):
                 self.assertFalse(os.path.isfile(os.path.join(testdir, name)))
@@ -669,7 +713,7 @@ class JobSchedulingTestCase(uTestCase):
         psleep(60)
         start_daemon()
         # sleep so jobs have time to run.
-        psleep(190)
+        psleep(200)
 
 
     # Test that Dates job "future" scheduling works and "past" jobs still
@@ -695,7 +739,9 @@ class JobSchedulingTestCase(uTestCase):
         names = ["test_JobDates_past",
                  "test_dates_list_past",
                  "test_disabled",
-                 "test_run_count_limit4"]
+                 "test_run_count_limit4",
+                 "test_run_count_limit_delete4",
+                 "test_active_time2"]
         for name in names:
             with self.subTest(name):
                 self.assertFalse(os.path.isfile(os.path.join(testdir, name)))
@@ -707,7 +753,8 @@ class JobSchedulingTestCase(uTestCase):
             for n in ("test_JobDates_multiple",
                       "test_dates_list_multiple",
                       "test_run_every",
-                      "test_run_count_limit"):
+                      "test_run_count_limit",
+                      "test_run_count_limit_delete"):
                 with self.subTest(n + str(i)):
                     name = n + str(i)
                     if os.path.isfile(os.path.join(testdir, name)):
@@ -719,6 +766,18 @@ class JobSchedulingTestCase(uTestCase):
                         self.assertTrue(os.path.isfile(os.path.join(testdir, name)))
 
 
+    # Test active time limit
+    def test_5_active_time_limit(self):
+        name = "test_active_time1"
+        if os.path.isfile(os.path.join(testdir, name)):
+            with open(os.path.join(testdir, name), 'r') as f:
+                result = f.readline()
+            self.assertEqual(result, str(1))
+        else:
+            # fail the test.
+            self.assertTrue(os.path.isfile(os.path.join(testdir, name)))
+
+
     # Test that the run count limit job still exists. run count limit is also
     # tested with test_5_multidate_results.
     def test_5_run_count_limit(self):
@@ -728,6 +787,14 @@ class JobSchedulingTestCase(uTestCase):
             self.assertTrue(False)
         else:
             self.assertTrue(True)
+
+    def test_5_run_count_limit_delete(self):
+        try:
+            job = Job.objects.get(name="test_run_count_limit_delete")
+        except Job.DoesNotExist:
+            self.assertTrue(True)
+        else:
+            self.assertTrue(False)
 
 
 """ scheduling things to test:
@@ -747,11 +814,8 @@ Scheduling with each job model scheduling attribute
     *   --monthly_days_list--
     *   --weekly_days--
     *   --weekly_days_list--
-
-
-I thinking limiting options should be in their own test case.
 Limiting options with each job model limiting attributes.
-    *   job_enabled: enabled, disabled
-    *   run_count_limit
-    *   Delete after run count limit jobs
+    *   --job_enabled: enabled, disabled--
+    *   --run_count_limit--
+    *   --Delete after run count limit jobs--
 """
