@@ -718,7 +718,7 @@ class Job(models.Model):
             if atb:
                 t = v.time().replace(second=0, microsecond=0, tzinfo=v.tzinfo)
                 # print("t =", t)  # debug
-                if not atb <= t <= ate:
+                if not atb <= t < ate:
                     # print("active time:", str(jtimes.count(v)), str(v))  # debug
                     for i in range(jtimes.count(v)):
                         jtimes.remove(v)
