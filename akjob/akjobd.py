@@ -10,6 +10,13 @@ from time import sleep
 # from contextlib import redirect_stderr, redirect_stdout
 
 
+# For debug
+# import inspect
+# print("akjobd module inspect:")
+# print(inspect.stack())
+# print("AKJOB_START_DAEMON = " + os.environ['AKJOB_START_DAEMON'])
+
+
 """ Notes:
 python-daemon asks for pylockfile but that package is depreciated. Instead I'm
 using pid which is python-daemon compatible.
@@ -19,13 +26,38 @@ think maybe I need to import django into the global namespace from
 setup_django(). Also something is going wrong when importing from akjob_logger.
 I'm going to leave it alone for now and use the management command instead.
 
+Bugs:
+I don't understand why the job loop doesn't always run when the akjobd daemon
+starts up. It works but it would be nice for it to run right away so unit
+testing could be easier and quicker but also the user can see their new job
+updated and scheduled right away. If the job loop does run right away,
+sometimes it doesn't do anything like schedule jobs. Again don't understand
+why.
+
 Ideas for future versions:
-Would using signals to control things be helpful?
-Is there someway better to track if a job is running or not. If things stop
-while a job is running, the _job_running flag doesn't get turned off and the
-job will no longer run.
-Look into catching termination signals and how they could be used to end the
-loop in a better way.
+*   Would using signals to control things be helpful?
+*   Is there someway better to track if a job is running or not. If things stop
+    while a job is running, the _job_running flag doesn't get turned off and
+    the job will no longer run.
+*   Look into catching termination signals and how they could be used to end the
+    loop in a better way.
+*   Query jobs that probably need to be deleted. Jobs with scheduled dates in
+    the past or any job that won't run anymore. Maybe make function or
+    something to delete them.
+
+
+Unittest testing database:
+When the akjob daemon is ran in it's own process, we need to handle switching
+to the testing db when running unit tests. Default testmode to false.
+Set testmode to True if running unittest so the right database is used.  It's
+assumed test db is named "test_" + default db so this will fail if that default
+isn't used.
+
+Using test mode running akjob from the command line or when spawned in it own
+process through subprocess.run:
+  The arguments -t or --testdb are used. args.testdb is set to True.
+  In setup_django(), is_test_mode() returns True.
+    switch_to_unittest_db() is ran.
 """
 
 
@@ -38,7 +70,7 @@ def check_for_root():
 # setup piddir and pidname from command line arguments.
 def parse_args():
     global args
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description="The Akjob Daemon")
     parser.add_argument("action",
                         choices=["start", "stop", "restart"],
                         help="Action to perform.")
@@ -50,6 +82,8 @@ def parse_args():
                         help="The directory used to store the log file.")
     parser.add_argument("-bd", "--basedir",
                         help="The base directory of the akbash django site.")
+    parser.add_argument("-t", "--testdb", action='store_true',
+                        help="Use the unittest test database.")
     args = parser.parse_args()
 
 
@@ -88,19 +122,39 @@ def set_pre_setup_base_dir():
 # Django has to be setup separately to disable the running of akjobd on django
 # startup thereby causing an infinite loop.
 def setup_django():
+
     # Set akjob to not auto start to avoid an infinate loop.
     os.environ['AKJOB_START_DAEMON'] = 'False'
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "akbash.settings")
+
     global django, F, Q  # not sure if django in global is needed.
     import django
     from django.db.models import F, Q
+
     if __name__ == '__main__':
         # make sure the BASE_DIR is in sys.path so the akbash.settings module
         # and the app packages can be found by django.setup().
         set_pre_setup_base_dir()
         if pre_setup_base_dir not in sys.path:
             sys.path.insert(0, pre_setup_base_dir)
+        # switch to unittest test db if -t/--testdb args.
+        if args.testdb is True:
+            db = django.conf.settings.DATABASES["default"]["NAME"]
+            django.conf.settings.DATABASES["default"]["NAME"] = 'test_' + db
+            django.db.connections.close_all()
+            # django.db.close_old_connections()
+            os.environ['AKJOB_UNITTEST'] = 'True'
         django.setup()
+
+
+    # For debug
+    # print("setup_dkango Using database: " +
+    #       django.conf.settings.DATABASES["default"]["NAME"])
+    # print("Using database: " +
+    #       django.conf.settings.DATABASES["default"]["NAME"] +
+    #       " | called by: " + inspect.stack()[1][3] +
+    #       " in " + inspect.stack()[1][1])
+
     global BASE_DIR
     BASE_DIR = django.conf.settings.BASE_DIR
     # print(BASE_DIR)  # for debug
@@ -199,7 +253,7 @@ def setup_logging():
 
 def worker(idnum):
     job = Job.objects.get(id=idnum)
-    dlog.info("Starting job " + str(job.id) + ", " + job.name)
+    dlog.info("Checking job " + str(job.id) + ", " + job.name)
     try:
         job.run()
     except Exception as inst:
@@ -257,8 +311,12 @@ def loop_through_jobs():
         worker(j.id)
 
 
+# Ideas for future version:
 # maybe learn how to catch the termination signal so daemon shutdown can be
-# logged.
+#   logged.
+# On linux the buffering makes it so you can't see the output of
+#   akjobd.out right away. If debug is turned on, turn off the buffer or
+#   greatly reduce the buffer.
 def daemonize():
     with open(os.path.join(logdir, "akjobd.out"), "w+") as outfile:
         with daemon.DaemonContext(
@@ -272,8 +330,10 @@ def daemonize():
             while True:
                 # print(" " * 5, "=" * 21, str(datetime.now()), "=" * 21)
                 print(" " * 5, "=" * 70)
+                sys.stdout.flush()
                 loop_through_jobs()
                 print(" " * 5, "_" * 70)
+                sys.stdout.flush()
                 sleep(60)
 
 
