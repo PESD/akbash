@@ -578,6 +578,29 @@ class JobSchedulingTestCase(uTestCase):
         job.save()
         self.create_job_test(job)
 
+    # schedule a job using day of month limit
+    def test_1_schedule_day_of_month_limit_dont_run(self):
+        name = "test_day_of_month_limit_dont_run"
+        job = self.create_job(name)
+        job.monthly_days_list = [self.now.day]
+        job.monthly_time = self.future.time()
+        day = self.now.day + 1
+        if day > 31:  # If today is the 31st set day to 1.
+            day = 1
+        job.active_montly_days_list = [day]
+        job.save()
+        self.create_job_test(job)
+
+    def test_1_schedule_day_of_month_limit_run(self):
+        name = "test_day_of_month_limit_run"
+        job = self.create_job(name)
+        job.monthly_days_list = [self.now.day]
+        job.monthly_time = self.future.time()
+        day = self.now.day
+        job.active_montly_days_list = [day]
+        job.save()
+        self.create_job_test(job)
+
 
     # Schedule a weekly job
     def test_1_schedule_weekly(self):
@@ -593,6 +616,29 @@ class JobSchedulingTestCase(uTestCase):
         job = self.create_job(name)
         job.weekly_days_list = [self.day]
         job.weekly_time = self.future.time()
+        job.save()
+        self.create_job_test(job)
+
+    # Schedule a job with day of week limit that passes
+    def test_1_schedule_weekly_limit_run(self):
+        name = "test_weekly_limit_run"
+        job = self.create_job(name)
+        job.weekly_days.set([self.day])
+        job.weekly_time = self.future.time()
+        job.active_weekly_days.set([self.day])
+        job.save()
+        self.create_job_test(job)
+
+    # Schedule a job with day of week limit that doesn't pass
+    def test_1_schedule_weekly_limit_dont_run(self):
+        name = "test_weekly_limit_dont_run"
+        job = self.create_job(name)
+        job.weekly_days.set([self.day])
+        job.weekly_time = self.future.time()
+        day = self.day + 1
+        if day > 7:  # If today is saturday, set day to sunday
+            day = 1
+        job.active_weekly_days.set([day])
         job.save()
         self.create_job_test(job)
 
@@ -726,7 +772,9 @@ class JobSchedulingTestCase(uTestCase):
                  "test_monthly",
                  "test_monthly_days_list",
                  "test_weekly_days_list",
-                 "test_weekly"]
+                 "test_weekly",
+                 "test_weekly_limit_run",
+                 "test_day_of_month_limit_run"]
         for name in names:
             with self.subTest(name):
                 if os.path.isfile(os.path.join(testdir, name)):
@@ -741,7 +789,9 @@ class JobSchedulingTestCase(uTestCase):
                  "test_disabled",
                  "test_run_count_limit4",
                  "test_run_count_limit_delete4",
-                 "test_active_time2"]
+                 "test_active_time2",
+                 "test_weekly_limit_dont_run",
+                 "test_day_of_month_limit_dont_run"]
         for name in names:
             with self.subTest(name):
                 self.assertFalse(os.path.isfile(os.path.join(testdir, name)))
