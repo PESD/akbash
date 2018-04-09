@@ -587,7 +587,7 @@ class JobSchedulingTestCase(uTestCase):
         day = self.now.day + 1
         if day > 31:  # If today is the 31st set day to 1.
             day = 1
-        job.active_montly_days_list = [day]
+        job.active_monthly_days_list = [day]
         job.save()
         self.create_job_test(job)
 
@@ -648,6 +648,47 @@ class JobSchedulingTestCase(uTestCase):
         job = self.create_job(name)
         job.run_every = timedelta(minutes=1)
         job.job_enabled = False
+        job.save()
+        self.create_job_test(job)
+
+
+    # Schedule a job with active months limit.
+    def test_1_schedule_active_months_limit_run(self):
+        name = "test_active_months_run"
+        job = self.create_job(name)
+        job.dates_list = [self.future]
+        job.active_months_list = [self.future.month]
+        job.save()
+        self.create_job_test(job)
+
+    def test_1_schedule_active_months_limit_dont_run(self):
+        name = "test_active_months_dont_run"
+        job = self.create_job(name)
+        job.dates_list = [self.future]
+        month = self.future.month + 1
+        if month > 12:
+            month = 1
+        job.active_months_list = [month]
+        job.save()
+        self.create_job_test(job)
+
+
+    # Schedule a job with active date limit.
+    def test_1_schedule_active_date_limit_run(self):
+        name = "test_active_date_run"
+        job = self.create_job(name)
+        job.dates_list = [self.future]
+        job.active_date_begin = self.now - timedelta(days=1)
+        job.active_date_end = self.now + timedelta(days=1)
+        job.save()
+        self.create_job_test(job)
+
+    def test_1_schedule_active_date_limit_doesnt_run(self):
+        name = "test_active_date_doesnt_run"
+        job = self.create_job(name)
+        job.dates_list = [self.future]
+        job.active_date_begin = self.now + timedelta(days=2)
+        job.active_date_end = self.now + timedelta(days=3)
         job.save()
         self.create_job_test(job)
 
@@ -759,7 +800,7 @@ class JobSchedulingTestCase(uTestCase):
         psleep(60)
         start_daemon()
         # sleep so jobs have time to run.
-        psleep(200)
+        psleep(210)
 
 
     # Test that Dates job "future" scheduling works and "past" jobs still
@@ -774,7 +815,9 @@ class JobSchedulingTestCase(uTestCase):
                  "test_weekly_days_list",
                  "test_weekly",
                  "test_weekly_limit_run",
-                 "test_day_of_month_limit_run"]
+                 "test_day_of_month_limit_run",
+                 "test_active_months_run",
+                 "test_active_date_run"]
         for name in names:
             with self.subTest(name):
                 if os.path.isfile(os.path.join(testdir, name)):
@@ -791,7 +834,9 @@ class JobSchedulingTestCase(uTestCase):
                  "test_run_count_limit_delete4",
                  "test_active_time2",
                  "test_weekly_limit_dont_run",
-                 "test_day_of_month_limit_dont_run"]
+                 "test_day_of_month_limit_dont_run",
+                 "test_active_months_dont_run",
+                 "test_active_date_doesnt_run"]
         for name in names:
             with self.subTest(name):
                 self.assertFalse(os.path.isfile(os.path.join(testdir, name)))
@@ -845,27 +890,3 @@ class JobSchedulingTestCase(uTestCase):
             self.assertTrue(True)
         else:
             self.assertTrue(False)
-
-
-""" scheduling things to test:
-Past, future, now, timezone
-    *   --jobs that get scheduled but didn't run because akjobd was off should
-        still run when akjobd is back up.--
-    *   --scheduled runtime now() runs. test because the 1st loops schedules the
-        job when then runs on the 2nd loop.--
-    *   --Jobs in the future haven't run yet.--
-    *   --Jobs in the future run in the future.--
-    *   --timezone stuff works--
-Scheduling with each job model scheduling attribute
-    *   --JobDates: single and multiple--
-    *   --dates_list: single and multiple--
-    *   --run_every / reoccuring jobs--
-    *   --monthly_days--
-    *   --monthly_days_list--
-    *   --weekly_days--
-    *   --weekly_days_list--
-Limiting options with each job model limiting attributes.
-    *   --job_enabled: enabled, disabled--
-    *   --run_count_limit--
-    *   --Delete after run count limit jobs--
-"""
