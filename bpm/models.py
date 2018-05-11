@@ -6,7 +6,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from akjob.models import Job, JobCallable
 from api.models import Person, Employee, Position, Location, update_field
 from api import ldap
-# from api import visions  # Imported but unused.
+# from api import visions
 from django.contrib.auth.models import User
 from bpm.visions_helper import VisionsHelper
 from bpm.synergy_helper import SynergyHelper
@@ -17,8 +17,6 @@ from bpm.synergy_helper import SynergyHelper
 # to be run.
 
 class Observer:
-    job_id = None
-    workflow_task_id = None
 
     def __init__(self, job_id, workflow_task_id):
         self.job_id = job_id
@@ -26,8 +24,7 @@ class Observer:
 
     def run(self, ownjob):
         workflow_task = WorkflowTask.objects.get(pk=self.workflow_task_id)
-        # I don't see a purpose for querying this job or is to check it exists?
-        Job.objects.get(pk=self.job_id)
+        # job = Job.objects.get(pk=self.job_id)
         args = {
             "workflow_task": workflow_task,
             "username": "tandem",
@@ -556,8 +553,6 @@ class TaskWorker:
 
         def task_transfer_synergy(**kwargs):
             workflow_task = kwargs["workflow_task"]
-            # moved employee assignment up here otherwise employee is undefined
-            # in the status check below.
             employee = TaskWorker.get_employee_from_workflow_task(workflow_task)
             # If the 'status' arg is defined, that means the request
             # originated from the front end. We need to check it and
@@ -630,8 +625,6 @@ class TaskWorker:
 
         def task_cancel_workflow(**kwargs):
             workflow_task = kwargs["workflow_task"]
-            # Unused local variable
-            # user = TaskWorker.get_user_or_false(kwargs["username"])
             cancel_workflow = TaskWorker.get_person_workflow_from_workflow_task(workflow_task)
             cancel_workflow.status = "Canceled"
             cancel_workflow.cancel_all_jobs()
