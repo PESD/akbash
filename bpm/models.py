@@ -3,21 +3,20 @@ from django.db import models
 from django.core.mail import send_mail
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
-from akjob.models import Job
+from akjob.models import Job, JobCallable
 from api.models import Person, Employee, Position, Location, update_field
 from api import ldap
-from api import visions
+# from api import visions
 from django.contrib.auth.models import User
 from bpm.visions_helper import VisionsHelper
 from bpm.synergy_helper import SynergyHelper
 
 
-# This is the Observer class. It is created when a task of the "Observer" type is activated.
-# This object is sent to a newly created Akjob Job as the code to be run.
+# This is the Observer class. It is created when a task of the "Observer" type
+# is activated.  This object is sent to a newly created Akjob Job as the code
+# to be run.
 
 class Observer:
-    job_id = None
-    workflow_task_id = None
 
     def __init__(self, job_id, workflow_task_id):
         self.job_id = job_id
@@ -25,7 +24,7 @@ class Observer:
 
     def run(self, ownjob):
         workflow_task = WorkflowTask.objects.get(pk=self.workflow_task_id)
-        job = Job.objects.get(pk=self.job_id)
+        # job = Job.objects.get(pk=self.job_id)
         args = {
             "workflow_task": workflow_task,
             "username": "tandem",
@@ -71,10 +70,11 @@ class Process(models.Model):
         related_name="+"
     )
 
-    # All new Workflows start here. Starts a Workflow for this process and the assigned person.
-    # This generates a badge number (if needed), checks to make sure there's no other Workflows
-    # active for this person, and creates all of the WorkflowActivities and WorkflowTasks. It
-    # also sets the current workflow field for the Person.
+    # All new Workflows start here. Starts a Workflow for this process and the
+    # assigned person.  This generates a badge number (if needed), checks to
+    # make sure there's no other Workflows active for this person, and creates
+    # all of the WorkflowActivities and WorkflowTasks. It also sets the current
+    # workflow field for the Person.
 
     def start_workflow(self, person):
         if person.current_workflow and self.name != "Cancel Workflow Process":
@@ -258,7 +258,14 @@ class WorkflowActivity(models.Model):
     def set_workflow_activity_active(self):
         self.status = "Active"
         self.save()
-        self.email_users()
+        # Schedule a job to email the new task notice.
+        job = Job.objects.create(name="New Task Email")
+        jco = JobCallable(self.email_users)
+        job.job_code_object = jco
+        job.run_every = timedelta(minutes=1)
+        job.run_count_limit = 1
+        job.delete_on_run_count_limit = True
+        job.save()
 
     def start_tasks(self):
         workflow_tasks = self.workflow_tasks.all()
@@ -546,6 +553,7 @@ class TaskWorker:
 
         def task_transfer_synergy(**kwargs):
             workflow_task = kwargs["workflow_task"]
+            employee = TaskWorker.get_employee_from_workflow_task(workflow_task)
             # If the 'status' arg is defined, that means the request
             # originated from the front end. We need to check it and
             # see if the user opted to skip over Synergy creation.
@@ -554,7 +562,6 @@ class TaskWorker:
                 if not status:
                     update_field(employee, "is_synergy_account_needed", False)
                     return ("True", "Success")
-            employee = TaskWorker.get_employee_from_workflow_task(workflow_task)
             synergy_username = SynergyHelper.get_synergy_login(employee.visions_id)
             user = TaskWorker.get_user_or_false(kwargs["username"])
             if not user:
@@ -618,7 +625,6 @@ class TaskWorker:
 
         def task_cancel_workflow(**kwargs):
             workflow_task = kwargs["workflow_task"]
-            user = TaskWorker.get_user_or_false(kwargs["username"])
             cancel_workflow = TaskWorker.get_person_workflow_from_workflow_task(workflow_task)
             cancel_workflow.status = "Canceled"
             cancel_workflow.cancel_all_jobs()
