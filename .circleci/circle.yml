@@ -1,0 +1,15 @@
+version: 2.0
+jobs:
+	build:
+		working_directory: ~/akbash
+		docker:
+			- image: circleci/python:3.6.4
+				environment:
+					AKBASH_CONFIG_FILE: akbash_circle_settings.ini
+		steps:
+			- checkout
+			- run:
+					name: The First Step
+					command: |
+						echo 'Hi'
+						echo 'This is the delivery pipeline'
