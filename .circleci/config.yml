@@ -1,43 +1,44 @@
 version: 2
 jobs:
-	build:
-		working_directory: ~/akbash
-		docker:
-			- image: circleci/python:3.6.4
-				environment:
-					AKBASH_CONFIG_FILE: akbash_circle_settings.ini
-		steps:
-			- checkout
-			- run:
-					name: Install unixodbc-dev
-					command: |
-						sudo apt-get update
-						sudo apt-get install unixodbc-dev
-			- restore_cache:
-					key: deps1-{{ .Branch }}-{{ checksum "requirements.txt" }}
-			- run:
-					name: Create Virtualenv and Install Requirements
-					command: |
-						virtualenv -p python3 virtualenv
-						source virtualenv/bin/activate
-						pip install -r requirements.txt
-			- save_cache:
-					key: deps1-{{ .Branch }}-{{ checksum "requirements.txt" }}
-					paths:
-						- "virtualenv"
-			- run:
-					name: Make Migrations
-					command: |
-						source virtualenv/bin/activate
-						python manage.py makemigrations
-						python manage.py migrate
-			- run:
-					name: Run Tests
-					command: |
-						source virtualenv/bin/activate
-						python manage.py test
-			- store_test_results:
-					path: test-results
-			- store_artifacts:
-					path: test-results
-					destination: tr1
+  build:
+    working_directory: ~/akbash
+    docker:
+      - image: circleci/python:3.6.4
+        environment:
+          AKBASH_CONFIG_FILE: akbash_circle_settings.ini
+    steps:
+      - checkout
+      - run:
+          name: Install unixodbc-dev
+          command: |
+            sudo apt-get update
+            sudo apt-get install unixodbc-dev
+      - restore_cache:
+          key: deps1-{{ .Branch }}-{{ checksum "requirements.txt" }}
+      - run:
+          name: Create Virtualenv and Install Requirements
+          command: |
+            virtualenv -p python3 virtualenv
+            source virtualenv/bin/activate
+            pip install -r requirements.txt
+      - save_cache:
+          key: deps1-{{ .Branch }}-{{ checksum "requirements.txt" }}
+          paths:
+            - "virtualenv"
+      - run:
+          name: Make Migrations
+          command: |
+            source virtualenv/bin/activate
+            python manage.py makemigrations
+            python manage.py migrate
+      - run:
+          name: Run Tests
+          command: |
+            source virtualenv/bin/activate
+            python manage.py test
+      # No need to store results or artifacts.
+      # - store_test_results:
+      #     path: test-results/
+      # - store_artifacts:
+      #     path: test-results/
+      #     destination: tr1
