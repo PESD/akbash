@@ -1,4 +1,5 @@
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
+from django.utils import timezone
 from django.db import models
 from django.core.mail import send_mail
 from django.conf import settings
@@ -291,7 +292,7 @@ class WorkflowActivity(models.Model):
             return False
         workflow = self.workflow
         self.status = "Complete"
-        self.completed_date = datetime.now()
+        self.completed_date = timezone.now()
         if user is not None:
             self.completed_by = user
         self.save()
@@ -599,7 +600,7 @@ class TaskWorker:
             person = TaskWorker.get_person_from_workflow_task(workflow_task)
             person.is_onboarded = True
             person.onboarded_by = user
-            person.onboarded_date = datetime.now()
+            person.onboarded_date = timezone.now()
             person.save()
             return (True, "Success")
 
@@ -609,7 +610,7 @@ class TaskWorker:
             person = TaskWorker.get_person_from_workflow_task(workflow_task)
             person.is_tcp_fingerprinted = True
             person.tcp_fingerprinted_by = user
-            person.tcp_fingerprinted_date = datetime.now()
+            person.tcp_fingerprinted_date = timezone.now()
             person.save()
             return (True, "Success")
 
@@ -619,7 +620,7 @@ class TaskWorker:
             person = TaskWorker.get_person_from_workflow_task(workflow_task)
             person.is_badge_created = True
             person.badge_created_by = user
-            person.badge_created_date = datetime.now()
+            person.badge_created_date = timezone.now()
             person.save()
             return (True, "Success")
 

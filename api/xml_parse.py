@@ -1,7 +1,7 @@
 import xml.etree.ElementTree as ET
 from .models import Person, Employee, Position, Location, update_field
 from datetime import date
-import os
+from django.utils import timezone
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.models import User
@@ -147,5 +147,5 @@ def parse_hires():
                 position = Position.objects.create(person=hire, location=location, title=title, is_primary=True, last_updated_by="TalentEd", last_updated_date=date.today())
                 position.save()
             except ObjectDoesNotExist:
-                position = Position.objects.create(person=hire, title=title, is_primary=True, last_updated_by="TalentEd", last_updated_date=date.today())
+                position = Position.objects.create(person=hire, title=title, is_primary=True, last_updated_by="TalentEd", last_updated_date=timezone.now())
                 position.save()
