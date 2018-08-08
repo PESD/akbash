@@ -9,12 +9,22 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Set environment variables for cache keys
+          command: |
+            # MONTH used to expire keys once per month since were not using
+            #   specific pip package versions in requirements.txt
+            MONTH=`date +%Y-%m`
+            PYTHON_VER=`python3 --version`
+            echo 'export MONTH="$MONTH"' >> $BASH_ENV
+            echo 'export PYTHON_VER="$PYTHON_VER"' >> $BASH_ENV
+      - run:
           name: Install unixodbc-dev
           command: |
             sudo apt-get update
             sudo apt-get install unixodbc-dev
       - restore_cache:
-          key: deps1-{{ .Branch }}-{{ checksum "requirements.txt" }}
+          # Incriment the "r" number if you need to rebuild the cache.
+          key: pip-r1-{{ .Environment.PYTHON_VER }}-{{ .Environment.MONTH }}-{{ checksum "requirements.txt" }}
       - run:
           name: Create Virtualenv and Install Requirements
           command: |
@@ -22,7 +32,7 @@ jobs:
             source virtualenv/bin/activate
             pip install -r requirements.txt
       - save_cache:
-          key: deps1-{{ .Branch }}-{{ checksum "requirements.txt" }}
+          key: pip-r1-{{ .Environment.PYTHON_VER }}-{{ .Environment.MONTH }}-{{ checksum "requirements.txt" }}
           paths:
             - "virtualenv"
       - run:
