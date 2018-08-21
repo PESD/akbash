@@ -168,7 +168,7 @@ def psleep(seconds):
 
     m, s = divmod(seconds, 60)
     if seconds < 60:
-        print("\nSleeping " + str(s) + " seconds", end="")
+        print("\nSleeping " + str(s) + " seconds", end="")  # noqa  linter prob
     elif s == 0:
         print("\nSleeping " + str(m) + " minutes", end="")
     else:

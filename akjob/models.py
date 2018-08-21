@@ -541,6 +541,13 @@ class Job(models.Model):
     delete_on_run_count_limit = models.BooleanField(default=False)
 
 
+    """ Specify a timeout in seconds. When the job is executing, if the timeout
+        is reached, the job process will be terminated. Default timeout is 5
+        minutes.
+    """
+    timeout = models.IntegerField(default=300)
+
+
 
 
     def __str__(self):
@@ -888,7 +895,7 @@ class Job(models.Model):
     # This should probably be called something else. maybe print_info()?
     # I didn't test this section well since it's not essential and time is
     # limited.
-    def print(self):
+    def print(self):  # noqa  -  Problems with Rob's linter.
         "Display (pretty print) the job's defined values."
         from textwrap import TextWrapper
         from pprint import pprint

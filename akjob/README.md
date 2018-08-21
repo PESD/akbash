@@ -13,13 +13,13 @@ myjob.save()
 ```
 This job will run every 2 hours and execute ```print("Hello", "World")```. The results of the print statement can be seen in the akjobd.out file in the logs directory.
 ## The Akjobd Daemon
-The akjobd daemon loops through all jobs stored in the database and runs them. If the job is not schedule to run at that time, the job will perform no actions. After akjobd runs all the jobs, it sleeps for 1 minute then starts the loop again.
+The akjobd daemon loops through all jobs stored in the database and runs them. If the job is not schedule to run at that time, the job will perform no actions. If the job is executed it must finish executing before the timeout time limit or else that process will be terminated. The default timeout is 5 minutes. You maybe specify your own timeout period by setting Job.timeout with a number of seconds. If a job is terminated, it will run again at the next scheduled time. After akjobd runs all the jobs, it sleeps for 1 minute then starts the loop again.
 
 The daemon starts when Akbash starts. That code is in akjob.apps. You may set the environment variable AKJOB_START_DAEMON to "False" to tell django not to start the daemon. This is useful for development instances.
 
-There is no monitoring to restart the daemon if it crashes or otherwise stops. A cronjob could be created to attempt to start the daemon periodically. This is safe because the daemon will not start if it's already running.
+There is no monitoring to restart the daemon if it crashes or otherwise stops. A cronjob could be created to attempt to start the daemon periodically. This is safe because the daemon will not start if it's already running. Since django is initialized often during normal operation, a cronjob is probably not needed.
 
-Akjobd uses a pid file to determine wether the daemon is already running or not. The default pid file is BASE_DIR/akjob/akjobd.pid. Environment variables or changing the akjobd launch options can be used to change the pid file though I don't know why you would want to do that.
+Akjobd uses a pid file to determine wether the daemon is already running or not. The default pid file is BASE_DIR/akjob/akjobd.pid. Environment variables or changing the akjobd launch options can be used to change the pid file though I don't know why you would want to do that except possibly if you're developing on multiple branches simultaneously. Look in the akjob unit tests for an example of running the daemon with different settings.
 
 When akjobd is launched via django startup, via akjob.apps, it is ran in a separate process so that the parent django process may continue on as normal.
 
@@ -37,15 +37,17 @@ Akjob logging is a mess. Here are some ideas to improve logging in future versio
 
 TODO: Documentation on using akjob's logging in custom job code objects.
 ### Akjobd Enviroment Variables
-AKJOB_START_DAEMON - If "True" akjobd will start automatically
-AKJOB_PID_DIR - Path to the directory where the pid file is written
-AKJOB_PID_FILE - Name of the pidfile. Default is akjobd.pid
-AKJOB_LOG_DIR - Path to the directory where logs files are written
-AKJOB_PYTHON - The python executable akjobd should use.
+* AKJOB_START_DAEMON - If "True" akjobd will start automatically
+* AKJOB_PID_DIR - Path to the directory where the pid file is written
+* AKJOB_PID_FILE - Name of the pidfile. Default is akjobd.pid
+* AKJOB_LOG_DIR - Path to the directory where logs files are written
+* AKJOB_PYTHON - The python executable akjobd should use.
 
 ## Creating and Scheduling Jobs
 ### Overview
 Jobs are created and scheduled by saving an instance of akjob.models.Job. Create an instance of akjob.models.Job. Set the various scheduling attributes. Set the job_code_object attribute using an object containing the code to run. Save the instance.
+### Timeout
+When the job is being executed, if it runs for longer than the timeout, job execution will be terminated. The job will run again at the next scheduled time. The defualt timeout is 300 seconds (5 minutes). You may set the timeout by setting Job.timeout to an integer number of seconds.
 ### Job Code Objects
 To execute job code, akjob will call the run method contained in the object stored in job_code_object. When akjob calls the run method, it also passes a referance to the job instance like so: `run(ownjob=self)`.
 
