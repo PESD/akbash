@@ -6,7 +6,7 @@ import argparse
 import pid
 import daemon
 import multiprocessing
-from datetime import datetime
+from datetime import datetime, timezone
 from time import sleep
 # from contextlib import redirect_stderr, redirect_stdout
 
@@ -325,7 +325,17 @@ def loop_through_jobs():
             p.terminate()
             p.join()
             j._job_running = False
+            j._last_run = datetime.now(timezone.utc)
+            if j.run_every:
+                j._last_interval = datetime.now(timezone.utc)
             j.save()
+            # check the process has been terminated.
+            # do we need to write code to send a sigkill?
+            if p.is_alive():
+                sleep(10)  # give the process some extra time
+                if p.is_alive():
+                    dlog.error("DID NOT TERMINATE! " +
+                               str(j.id) + ", " + j.name)
 
 
 # Ideas for future version:
