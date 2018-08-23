@@ -321,21 +321,25 @@ def loop_through_jobs():
         p.start()
         p.join(j.timeout)
         if p.is_alive():
-            dlog.error("Timeout. Killing job " + str(j.id) + ", " + j.name)
+            dlog.error("Timeout! Killing job " + str(j.id) + ", " + j.name)
             p.terminate()
-            p.join()
+            p.join(30)
+            # check the process has been terminated.
+            # do we need to write code to send a sigkill?
+            if p.is_alive():
+                dlog.error("DID NOT TERMINATE! " +
+                           str(j.id) + ", " + j.name)
+                # continue so the clean up below is not done.  j._job_running
+                # will be True so the job won't run again until the job is
+                # fixed.
+                continue
+            # Fix the job so it won't run again next loop but will run again if
+            # scheduled.
             j._job_running = False
             j._last_run = datetime.now(timezone.utc)
             if j.run_every:
                 j._last_interval = datetime.now(timezone.utc)
             j.save()
-            # check the process has been terminated.
-            # do we need to write code to send a sigkill?
-            if p.is_alive():
-                sleep(10)  # give the process some extra time
-                if p.is_alive():
-                    dlog.error("DID NOT TERMINATE! " +
-                               str(j.id) + ", " + j.name)
 
 
 # Ideas for future version:
