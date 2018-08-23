@@ -5,7 +5,8 @@ import sys
 import argparse
 import pid
 import daemon
-from datetime import datetime
+import multiprocessing
+from datetime import datetime, timezone
 from time import sleep
 # from contextlib import redirect_stderr, redirect_stdout
 
@@ -25,6 +26,11 @@ This module does not work from the command line although it's almost there. I
 think maybe I need to import django into the global namespace from
 setup_django(). Also something is going wrong when importing from akjob_logger.
 I'm going to leave it alone for now and use the management command instead.
+ummm... I think I fixed this and it's now command line usable but now I'm
+unsure because of this note. I guess testing is needed.
+
+Using multiprocessing with the fork method makes this script only compatable on
+unix systems. To not use the fork method will require some refactoring.
 
 Bugs:
 I don't understand why the job loop doesn't always run when the akjobd daemon
@@ -44,6 +50,7 @@ Ideas for future versions:
 *   Query jobs that probably need to be deleted. Jobs with scheduled dates in
     the past or any job that won't run anymore. Maybe make function or
     something to delete them.
+*   Look into using the multiprocessing module to setup workers and a queue.
 
 
 Unittest testing database:
@@ -308,7 +315,31 @@ def loop_through_jobs():
             Q(_run_count__lt=F('run_count_limit'))  # OR run_count < limit )
     ):
         # debugRunCountMsg(j)
-        worker(j.id)
+        # Executing job using multiprocessing so it can be killed if it runs
+        # too long.
+        p = multiprocessing.Process(target=worker, name=j.name, args=(j.id,))
+        p.start()
+        p.join(j.timeout)
+        if p.is_alive():
+            dlog.error("Timeout! Killing job " + str(j.id) + ", " + j.name)
+            p.terminate()
+            p.join(30)
+            # check the process has been terminated.
+            # do we need to write code to send a sigkill?
+            if p.is_alive():
+                dlog.error("DID NOT TERMINATE! " +
+                           str(j.id) + ", " + j.name)
+                # continue so the clean up below is not done.  j._job_running
+                # will be True so the job won't run again until the job is
+                # fixed.
+                continue
+            # Fix the job so it won't run again next loop but will run again if
+            # scheduled.
+            j._job_running = False
+            j._last_run = datetime.now(timezone.utc)
+            if j.run_every:
+                j._last_interval = datetime.now(timezone.utc)
+            j.save()
 
 
 # Ideas for future version:
@@ -317,6 +348,8 @@ def loop_through_jobs():
 # On linux the buffering makes it so you can't see the output of
 #   akjobd.out right away. If debug is turned on, turn off the buffer or
 #   greatly reduce the buffer.
+# Look into using the multiprocessing module to setup workers and a queue.
+#   Might be better?
 def daemonize():
     with open(os.path.join(logdir, "akjobd.out"), "w+") as outfile:
         with daemon.DaemonContext(
@@ -415,6 +448,7 @@ def do_action(action):
 # set things up if ran from the command line or the subprocessing module from
 # apps.py or tests.py.
 if __name__ == '__main__':
+    multiprocessing.set_start_method('fork')  # unix only
     parse_args()
     setup_django()
     set_pid_file_name()

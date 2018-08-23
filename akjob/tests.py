@@ -1,15 +1,13 @@
 """
+Akjob unit tests.
 
 Notes:
-Some things to test:
-    *   Jobs with deleteme flag are deleted
-    *   Disabled jobs are not ran
-    *   Errors are logged
-    *   test if run count limit works
-    *   test if delete_on_run_count_limit works
-
 Do we want to test the contents of logs or logging?
 https://docs.python.org/3/library/unittest.html#unittest.TestCase.assertLogs
+
+The scheduling tests don't work well and often fail. Tests are more prone to
+fail the greater the lag. If the network and database are performing well the
+tests pass. We need to think of a better way to test this.
 """
 
 
@@ -106,6 +104,8 @@ def start_daemon():
          "-t"])
 
 
+# TODO: all these job code object functions and classes repeat a lot of code
+#       and could be cleaned up.
 """ A function that can be used with JobCallable.
     Creates a file in the testdir named "name" and writes "text" into it.
 """
@@ -152,6 +152,24 @@ class MultiDTJCO:
                    str(self.iteration), str(self.iteration))
 
 
+""" A job code object for testing timeouts.
+"""
+class TimeoutTestJCO:
+    def __init__(self, name, sleeptime, directory):
+        self.name = name
+        self.sleeptime = sleeptime
+        self.testdir = directory
+
+    def run(self, ownjob=None):
+        with open(os.path.join(self.testdir, self.name), 'w') as f:
+            f.write("Job with timeout started.\n")
+            # close file now becasue when the job is terminated this won't be
+            # cleaned up.
+        sleep(self.sleeptime)
+        with open(os.path.join(self.testdir, self.name), 'a') as f:
+            f.write("Job with timeout ending.\n")
+
+
 """ A function that calls sleep() and outputs how long the sleep is
     with a text progress bar. We're going to have some long sleeps so it's nice
     to see the system is sleeping instead of being broke.  Not exact times.
@@ -168,7 +186,7 @@ def psleep(seconds):
 
     m, s = divmod(seconds, 60)
     if seconds < 60:
-        print("\nSleeping " + str(s) + " seconds", end="")
+        print("\nSleeping " + str(s) + " seconds", end="")  # noqa  linter prob
     elif s == 0:
         print("\nSleeping " + str(m) + " minutes", end="")
     else:
@@ -756,6 +774,37 @@ class JobSchedulingTestCase(uTestCase):
                       "test_active_time7"]
 
 
+    # schedule a job specifying timeout that doesn't time out.
+    def test_1_schedule_job_with_timeout(self):
+        name = "test_dont_timeout"
+        sleeptime = 5
+        global testdir
+        jco = TimeoutTestJCO(name, sleeptime, testdir)
+        job = Job.objects.create(name=name)
+        job.job_code_object = jco
+        job.run_every = timedelta(minutes=2)
+        job.run_count_limit = 1
+        job.timeout = 10
+        job.save()
+        global testfiles
+        testfiles += ["test_dont_timeout"]
+
+    # schedule a job specifying timeout that will cause a timeout.
+    def test_1_schedule_timeout(self):
+        name = "test_timeout"
+        sleeptime = 10
+        global testdir
+        jco = TimeoutTestJCO(name, sleeptime, testdir)
+        job = Job.objects.create(name=name)
+        job.job_code_object = jco
+        job.run_every = timedelta(minutes=2)
+        job.run_count_limit = 1
+        job.timeout = 5
+        job.save()
+        global testfiles
+        testfiles += ["test_timeout"]
+
+
     def test_2_wait(self):
         """ Not really a test. Start akjobd and sleep for over 1 minute while we
             wait for jobs to run. """
@@ -890,3 +939,18 @@ class JobSchedulingTestCase(uTestCase):
             self.assertTrue(True)
         else:
             self.assertTrue(False)
+
+    def test_5_timeout(self):
+        global testdir
+        with self.subTest("test_dont_timeout"):
+            with open(os.path.join(testdir, "test_dont_timeout"), 'r') as f:
+                result = f.readline()
+                self.assertEqual(result, "Job with timeout started.\n")
+                result = f.readline()
+                self.assertEqual(result, "Job with timeout ending.\n")
+        with self.subTest("test_timeout"):
+            with open(os.path.join(testdir, "test_timeout"), 'r') as f:
+                result = f.readline()
+                self.assertEqual(result, "Job with timeout started.\n")
+                result = f.readline()
+                self.assertFalse(result)
